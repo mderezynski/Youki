@@ -397,8 +397,13 @@ namespace MPX
         m_main_window->signal_key_press_event().connect(
             sigc::mem_fun(
                   *this
-                , &YoukiController::on_main_window_key_press_event
-        )) ;
+                , &YoukiController::on_main_window_key_press_event_pre
+        ), false ) ;
+        m_main_window->signal_key_press_event().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_main_window_key_press_event_after
+        ), true ) ;
 
         m_main_window->signal_quit().connect(
             sigc::mem_fun(
@@ -663,10 +668,14 @@ namespace MPX
 //        m_Paned2->add1( *m_Paned1 ) ;
 //        m_Paned2->add2( *m_ScrolledWinAlbums ) ;
 
-//        std::vector<Gtk::Widget*> v (2) ;
-//        v[0] = m_ScrolledWinArtist ;
-//        v[1] = m_ScrolledWinTracks ;
-//        m_Paned1->set_focus_chain( v ) ;
+        std::vector<Gtk::Widget*> v (6) ;
+        v[0] = m_Entry ;
+        v[1] = m_ScrolledWinArtist ;
+        v[2] = m_ScrolledWinAlbums ;
+        v[3] = m_ScrolledWinTracks ;
+        v[4] = m_main_position ;
+        v[5] = m_main_volume ;
+        m_main_window->set_focus_chain( v ) ;
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
@@ -701,6 +710,8 @@ namespace MPX
                   *this
                 , &YoukiController::on_status_icon_scroll_down
         )) ;
+
+        on_entry_clear_clicked() ;
     }
 
     YoukiController::~YoukiController ()
@@ -1427,36 +1438,28 @@ namespace MPX
     YoukiController::on_entry_clear_clicked(
     )
     {
-        m_conn1.block() ;    
-        m_conn2.block() ;    
-        m_conn3.block() ;    
-        m_conn4.block() ;    
-
-        m_EntryText.clear() ;
-        m_Entry->set_text( "" ) ;
+        m_conn1.block() ;
+        m_conn2.block() ;
+        m_conn3.block() ;
+        m_conn4.block() ;
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
-        private_->FilterModelTracks->set_filter( "" ) ;
+        m_Entry->set_text( "" ) ;
 
-        private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+        private_->FilterModelAlbums->clear_constraint_album() ;
+        private_->FilterModelAlbums->clear_constraint_artist() ;
 
-        private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
-        private_->FilterModelAlbums->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+        private_->FilterModelArtist->clear_constraint_artist() ;
 
         private_->FilterModelArtist->regen_mapping() ;
         private_->FilterModelAlbums->regen_mapping() ;
+        private_->FilterModelTracks->regen_mapping() ;
 
-        m_ListViewAlbums->select_row( 0 ) ;
-        m_ListViewArtist->select_row( 0 ) ;
-
-        m_ListViewAlbums->scroll_to_row( 0 ) ;
         m_ListViewArtist->scroll_to_row( 0 ) ;
+        m_ListViewAlbums->scroll_to_row( 0 ) ;
         m_ListViewTracks->scroll_to_row( 0 ) ;
 
-        m_conn1.unblock() ;    
-        m_conn2.unblock() ;    
-        m_conn3.unblock() ;    
-        m_conn4.unblock() ;    
+        m_ListViewArtist->select_row( 0 ) ;
 
         boost::optional<MPX::Track> t = m_track_current ;
 
@@ -1465,6 +1468,11 @@ namespace MPX
             gint64 id_track = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
             m_ListViewTracks->scroll_to_id( id_track ) ;
         }
+
+        m_conn1.unblock() ;
+        m_conn2.unblock() ;
+        m_conn3.unblock() ;
+        m_conn4.unblock() ;
     }
 
     bool
@@ -1629,16 +1637,12 @@ namespace MPX
     }
 
     bool
-    YoukiController::on_main_window_key_press_event(
+    YoukiController::on_main_window_key_press_event_pre(
           GdkEventKey* event
     ) 
     {
         switch( event->keyval )
         {
-            case GDK_Escape:
-                m_main_window->hide() ;
-                return true ;
-
             case GDK_F1:
                 m_mlibman_dbus_proxy->ShowWindow () ;
                 return true ;
@@ -1658,6 +1662,23 @@ namespace MPX
                     initiate_quit() ;
                     return true ;
                 }
+
+            default: break ;
+        }
+
+        return false ;
+    }
+
+    bool
+    YoukiController::on_main_window_key_press_event_after(
+          GdkEventKey* event
+    ) 
+    {
+        switch( event->keyval )
+        {
+            case GDK_Escape:
+                m_main_window->hide() ;
+                return true ;
 
             default: break ;
         }

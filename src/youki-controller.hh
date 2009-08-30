@@ -341,7 +341,12 @@ namespace MPX
             ) ;
 
             bool
-            on_main_window_key_press_event(
+            on_main_window_key_press_event_pre(
+                  GdkEventKey*
+            ) ;
+
+            bool
+            on_main_window_key_press_event_after(
                   GdkEventKey*
             ) ;
 

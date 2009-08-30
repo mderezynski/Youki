@@ -920,8 +920,8 @@ namespace Albums
 
             protected:
 
-                virtual bool
-                on_key_press_event (GdkEventKey * event)
+                bool
+                key_press_event (GdkEventKey * event)
                 {
                     if( event->is_modifier )
                         return false ;
@@ -956,7 +956,7 @@ namespace Albums
                         gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
                         gdk_event_free(new_event) ;
 
-                        return false ;
+                        return true ;
                     }
 
                     int step ; 
@@ -1011,7 +1011,7 @@ namespace Albums
                                     goto mark_first_row_up;
                                 }
                             }
-                            queue_draw();
+
                             return true;
 
                         case GDK_Down:
@@ -1052,66 +1052,43 @@ namespace Albums
                                     goto mark_first_row_down;
                                 }
                             }
-                            queue_draw();
-                            return true;
 
-                        case GDK_Left:
-                        case GDK_KP_Left:
-                        case GDK_Right:
-                        case GDK_KP_Right:
-                        case GDK_Home:
-                        case GDK_KP_Home:
-                        case GDK_End:
-                        case GDK_KP_End:
-                        case GDK_KP_Enter:
-                        case GDK_Return:
-                        case GDK_Escape:
-                        case GDK_Tab:
-                            return false ;
+                            return true;
 
                         default:
 
                             if( !Gtk::DrawingArea::on_key_press_event( event ))
                             { 
-                                if( (event->state & GDK_CONTROL_MASK)
-                                                ||
-                                    (event->state & GDK_MOD1_MASK)
-                                                ||
-                                    (event->state & GDK_SUPER_MASK)
-                                                ||
-                                    (event->state & GDK_HYPER_MASK)
-                                                ||
-                                    (event->state & GDK_META_MASK)
-                                )
+                                if( !m_search_active ) 
                                 {
+                                    int x, y, x_root, y_root ;
+
+                                    dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
+
+                                    x = x_root + get_allocation().get_x() ;
+                                    y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
+
+                                    m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
+                                    m_SearchWindow->move( x, y ) ;
+                                    m_SearchWindow->show() ;
+
+                                    send_focus_change( *m_SearchEntry, true ) ;
+
+                                    GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                                    g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                                    gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
+                                    ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                                    gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                                    gdk_event_free(new_event) ;
+
+                                    m_search_active = true ;
+
                                     return false ;
                                 }
-
-                                int x, y, x_root, y_root ;
-
-                                dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
-
-                                x = x_root + get_allocation().get_x() ;
-                                y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
-
-                                m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
-                                m_SearchWindow->move( x, y ) ;
-                                m_SearchWindow->show() ;
-
-                                send_focus_change( *m_SearchEntry, true ) ;
-
-                                GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
-                                g_object_unref( ((GdkEventKey*)new_event)->window ) ;
-                                gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
-                                ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
-                                gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
-                                gdk_event_free(new_event) ;
-
-                                m_search_active = true ;
                             }
                     }
 
-                    return false;
+                    return false ;
                 }
 
                 void
@@ -1738,6 +1715,8 @@ namespace Albums
                     g_signal_connect(G_OBJECT(gobj()), "set_scroll_adjustments", G_CALLBACK(list_view_set_adjustments), this);
 
                     m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
+                    gtk_widget_realize( GTK_WIDGET(m_SearchEntry->gobj() )) ;
+                    m_SearchEntry->show() ;
 
                     m_search_changed_conn = m_SearchEntry->signal_changed().connect(
                             sigc::mem_fun(
@@ -1768,6 +1747,12 @@ namespace Albums
 
                     m_SearchWindow->add( *m_SearchEntry ) ;
                     m_SearchEntry->show() ;
+
+                    signal_key_press_event().connect(
+                        sigc::mem_fun(
+                              *this
+                            , &Class::key_press_event
+                    ), true ) ;
                }
 
                 virtual ~Class ()

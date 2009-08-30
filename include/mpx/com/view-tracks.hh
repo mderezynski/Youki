@@ -716,15 +716,9 @@ namespace Tracks
                             bool frag_diff = m_frags != frags ;
                             bool aque_diff = m_constraints_aqe != aque ;
 
-                            if( frag_diff && aque_diff ) 
+                            if( frag_diff || aque_diff ) 
                             {
-                                m_current_filter = text ;
-                                regen_mapping() ;
-                            }
-                            else
-                            if( frag_diff )
-                            {
-                                if( !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
+                                if( aque.empty() && m_constraints_aqe.empty() && !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
                                 {
                                     m_current_filter = text ;
                                     regen_mapping_iterative() ;
@@ -735,13 +729,7 @@ namespace Tracks
                                     regen_mapping() ;
                                 }
                             }
-                            else
-                            if( aque_diff )
-                            {
-                                m_current_filter = text ;
-                                regen_mapping() ;
-                            }
-                        }
+                       }
                         else
                         {
                             m_current_filter = text; 
@@ -1457,8 +1445,8 @@ namespace Tracks
                     return false ;
                 }
 
-                virtual bool
-                on_key_press_event (GdkEventKey * event)
+                bool
+                key_press_event (GdkEventKey * event)
                 {
                     if( event->is_modifier )
                         return false ;
@@ -1500,7 +1488,7 @@ namespace Tracks
                         gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
                         gdk_event_free(new_event) ;
 
-                        return false ;
+                        return true ;
                     }
 
                     continue_matching:
@@ -1537,8 +1525,8 @@ namespace Tracks
 
                                 MPX::Track track = get<4>(*(get<0>(m_selection.get()))) ;
                                 m_SIGNAL_track_activated.emit( track, !(event->state & GDK_CONTROL_MASK) ) ;
-                                queue_draw () ;
                             }
+
                             return true;
                         }
 
@@ -1628,36 +1616,12 @@ namespace Tracks
                             return true;
                         }
 
-                        case GDK_Left:
-                        case GDK_KP_Left:
-                        case GDK_Right:
-                        case GDK_KP_Right:
-                        case GDK_Home:
-                        case GDK_KP_Home:
-                        case GDK_End:
-                        case GDK_KP_End:
-                        case GDK_Escape:
-                        case GDK_Tab:
-                            return false ;
-
                         default:
 
-                            if( !Gtk::DrawingArea::on_key_press_event( event ))
-                            { 
-                                if( (event->state & GDK_CONTROL_MASK)
-                                                ||
-                                    (event->state & GDK_MOD1_MASK)
-                                                ||
-                                    (event->state & GDK_SUPER_MASK)
-                                                ||
-                                    (event->state & GDK_HYPER_MASK)
-                                                ||
-                                    (event->state & GDK_META_MASK)
-                                )
-                                {
-                                    return false ;
-                                }
-                                
+                            if( !m_search_active )
+                            {
+                                g_message("activating search") ;
+
                                 int x, y, x_root, y_root ;
 
                                 dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
@@ -1679,10 +1643,12 @@ namespace Tracks
                                 gdk_event_free(new_event) ;
 
                                 m_search_active = true ;
+
+                                return false ;
                             }
                     }
 
-                    return false;
+                    return false ;
                 }
 
                 void
@@ -2780,6 +2746,8 @@ namespace Tracks
                     */
 
                     m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
+                    gtk_widget_realize( GTK_WIDGET(m_SearchEntry->gobj()) ) ;
+                    m_SearchEntry->show() ;
 
                     m_SearchHBox = Gtk::manage( new Gtk::HBox ) ;
                     m_SearchButton = Gtk::manage( new Gtk::Button ) ;
@@ -2821,6 +2789,12 @@ namespace Tracks
                                   *this
                                 , &Class::on_search_window_focus_out
                     )) ;
+
+                    signal_key_press_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &Class::key_press_event
+                    ), true ) ;
 
                     m_SearchHBox->pack_start( *m_SearchEntry, true, true, 0 ) ;
                     m_SearchHBox->pack_start( *m_SearchButton, true, true, 0 ) ;
