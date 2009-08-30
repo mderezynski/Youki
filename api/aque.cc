@@ -283,7 +283,7 @@ namespace AQE
 
             ++i ;
 
-            if( i == text_utf8.end() )
+            if( i == text_utf8.end() && !done_reading_pair )
             {
                 if( quote_open )
                 {
@@ -296,12 +296,8 @@ namespace AQE
                 {
                     if( rt == READ_ATTR )
                     {
-                        if( !tmp.empty() )
-                        {
-                            attribute = tmp ;
-                        }
-
-                        tmp.clear() ;
+                        non_attr_strings.push_back( attribute ) ;
+                        attribute.clear() ;
                     }
                     else
                     {
@@ -310,12 +306,6 @@ namespace AQE
 
                         done_reading_pair = true ;
                     }
-                }
-
-                if( !attribute.empty() && rt == READ_ATTR )
-                {
-                    non_attr_strings.push_back( attribute ) ;
-                    attribute.clear() ;
                 }
             }
 
