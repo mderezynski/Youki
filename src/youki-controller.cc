@@ -491,6 +491,24 @@ namespace MPX
                 View::Tracks::DataModel_SP_t m ( new View::Tracks::DataModel ) ;
                 private_->FilterModelTracks = View::Tracks::DataModelFilter_SP_t (new View::Tracks::DataModelFilter( m )) ;
 
+                // Tracks 
+
+                using boost::get ;
+
+                SQL::RowV v ;
+                m_library->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album, track_view.track")).str()) ; 
+                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                {
+                        SQL::Row & r = *i;
+                        try{
+                            private_->FilterModelTracks->append_track_quiet(r, (*(m_library->sqlToTrack(r, true, false ).get()))) ;
+                        } catch( Library::FileQualificationError )
+                        {
+                        }
+                }
+
+                m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
+
                 View::Tracks::Column_SP_t c1 (new View::Tracks::Column(_("Title"))) ;
                 c1->set_column(0) ;
 
@@ -514,8 +532,6 @@ namespace MPX
                     , true
                     , 60
                 ) ;
-
-                m_ListViewTracks->set_model( private_->FilterModelTracks ) ;
 
                 m_ScrolledWinTracks->add( *m_ListViewTracks ) ;
                 m_ScrolledWinTracks->show_all() ;
@@ -688,7 +704,6 @@ namespace MPX
                 , &YoukiController::on_status_icon_scroll_down
         )) ;
 
-        reload_library () ;
         on_entry_clear_clicked() ;
 
 /*
@@ -843,68 +858,6 @@ namespace MPX
     {
         Gtk::Main::quit () ;
         return false ;
-    }
-
-    void
-    YoukiController::reload_library ()
-    {
-        using boost::get ;
-
-        View::Tracks::DataModel_SP_t m1 ( new View::Tracks::DataModel ) ;
-        View::Tracks::DataModelFilter_SP_t model_tracks = View::Tracks::DataModelFilter_SP_t (new View::Tracks::DataModelFilter( m1 )) ;
-
-       // Tracks 
-
-        SQL::RowV v ;
-        m_library->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album, track_view.track")).str()) ; 
-        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
-        {
-                SQL::Row & r = *i;
-                try{
-                    model_tracks->append_track_quiet(r, (*(m_library->sqlToTrack(r, true, false ).get()))) ;
-                } catch( Library::FileQualificationError )
-                {
-                }
-        }
-
-        private_->FilterModelTracks = model_tracks ;
-        m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
-
-        boost::optional<MPX::Track> t = m_track_current ;
-
-        if( t )
-        {
-            m_ListViewTracks->set_active_track( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
-        }
-
-        //// SET UP CONSTRAINTS
-
-        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
-
-        boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
-        boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
-
-        if( id_artist ) 
-        {
-            AQE::Constraint_t c ;
-            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
-            c.TargetValue = id_artist.get() ;
-            c.MatchType = AQE::MT_EQUAL ;
-
-            private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
-        }
-
-        if( id_albums ) 
-        {
-            AQE::Constraint_t c ;
-            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ID ;
-            c.TargetValue = id_albums.get() ;
-            c.MatchType = AQE::MT_EQUAL ;
-
-            private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
-        }
-
-        private_->FilterModelTracks->set_filter( m_EntryText ) ;
     }
 
     void
@@ -1661,7 +1614,13 @@ namespace MPX
     void
     YoukiController::on_advanced_changed()
     {
+        if( !m_checkbutton_advanced->get_active() )
+        {
+            m_EntryText.clear() ;
+        }
+
         m_ListViewTracks->set_advanced( m_checkbutton_advanced->get_active() ) ;
+        m_Entry->set_text( m_EntryText ) ;
     }
 
     void

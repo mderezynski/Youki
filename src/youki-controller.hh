@@ -464,9 +464,6 @@ namespace MPX
             ) ;
 
             void
-            reload_library() ;
-
-            void
             initiate_quit() ;
 
             bool

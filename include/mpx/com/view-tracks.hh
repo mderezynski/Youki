@@ -489,7 +489,7 @@ namespace Tracks
                 DataModelFilter( DataModel_SP_t& model )
 
                     : DataModel( model->m_realmodel )
-                    , m_advanced( true )
+                    , m_advanced( false )
                     , m_cache_enabled( true )
 
                 {
@@ -639,7 +639,11 @@ namespace Tracks
                     const std::string&                    title             = get<std::string>(r["title"]) ;
                     const std::string&                    artist            = get<std::string>(r["artist"]) ;
                     const std::string&                    album             = get<std::string>(r["album"]) ; 
-                    const std::string&                    release_date      = get<std::string>(r["mb_release_date"]).substr( 0, 4 ) ;
+
+                    const std::string&                    release_date      = r.count("mb_release_date")
+                                                                              ? get<std::string>(r["mb_release_date"]).substr( 0, 4 )
+                                                                              : "" ;
+
                     gint64                                id                = get<gint64>(r["id"]) ;
                     gint64                                track_n           = get<gint64>(r["track"]) ;
                     gint64                                id_artist         = get<gint64>(r["mpx_album_artist_id"]) ;
@@ -681,7 +685,7 @@ namespace Tracks
                 { 
                     using boost::get ;
 
-                    if(!m_filter_full.empty() && (text.substr(0, text.size()-1) == m_filter_full) && !m_advanced)
+                    if( !m_advanced && !m_filter_full.empty() && (text.substr(0, text.size()-1) == m_filter_full) )
                     {
                         m_filter_full = text ; 
                         m_filter_effective = text ;
@@ -690,19 +694,25 @@ namespace Tracks
                     }
                     else
                     {
-                        m_filter_full = text; 
-
                         if( m_advanced )
                         {
+                            AQE::Constraints_t aqe = m_constraints_aqe ;
+
                             m_constraints_aqe.clear() ;
                             m_filter_effective = AQE::parse_advanced_query( m_constraints_aqe, text ) ;
+
+                            if( m_filter_effective != m_filter_full || m_constraints_aqe != aqe )
+                            {
+                                m_filter_full = m_filter_effective ; 
+                                regen_mapping() ;
+                            }
                         }
                         else
                         {
+                            m_filter_full = text; 
                             m_filter_effective = m_filter_full ;
+                            regen_mapping();
                         }
-
-                        regen_mapping();
                     }
                 }
 
@@ -717,8 +727,6 @@ namespace Tracks
                     {
                         m_constraints_aqe.clear() ;
                     }
-
-                    set_filter( m_filter_full ) ;
                 }
 
                 void
@@ -779,8 +787,16 @@ namespace Tracks
 
                     if( text.empty() )
                     {
-                        m_constraint_albums.reset() ;
-                        m_constraint_artist.reset() ;
+                        if( m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                        {
+                            m_constraint_albums.reset() ;
+                            m_constraint_artist.reset() ;
+                        }
+                        else
+                        {
+                            m_constraint_albums = std::set<gint64>() ;
+                            m_constraint_artist = std::set<gint64>() ;
+                        }
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
@@ -802,6 +818,12 @@ namespace Tracks
                                 {
                                     m_position = new_mapping.size()  - 1 ;
                                 }
+
+                                if( m_constraint_albums )
+                                    m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+
+                                if( m_constraint_artist )
+                                    m_constraint_artist.get().insert( get<6>(*i) ) ;
                             }
                         }
                     }
@@ -898,10 +920,10 @@ namespace Tracks
                                 {
                                     m_position = new_mapping.size()  - 1 ;
                                 }
-                            }
 
-                            m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                            m_constraint_artist.get().insert( get<6>(**i) ) ;
+                                m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                                m_constraint_artist.get().insert( get<6>(**i) ) ;
+                            }
                         }
                     }
 
@@ -930,8 +952,16 @@ namespace Tracks
 
                     if( text.empty() )
                     {
-                        m_constraint_albums.reset() ;
-                        m_constraint_artist.reset() ;
+                        if( m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                        {
+                            m_constraint_albums.reset() ;
+                            m_constraint_artist.reset() ;
+                        }
+                        else
+                        {
+                            m_constraint_albums = std::set<gint64>() ;
+                            m_constraint_artist = std::set<gint64>() ;
+                        }
 
                         for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
@@ -953,6 +983,12 @@ namespace Tracks
                                 {
                                     m_position = new_mapping.size()  - 1 ;
                                 } 
+
+                                if( m_constraint_albums )
+                                    m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+
+                                if( m_constraint_artist )
+                                    m_constraint_artist.get().insert( get<6>(**i) ) ;
                             }
                         }
                     }
@@ -1044,10 +1080,10 @@ namespace Tracks
                             if( truth )
                             {
                                 new_mapping.push_back( *i ) ;
-                            }
 
-                            m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                            m_constraint_artist.get().insert( get<6>(**i) ) ;
+                                m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                                m_constraint_artist.get().insert( get<6>(**i) ) ;
+                            }
                         }
                     }
 

@@ -19,12 +19,14 @@ namespace
         , const std::string&    attribute
         , const std::string&    value
         , MatchType_t           type
+        , bool                  inverse_match
     )
     {
         if( type != MT_UNDEFINED )
         {
             Constraint_t c ;
             c.MatchType = type ;
+            c.InverseMatch = inverse_match ;
 
             if( attribute == "musicip-puid" )
             {
@@ -155,6 +157,7 @@ namespace AQE
 
         MatchType_t type ;
         bool quote_open = false ;
+        bool inverse = false ;
         bool done_reading_pair  = false ;
         
         enum ReadType_t
@@ -173,46 +176,43 @@ namespace AQE
             if( *i == '<' )
             {
                 type = MT_LESSER_THAN ;
-
-                attribute = tmp ;
-                tmp.clear() ;
                 rt = READ_VAL ;
             }
             else
             if( *i == '>' )
             {
                 type = MT_GREATER_THAN ;
-
-                attribute = tmp ;
-                tmp.clear() ;
                 rt = READ_VAL ;
             }
             else
             if( *i == '=' )
             {
                 type = MT_EQUAL ;
-
-                attribute = tmp ;
-                tmp.clear() ;
                 rt = READ_VAL ;
             }
             else
             if( *i == '~' )
             {
                 type = MT_FUZZY_EQUAL ;
-
-                attribute = tmp ;
-                tmp.clear() ;
                 rt = READ_VAL ;
             }
             else
             if( *i == '%' )
             {
                 type = MT_EQUAL_BEGIN ;
-
-                attribute = tmp ;
-                tmp.clear() ;
                 rt = READ_VAL ;
+            }
+            else
+            if( *i == '!' )
+            {
+                if( rt == READ_ATTR && tmp.empty() )
+                {
+                    inverse = true ;
+                }
+                else
+                {
+                    tmp += *i ;
+                }
             }
             else
             if( *i == '"' )
@@ -244,7 +244,7 @@ namespace AQE
                 }
             }
             else
-            if( *i == ' ' )
+            if( *i == ' ' ) 
             {
                 if( quote_open )
                 {
@@ -254,7 +254,12 @@ namespace AQE
                 {
                     if( rt == READ_ATTR )
                     {
-                        // ignore
+                        if( !tmp.empty() )
+                        {
+                            attribute = tmp ;
+                        }
+
+                        tmp.clear() ;
                     }
                     else
                     {
@@ -267,7 +272,51 @@ namespace AQE
             }
             else
             {
+                if( tmp.empty() && !attribute.empty() && rt == READ_ATTR )
+                {
+                    non_attr_strings.push_back( attribute ) ;
+                    attribute.clear() ;
+                }
+
                 tmp += *i ;
+            }
+
+            ++i ;
+
+            if( i == text_utf8.end() )
+            {
+                if( quote_open )
+                {
+                    tmp += *i ;
+
+                    quote_open = false ;
+                    done_reading_pair = true ;
+                }
+                else
+                {
+                    if( rt == READ_ATTR )
+                    {
+                        if( !tmp.empty() )
+                        {
+                            attribute = tmp ;
+                        }
+
+                        tmp.clear() ;
+                    }
+                    else
+                    {
+                        value = tmp ;
+                        tmp.clear() ;
+
+                        done_reading_pair = true ;
+                    }
+                }
+
+                if( !attribute.empty() && rt == READ_ATTR )
+                {
+                    non_attr_strings.push_back( attribute ) ;
+                    attribute.clear() ;
+                }
             }
 
             if( done_reading_pair )
@@ -279,6 +328,7 @@ namespace AQE
                         , attribute
                         , value
                         , type
+                        , inverse
                     ) ;
 
                     type = MT_UNDEFINED ;
@@ -286,11 +336,10 @@ namespace AQE
                     value.clear() ;
                     tmp.clear() ;
                     done_reading_pair = false ;
+                    inverse = false ;
                     rt = READ_ATTR ;
                 }
             }
-
-            ++i ;
         }
 
         return Glib::ustring(boost::algorithm::join( non_attr_strings, " ")).lowercase() ;
@@ -298,7 +347,10 @@ namespace AQE
 
     template <typename T>
     bool
-    determine_match (const Constraint_t& c, const MPX::Track& track)
+    determine_match(
+          const Constraint_t&   c
+        , const MPX::Track&     track
+    )
     {
         g_return_val_if_fail(track.has(c.TargetAttr), false) ;
 
@@ -335,12 +387,15 @@ namespace AQE
                 break  ;
         }
 
-        return truthvalue ;
+        return (c.InverseMatch) ? !truthvalue : truthvalue ;
     }
 
     template <>
     bool
-    determine_match<std::string>(const Constraint_t& c, const MPX::Track& track)
+    determine_match<std::string>(
+          const Constraint_t&   c
+        , const MPX::Track&     track
+    )
     {
         g_return_val_if_fail(track.has(c.TargetAttr), false) ;
 
@@ -393,7 +448,7 @@ namespace AQE
                 break  ;
         }
 
-        return truthvalue  ;
+        return (c.InverseMatch) ? !truthvalue : truthvalue ;
     }
 
 
