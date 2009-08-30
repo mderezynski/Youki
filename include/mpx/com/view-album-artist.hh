@@ -553,8 +553,6 @@ namespace Artist
 
                 boost::optional<boost::tuple<Model_t::iterator, gint64, std::size_t> > m_selection ;
 
-                bool                                m_highlight ;
-
                 std::set<int>                       m_collapsed ;
                 std::set<int>                       m_fixed ;
                 int                                 m_fixed_total_width ;
@@ -567,9 +565,6 @@ namespace Artist
 
                 sigc::connection                    m_search_changed_conn ;
                 bool                                m_search_active ;
-                int                                 m_search_idx ;
-
-                bool                                m_clicked ;
 
                 void
                 initialize_metrics ()
@@ -882,8 +877,6 @@ namespace Artist
                         {
                             select_row( row ) ;
                         }
-
-                        m_clicked = true ;
                     }
                 
                     return true;
@@ -892,7 +885,6 @@ namespace Artist
                 bool
                 on_button_release_event (GdkEventButton * event)
                 {
-                    m_clicked = false ;
                     return true ;
                 }
 
@@ -905,41 +897,6 @@ namespace Artist
 
                     return true ;
                 }
-
-/*
-                bool
-                on_motion_notify_event(
-                    GdkEventMotion* event
-                )
-                {
-                    if( m_clicked )
-                    {
-                        int               x_orig
-                                        , y_orig;
-
-                        GdkModifierType   state;
-
-                        if( event->is_hint )
-                        {
-                            gdk_window_get_pointer( event->window, &x_orig, &y_orig, &state ) ;
-                        }
-                        else
-                        {
-                            x_orig = int( event->x ) ;
-                            y_orig = int( event->y ) ;
-                            state  = GdkModifierType( event->state ) ;
-                        }
-
-                        std::size_t row = get_upper_row() + ( y_orig/m_row_height ) ;
-
-                        if( row < m_model->size() )
-                        {
-                            select_row( row ) ;
-                        }
-                    }
-                    return true ;
-                }
-*/
 
                 bool
                 on_configure_event(
@@ -1252,13 +1209,6 @@ namespace Artist
                 }
 
                 void
-                set_highlight(bool highlight)
-                {
-                    m_highlight = highlight;
-                    queue_draw ();
-                }
-
-                void
                 set_model(DataModelFilter_SP_t model)
                 {
                     m_model = model;
@@ -1465,7 +1415,6 @@ namespace Artist
                     m_SearchEntry->set_text("") ;
                     m_search_changed_conn.unblock () ;
                     m_search_active = false ;
-                    m_search_idx = 0 ;
                 }
 
             protected:
@@ -1485,11 +1434,8 @@ namespace Artist
                         : ObjectBase( "YoukiViewArtists" )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
-                        , m_highlight( false )
                         , m_fixed_total_width( 0 )
                         , m_search_active( false )
-                        , m_search_idx( 0 )
-                        , m_clicked( false )
 
                 {
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;

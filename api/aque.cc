@@ -153,7 +153,7 @@ namespace AQE
         Glib::ustring value ;
 
         MatchType_t type ;
-        bool quote_open = false ;
+
         bool inverse = false ;
         bool done_reading_pair  = false ;
         
@@ -235,7 +235,7 @@ namespace AQE
                 value = tmp ;
                 tmp.clear() ;
 
-                done_reading_pair = true ;
+                done_reading_pair = i != text_utf8.end() ;
             }
             else
             if( *i == ' ' ) 
@@ -277,35 +277,26 @@ namespace AQE
 
             if( i == text_utf8.end() && !done_reading_pair )
             {
-                if( quote_open )
+                if( rt == READ_ATTR )
                 {
-                    quote_open = false ;
-
-                    done_reading_pair = true ;
+                    if( !tmp.empty() )
+                    {
+                        non_attr_strings.push_back( tmp ) ;
+                        tmp.clear() ;
+                    }
+                    else
+                    if( !attribute.empty() )
+                    {
+                        non_attr_strings.push_back( attribute ) ;
+                        attribute.clear() ;
+                    }
                 }
                 else
                 {
-                    if( rt == READ_ATTR )
-                    {
-                        if( !tmp.empty() )
-                        {
-                            non_attr_strings.push_back( tmp ) ;
-                            tmp.clear() ;
-                        }
-                        else
-                        if( !attribute.empty() )
-                        {
-                            non_attr_strings.push_back( attribute ) ;
-                            attribute.clear() ;
-                        }
-                    }
-                    else
-                    {
-                        value = tmp ;
-                        tmp.clear() ;
+                    value = tmp ;
+                    tmp.clear() ;
 
-                        done_reading_pair = true ;
-                    }
+                    done_reading_pair = true ;
                 }
             }
     

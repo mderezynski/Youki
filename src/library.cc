@@ -745,9 +745,10 @@ namespace MPX
                                     if( row.count("hal_vrp") )
                                             (*track.get())[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
 
+/*
                                     (*track.get())[ATTRIBUTE_LOCATION] = trackGetLocation( (*track.get()) ); 
-
                                     g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );
+*/
                                 }
                                 else
 #endif

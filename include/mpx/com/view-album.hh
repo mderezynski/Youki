@@ -1063,6 +1063,8 @@ namespace Albums
                         case GDK_KP_Home:
                         case GDK_End:
                         case GDK_KP_End:
+                        case GDK_KP_Enter:
+                        case GDK_Return:
                         case GDK_Escape:
                         case GDK_Tab:
                             return false ;

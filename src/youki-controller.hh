@@ -229,8 +229,10 @@ namespace MPX
             Glib::ustring                     m_prediction ;
             Glib::ustring                     m_prediction_last ;
 
+/*
             Gtk::CheckButton                * m_checkbutton_advanced ;
             Gtk::Label                      * m_checkbutton_advanced_label ;
+*/
 
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;

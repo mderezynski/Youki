@@ -489,7 +489,7 @@ namespace Tracks
                 DataModelFilter( DataModel_SP_t& model )
 
                     : DataModel( model->m_realmodel )
-                    , m_advanced( false )
+                    , m_advanced( true )
                     , m_cache_enabled( true )
 
                 {

@@ -339,6 +339,7 @@ namespace MPX
                     , &YoukiController::on_entry_clear_clicked
         )))) ;
 
+/*
         m_checkbutton_advanced_label = Gtk::manage( new Gtk::Label(_("Advanced"))) ;
 
         m_checkbutton_advanced = Gtk::manage( new Gtk::CheckButton) ;
@@ -348,6 +349,7 @@ namespace MPX
                   *this
                 , &YoukiController::on_advanced_changed
         )) ;
+*/
 
         m_completion_timer.stop() ;
         m_completion_timer.reset() ;
@@ -454,7 +456,7 @@ namespace MPX
         m_HBox_Entry->set_border_width( 2 ) ;
         m_HBox_Entry->pack_start( *m_Label_Search, false, false, 0 ) ;
         m_HBox_Entry->pack_start( *m_Alignment_Entry, true, true, 0 ) ;
-        m_HBox_Entry->pack_start( *m_checkbutton_advanced, false, false, 0 ) ;
+//        m_HBox_Entry->pack_start( *m_checkbutton_advanced, false, false, 0 ) ;
 
         m_Alignment_Entry->add( *m_Entry ) ;
         m_Alignment_Entry->property_top_padding() = 2 ;
@@ -800,18 +802,20 @@ namespace MPX
         m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
+/*
         m_checkbutton_advanced_label->modify_base( Gtk::STATE_NORMAL, c ) ;
         m_checkbutton_advanced_label->modify_base( Gtk::STATE_ACTIVE, c ) ;
         m_checkbutton_advanced_label->modify_base( Gtk::STATE_PRELIGHT, c ) ;
         m_checkbutton_advanced_label->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
         m_checkbutton_advanced_label->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_checkbutton_advanced_label->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
+*/
 
         c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
-        m_checkbutton_advanced_label->modify_text( Gtk::STATE_NORMAL, c ) ;
-        m_checkbutton_advanced_label->modify_fg( Gtk::STATE_NORMAL, c ) ;
+//        m_checkbutton_advanced_label->modify_text( Gtk::STATE_NORMAL, c ) ;
+//        m_checkbutton_advanced_label->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
         Gdk::Color cgdk ;
         cgdk.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
@@ -1283,7 +1287,7 @@ namespace MPX
     )
     {
         m_EntryText.clear() ;
-        m_checkbutton_advanced->set_active( true ) ; 
+//        m_checkbutton_advanced->set_active( true ) ; 
         m_Entry->set_text( (boost::format("title %% \"%s\"") % text).str() ) ;
     }
 
@@ -1563,6 +1567,7 @@ namespace MPX
         private_->FilterModelAlbums->regen_mapping() ;
     }
 
+/*
     void
     YoukiController::on_advanced_changed()
     {
@@ -1574,6 +1579,7 @@ namespace MPX
         m_ListViewTracks->set_advanced( m_checkbutton_advanced->get_active() ) ;
         m_Entry->set_text( m_EntryText ) ;
     }
+*/
 
     void
     YoukiController::on_position_seek(
