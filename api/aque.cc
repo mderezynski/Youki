@@ -140,16 +140,13 @@ namespace MPX
 {
 namespace AQE
 {
-    Glib::ustring
+    void
     parse_advanced_query(
           Constraints_t&            constraints
         , const std::string&        text
+        , StrV&                     non_attr_strings
     )
     {
-        typedef std::vector< std::string > Vector_t ;
-
-        Vector_t non_attr_strings;
-
         Glib::ustring tmp ;
 
         Glib::ustring attribute ;
@@ -220,48 +217,40 @@ namespace AQE
                 if( rt == READ_ATTR )
                 {
                     // we interpret this as the start of the attribute and use MT_EQUAL
-                    type = MT_EQUAL ;
 
+                    type = MT_FUZZY_EQUAL ;
                     attribute = tmp ;
-                    tmp.clear() ;
                     rt = READ_VAL ;
-
-                    quote_open = true ;
                 }
-                else
-                if( !quote_open )
+
+                tmp.clear() ;
+                ++i ;
+
+                while( i != text_utf8.end() && *i != '"' )
                 {
-                    quote_open = true ;
+                    tmp += *i ; 
+                    ++i ;
                 }
-                else
-                {
-                    quote_open = false ;
 
-                    value = tmp ;
-                    tmp.clear() ;
+                value = tmp ;
+                tmp.clear() ;
 
-                    done_reading_pair = true ;
-                }
+                done_reading_pair = true ;
             }
             else
             if( *i == ' ' ) 
             {
-                if( quote_open )
+                if( rt == READ_ATTR )
                 {
-                    tmp += *i ;
+                    if( !tmp.empty() )
+                    {
+                        attribute = tmp ;
+                        tmp.clear() ;
+                    }
                 }
                 else
                 {
-                    if( rt == READ_ATTR )
-                    {
-                        if( !tmp.empty() )
-                        {
-                            attribute = tmp ;
-                        }
-
-                        tmp.clear() ;
-                    }
-                    else
+                    if( !tmp.empty() )
                     {
                         value = tmp ;
                         tmp.clear() ;
@@ -281,23 +270,34 @@ namespace AQE
                 tmp += *i ;
             }
 
-            ++i ;
+            if( i != text_utf8.end() )
+            {
+                ++i ;
+            }
 
             if( i == text_utf8.end() && !done_reading_pair )
             {
                 if( quote_open )
                 {
-                    tmp += *i ;
-
                     quote_open = false ;
+
                     done_reading_pair = true ;
                 }
                 else
                 {
                     if( rt == READ_ATTR )
                     {
-                        non_attr_strings.push_back( attribute ) ;
-                        attribute.clear() ;
+                        if( !tmp.empty() )
+                        {
+                            non_attr_strings.push_back( tmp ) ;
+                            tmp.clear() ;
+                        }
+                        else
+                        if( !attribute.empty() )
+                        {
+                            non_attr_strings.push_back( attribute ) ;
+                            attribute.clear() ;
+                        }
                     }
                     else
                     {
@@ -308,7 +308,7 @@ namespace AQE
                     }
                 }
             }
-
+    
             if( done_reading_pair )
             {
                 if( !attribute.empty() && !value.empty() )
@@ -331,8 +331,6 @@ namespace AQE
                 }
             }
         }
-
-        return Glib::ustring(boost::algorithm::join( non_attr_strings, " ")).lowercase() ;
     }
 
     template <typename T>

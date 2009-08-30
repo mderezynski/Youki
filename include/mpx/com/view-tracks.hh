@@ -475,8 +475,8 @@ namespace Tracks
 
                 RowRowMapping_t                         m_mapping ;
                 FragmentCache_t                         m_fragment_cache ;
-                std::string                             m_filter_full ;
-                std::string                             m_filter_effective ;
+                std::string                             m_current_filter ;
+                StrV                                    m_frags ;
                 AQE::Constraints_t                      m_constraints_ext ;
                 AQE::Constraints_t                      m_constraints_aqe ;
                 boost::optional<gint64>                 m_active_track ;
@@ -684,11 +684,21 @@ namespace Tracks
                 )
                 { 
                     using boost::get ;
+                    using boost::algorithm::split;
+                    using boost::algorithm::is_any_of;
+                    using boost::algorithm::find_first;
 
-                    if( !m_advanced && !m_filter_full.empty() && (text.substr(0, text.size()-1) == m_filter_full) )
+                    if( !m_advanced && !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
                     {
-                        m_filter_full = text ; 
-                        m_filter_effective = text ;
+                        m_current_filter = text ; 
+
+                        m_frags.clear() ;
+
+                        if( !text.empty() ) 
+                        {
+                            std::string text_lc = Glib::ustring(text).lowercase() ;
+                            split( m_frags, text_lc, is_any_of(" ") );
+                        }
 
                         regen_mapping_iterative() ;
                     }
@@ -696,21 +706,54 @@ namespace Tracks
                     {
                         if( m_advanced )
                         {
-                            AQE::Constraints_t aqe = m_constraints_aqe ;
+                            AQE::Constraints_t aque = m_constraints_aqe ;
+                            StrV frags = m_frags ;
 
                             m_constraints_aqe.clear() ;
-                            m_filter_effective = AQE::parse_advanced_query( m_constraints_aqe, text ) ;
+                            m_frags.clear() ;
+                            AQE::parse_advanced_query( m_constraints_aqe, text, m_frags ) ;
 
-                            if( m_filter_effective != m_filter_full || m_constraints_aqe != aqe )
+                            bool frag_diff = m_frags != frags ;
+                            bool aque_diff = m_constraints_aqe != aque ;
+
+                            if( frag_diff && aque_diff ) 
                             {
-                                m_filter_full = m_filter_effective ; 
+                                m_current_filter = text ;
+                                regen_mapping() ;
+                            }
+                            else
+                            if( frag_diff )
+                            {
+                                if( !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
+                                {
+                                    m_current_filter = text ;
+                                    regen_mapping_iterative() ;
+                                }
+                                else
+                                {
+                                    m_current_filter = text ;
+                                    regen_mapping() ;
+                                }
+                            }
+                            else
+                            if( aque_diff )
+                            {
+                                m_current_filter = text ;
                                 regen_mapping() ;
                             }
                         }
                         else
                         {
-                            m_filter_full = text; 
-                            m_filter_effective = m_filter_full ;
+                            m_current_filter = text; 
+
+                            m_frags.clear() ;
+
+                            if( !text.empty() ) 
+                            {
+                                std::string text_lc = Glib::ustring(text).lowercase() ;
+                                split( m_frags, text_lc, is_any_of(" ") );
+                            }
+
                             regen_mapping();
                         }
                     }
@@ -782,10 +825,9 @@ namespace Tracks
 
                     RowRowMapping_t new_mapping ;
 
-                    std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
-                    gint64          id          = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
+                    gint64 id = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
 
-                    if( text.empty() )
+                    if( m_frags.empty() )
                     {
                         if( m_constraints_ext.empty() && m_constraints_aqe.empty() )
                         {
@@ -829,20 +871,17 @@ namespace Tracks
                     }
                     else
                     {
-                        StrV m;
-                        split( m, text, is_any_of(" ") );
-
                         IntersectVector_t intersect_v ; 
                         std::vector<std::string> vec (3) ;
 
-                        for( std::size_t n = 0 ; n < m.size(); ++n )
+                        for( std::size_t n = 0 ; n < m_frags.size(); ++n )
                         {
-                            if( m[n].empty() ) // the fragment is an empty string, so just contine and do nothing (FIXME> Perhaps just add the track instead?)
+                            if( m_frags[n].empty() ) // the fragment is an empty string, so just contine and do nothing (FIXME> Perhaps just add the track instead?)
                             {
                                 continue ;
                             }
 
-                            FragmentCache_t::iterator it = m_fragment_cache.find( m[n] ) ; // do we have this text fragment's result set cached?
+                            FragmentCache_t::iterator it = m_fragment_cache.find( m_frags[n] ) ; // do we have this text fragment's result set cached?
 
                             if( m_cache_enabled && it != m_fragment_cache.end() ) // yes, this text fragment's result set is already cached
                             {
@@ -861,15 +900,15 @@ namespace Tracks
                                     vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
                                     vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
 
-                                    if( Util::match_vec( m[n], vec) )
+                                    if( Util::match_vec( m_frags[n], vec) )
                                     {
                                         mst->insert( i ) ; 
                                     }
                                 }
 
-                                if( m_cache_enabled && m_constraints_ext.empty() )
+                                if( m_cache_enabled && m_constraints_ext.empty() && m_constraints_aqe.empty() )
                                 {
-                                    m_fragment_cache.insert( std::make_pair( m[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
+                                    m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
                             }
                         }
@@ -947,10 +986,9 @@ namespace Tracks
 
                     RowRowMapping_t new_mapping ;
 
-                    std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
-                    gint64          id          = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
+                    gint64 id = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
 
-                    if( text.empty() )
+                    if( m_frags.empty() )
                     {
                         if( m_constraints_ext.empty() && m_constraints_aqe.empty() )
                         {
@@ -994,20 +1032,17 @@ namespace Tracks
                     }
                     else
                     {
-                        StrV m;
-                        split( m, text, is_any_of(" ") );
-
                         IntersectVector_t intersect_v ; 
                         std::vector<std::string> vec (3) ;
 
-                        for( std::size_t n = 0 ; n < m.size(); ++n )
+                        for( std::size_t n = 0 ; n < m_frags.size(); ++n )
                         {
-                            if( m[n].empty() )
+                            if( m_frags[n].empty() )
                             {
                                 continue ;
                             }
 
-                            FragmentCache_t::iterator it = m_fragment_cache.find( m[n] ) ;
+                            FragmentCache_t::iterator it = m_fragment_cache.find( m_frags[n] ) ;
 
                             if( m_cache_enabled && it != m_fragment_cache.end() )
                             {
@@ -1026,15 +1061,15 @@ namespace Tracks
                                     vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
                                     vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
 
-                                    if( Util::match_vec( m[n], vec) )
+                                    if( Util::match_vec( m_frags[n], vec) )
                                     {
                                         mst->insert( *i ) ; 
                                     }
                                 }
 
-                                if( m_cache_enabled && m_constraints_ext.empty() )
+                                if( m_cache_enabled && m_constraints_ext.empty() && m_constraints_aqe.empty() )
                                 {
-                                    m_fragment_cache.insert( std::make_pair( m[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
+                                    m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
                             }
                         }

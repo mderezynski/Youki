@@ -5,6 +5,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
+#include "mpx/util-string.hh"
 #include <vector>
 #include <glib.h>
 
@@ -71,10 +72,11 @@ namespace AQE
         return true ;
     }
 
-    Glib::ustring
+    void
     parse_advanced_query(
           Constraints_t&        /*OUT: constraints*/
         , const std::string&    /*IN:  text*/
+        , StrV&
     ) ;
 
     template <typename T>

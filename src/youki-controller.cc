@@ -321,12 +321,8 @@ namespace MPX
         m_NotebookPlugins->property_tab_border() = 0 ;
         m_NotebookPlugins->property_tab_pos() = Gtk::POS_BOTTOM ;
 
-//        m_Paned1            = Gtk::manage( new Gtk::HPaned ) ;
-//        m_Paned2            = Gtk::manage( new Gtk::HPaned ) ;
         m_MainHBox          = Gtk::manage( new PercentualDistributionHBox ) ;
-
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
-
         m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Info         = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
@@ -703,27 +699,11 @@ namespace MPX
                   *this
                 , &YoukiController::on_status_icon_scroll_down
         )) ;
-
-        on_entry_clear_clicked() ;
-
-/*
-        gtk_widget_realize( GTK_WIDGET( m_Paned1->gobj() )) ;
-        gtk_widget_realize( GTK_WIDGET( m_Paned2->gobj() )) ;
-
-        m_Paned2->set_position( mcs->key_get<int>("main-window","paned2") ) ;
-        while (gtk_events_pending()) gtk_main_iteration() ;
-
-        m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
-        while (gtk_events_pending()) gtk_main_iteration() ;
-*/
     }
 
     YoukiController::~YoukiController ()
     {
         m_play->request_status( PLAYSTATUS_STOPPED ) ; 
-
-//        mcs->key_set<int>("main-window","paned1", m_Paned1->get_position() ) ;
-//        mcs->key_set<int>("main-window","paned2", m_Paned2->get_position() ) ;
 
         delete m_control_status_icon ;
         delete m_main_window ;
@@ -1448,8 +1428,8 @@ namespace MPX
         m_conn3.block() ;    
         m_conn4.block() ;    
 
-        m_Entry->set_text( "" ) ;
         m_EntryText.clear() ;
+        m_Entry->set_text( "" ) ;
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
         private_->FilterModelTracks->set_filter( "" ) ;
@@ -1576,37 +1556,9 @@ namespace MPX
     YoukiController::on_entry_changed__process_filtering(
     )
     {
-/*(
-        m_ListViewArtist->clear_selection() ;
-        m_ListViewAlbums->clear_selection() ;
-
-        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
-*/
-
         private_->FilterModelTracks->set_filter( m_EntryText ) ;
-
         private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
         private_->FilterModelArtist->regen_mapping() ;
-
-/*
-        boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
-
-        boost::optional<std::set<gint64> > constraint ; 
-
-        if( id_artist ) 
-        {
-            AQE::Constraint_t c ;
-            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
-            c.TargetValue = id_artist.get() ;
-            c.MatchType = AQE::MT_EQUAL ;
-
-            constraint = std::set<gint64>() ; 
-            constraint.get().insert( id_artist.get() ) ;
-        }
-
-        private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
-*/
-
         private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
         private_->FilterModelAlbums->regen_mapping() ;
     }
