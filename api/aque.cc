@@ -202,7 +202,7 @@ namespace AQE
             else
             if( *i == '!' )
             {
-                if( rt == READ_ATTR && tmp.empty() )
+                if( rt == READ_ATTR && !attribute.empty() )
                 {
                     inverse = true ;
                 }

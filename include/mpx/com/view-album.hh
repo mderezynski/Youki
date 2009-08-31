@@ -1448,14 +1448,17 @@ namespace Albums
                       std::size_t row
                 )
                 {
-                    Limiter<std::size_t> d ( 
-                          Limiter<std::size_t>::ABS_ABS
-                        , 0
-                        , m_model->m_mapping.size() - (m_visible_height/m_row_height) 
-                        , row 
-                    ) ;
+                    if( m_visible_height && m_row_height )
+                    {
+                        Limiter<std::size_t> d ( 
+                              Limiter<std::size_t>::ABS_ABS
+                            , 0
+                            , m_model->m_mapping.size() - (m_visible_height/m_row_height) 
+                            , row 
+                        ) ;
 
-                    m_prop_vadj.get_value()->set_value( d  * m_row_height ) ; 
+                        m_prop_vadj.get_value()->set_value( d  * m_row_height ) ; 
+                    }
                 }
 
                 void
