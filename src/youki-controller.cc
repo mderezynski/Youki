@@ -1207,10 +1207,11 @@ namespace MPX
 
         std::vector<std::string> info ;
 
-        int id[] = { ATTRIBUTE_TITLE } ;
-
         info.push_back( TrackGetArtistName( t.get() )) ;
+        info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_TITLE].get()) ) ;
 
+/*
+        int id[] = { ATTRIBUTE_TITLE } ;
         for( unsigned int n = 0; n < G_N_ELEMENTS(id) ; ++n ) 
         {
             if( t.get().has( n ) )
@@ -1218,6 +1219,7 @@ namespace MPX
                 info.push_back( boost::get<std::string>(t.get()[id[n]].get()) ) ;
             }
         }
+*/
 
         m_control_status_icon->set_metadata( t.get() ) ;
         m_main_titleinfo->set_info( info ) ;
@@ -1438,19 +1440,29 @@ namespace MPX
     YoukiController::on_entry_clear_clicked(
     )
     {
+        m_conn1.block() ;
+        m_conn2.block() ;
+        m_conn3.block() ;
+        m_conn4.block() ;
+
+        private_->FilterModelAlbums->clear_constraint_artist() ;
+        private_->FilterModelAlbums->clear_constraint_album() ;
+
+        m_Entry->set_text( "" ) ;
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+        private_->FilterModelTracks->set_filter( "" ) ;
+
+        m_conn1.unblock() ;
+        m_conn2.unblock() ;
+        m_conn3.unblock() ;
+        m_conn4.unblock() ;
+
+        private_->FilterModelAlbums->regen_mapping() ;
+
         private_->FilterModelArtist->clear_constraint_artist() ;
         private_->FilterModelArtist->regen_mapping() ;
         m_ListViewArtist->scroll_to_row( 0 ) ;
         m_ListViewArtist->select_row( 0 ) ;
-
-        private_->FilterModelAlbums->clear_constraint_artist() ;
-        private_->FilterModelAlbums->clear_constraint_album() ;
-        private_->FilterModelAlbums->regen_mapping() ;
-        m_ListViewAlbums->scroll_to_row( 0 ) ;
-        m_ListViewAlbums->select_row( 0 ) ;
-
-        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
-        m_Entry->set_text( "" ) ;
 
         boost::optional<MPX::Track> t = m_track_current ;
 
