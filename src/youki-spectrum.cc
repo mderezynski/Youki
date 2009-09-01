@@ -47,6 +47,7 @@ namespace MPX
     )
     : m_spectrum_data( SPECT_BANDS, 0 )
     , m_spectrum_peak( SPECT_BANDS, 0 )
+    , m_mode( SPECTRUM_MODE_LINEAR )
     {
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
         set_size_request( -1, 44 ) ;
@@ -148,7 +149,7 @@ namespace MPX
         GdkEventButton* G_GNUC_UNUSED 
     )
     {
-        m_signal.emit() ;
+        m_mode = Mode( !m_mode ) ; 
         return true ;
     }
 
@@ -201,28 +202,57 @@ namespace MPX
             w = WIDTH ;
 
             //// BAR 
-
-            int   bar = m_spectrum_data[n] / 2 ;
-            y = - bar ;
-            h =   bar + HEIGHT ;
-
-            if( w && h ) 
+        
+            if( m_mode == SPECTRUM_MODE_VOCODER )
             {
-                cairo->set_source_rgba(
-                      double(colors[n/6].r)/255.
-                    , double(colors[n/6].g)/255.
-                    , double(colors[n/6].b)/255.
-                    , ALPHA
-                ) ;
-                RoundedRectangle(
-                      cairo
-                    , x
-                    , y + 4
-                    , w
-                    , h
-                    , 1.
-                ) ;
-                cairo->fill ();
+                int   bar = HEIGHT + m_spectrum_data[n] / 2 ;
+                bar = (bar < 2) ? 2 : bar ;
+                y =   ( HEIGHT + bar ) / 2 ;
+                h =   - bar ; 
+
+                if( w && h ) 
+                {
+                    cairo->set_source_rgba(
+                          double(colors[n/6].r)/255.
+                        , double(colors[n/6].g)/255.
+                        , double(colors[n/6].b)/255.
+                        , ALPHA - (0.65 - ((0.65) * (bar/36.)))
+                    ) ;
+                    RoundedRectangle(
+                          cairo
+                        , x
+                        , (HEIGHT-y) + 4
+                        , w
+                        , - h
+                        , 1.
+                    ) ;
+                    cairo->fill ();
+                }
+            }
+            else
+            {
+                int   bar = m_spectrum_data[n] / 2 ;
+                y = - bar ;
+                h =   bar + HEIGHT ;
+
+                if( w && h ) 
+                {
+                    cairo->set_source_rgba(
+                          double(colors[n/6].r)/255.
+                        , double(colors[n/6].g)/255.
+                        , double(colors[n/6].b)/255.
+                        , ALPHA
+                    ) ;
+                    RoundedRectangle(
+                          cairo
+                        , x
+                        , y + 4 
+                        , w
+                        , h
+                        , 1.
+                    ) ;
+                    cairo->fill ();
+                }
             }
         }
     }

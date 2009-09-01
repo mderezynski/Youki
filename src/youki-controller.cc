@@ -711,6 +711,10 @@ namespace MPX
                 , &YoukiController::on_status_icon_scroll_down
         )) ;
 
+        private_->FilterModelTracks->regen_mapping() ;
+        private_->FilterModelAlbums->regen_mapping() ;
+        private_->FilterModelArtist->regen_mapping() ;
+
         on_entry_clear_clicked() ;
     }
 
@@ -1440,29 +1444,23 @@ namespace MPX
     YoukiController::on_entry_clear_clicked(
     )
     {
+        m_Entry->set_text( "" ) ;
+
+        m_ListViewArtist->scroll_to_row( 0 ) ;
+        m_ListViewArtist->select_row( 0 ) ;
+
         m_conn1.block() ;
         m_conn2.block() ;
         m_conn3.block() ;
         m_conn4.block() ;
 
-        private_->FilterModelAlbums->clear_constraint_artist() ;
-        private_->FilterModelAlbums->clear_constraint_album() ;
-
-        m_Entry->set_text( "" ) ;
-        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
-        private_->FilterModelTracks->set_filter( "" ) ;
+        m_ListViewAlbums->scroll_to_row( 0 ) ;
+        m_ListViewAlbums->select_row( 0 ) ;
 
         m_conn1.unblock() ;
         m_conn2.unblock() ;
         m_conn3.unblock() ;
         m_conn4.unblock() ;
-
-        private_->FilterModelAlbums->regen_mapping() ;
-
-        private_->FilterModelArtist->clear_constraint_artist() ;
-        private_->FilterModelArtist->regen_mapping() ;
-        m_ListViewArtist->scroll_to_row( 0 ) ;
-        m_ListViewArtist->select_row( 0 ) ;
 
         boost::optional<MPX::Track> t = m_track_current ;
 

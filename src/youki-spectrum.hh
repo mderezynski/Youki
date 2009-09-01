@@ -26,6 +26,14 @@ namespace MPX
 
             boost::shared_ptr<IPlay>  m_play ;
 
+            enum Mode
+            {
+                  SPECTRUM_MODE_LINEAR
+                , SPECTRUM_MODE_VOCODER
+            } ;
+
+            Mode m_mode ;
+
         public:
 
             sigc::signal<void>&
