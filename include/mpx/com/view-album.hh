@@ -321,8 +321,8 @@ namespace Albums
 
                 RowRowMapping_t                             m_mapping ;
 
-                boost::optional<std::set<gint64> >          m_constraint_id_album ;
-                boost::optional<std::set<gint64> >          m_constraint_id_artist ;
+                boost::optional<std::set<gint64> >          m_constraints_album ;
+                boost::optional<std::set<gint64> >          m_constraints_artist ;
 
             public:
 
@@ -337,33 +337,33 @@ namespace Albums
                 }
 
                 virtual void
-                set_constraint_albums(
+                set_constraints_albums(
                     const boost::optional<std::set<gint64> >& constraint
                 )
                 {
-                    m_constraint_id_album = constraint ;
+                    m_constraints_album = constraint ;
                 }
 
                 virtual void
-                clear_constraint_album(
+                clear_constraints_album(
                 )
                 {
-                    m_constraint_id_album.reset() ;
+                    m_constraints_album.reset() ;
                 }
 
                 virtual void
-                set_constraint_artist(
+                set_constraints_artist(
                     const boost::optional<std::set<gint64> >& constraint
                 )
                 {
-                    m_constraint_id_artist = constraint ;
+                    m_constraints_artist = constraint ;
                 }
 
                 virtual void
-                clear_constraint_artist(
+                clear_constraints_artist(
                 )
                 {
-                    m_constraint_id_artist.reset() ;
+                    m_constraints_artist.reset() ;
                 }
 
                 virtual void
@@ -514,9 +514,9 @@ namespace Albums
                     for( ; i != m_realmodel->end(); ++i )
                     {
                             int truth = 
-                                        (!m_constraint_id_album  || m_constraint_id_album.get().count( get<1>(*i)) )
+                                        (!m_constraints_album  || m_constraints_album.get().count( get<1>(*i)) )
                                                                         &&
-                                        (!m_constraint_id_artist || m_constraint_id_artist.get().count( get<2>(*i)) )
+                                        (!m_constraints_artist || m_constraints_artist.get().count( get<2>(*i)) )
                             ; 
 
                             if( truth )
@@ -1268,7 +1268,7 @@ namespace Albums
                             GdkRectangle r ;
 
                             r.x         = inner_pad ; 
-                            r.y         = inner_pad + ypos ;
+                            r.y         = inner_pad + ypos ; 
                             r.width     = a.get_width() - 2*inner_pad ;  
                             r.height    = m_row_height - 2*inner_pad - 2 ;
 
@@ -1292,7 +1292,7 @@ namespace Albums
                                   , m_row_height
                                   , iter_is_selected
                                   , iter_is_selected ? c_text_sel : c_text
-                                  , bool(m_model->m_constraint_id_artist)
+                                  , bool(m_model->m_constraints_artist)
                             ) ;
 
                             xpos += (*i)->get_width() ; 

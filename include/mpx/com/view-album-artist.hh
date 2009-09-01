@@ -211,7 +211,7 @@ namespace Artist
         struct DataModelFilter : public DataModel
         {
                 RowRowMapping_t                           m_mapping ;
-                boost::optional<std::set<gint64> >      m_constraint_id_artist ;
+                boost::optional<std::set<gint64> >      m_constraints_artist ;
 
                 DataModelFilter(DataModel_SP_t & model)
                     : DataModel( model->m_realmodel )
@@ -224,18 +224,18 @@ namespace Artist
                 }
 
                 virtual void
-                set_constraint_artist(
+                set_constraints_artist(
                     const boost::optional<std::set<gint64> >& constraint
                 )
                 {
-                    m_constraint_id_artist = constraint ;
+                    m_constraints_artist = constraint ;
                 }
 
                 virtual void
-                clear_constraint_artist(
+                clear_constraints_artist(
                 )
                 {
-                    m_constraint_id_artist.reset() ;
+                    m_constraints_artist.reset() ;
                 }
 
                 virtual void
@@ -345,7 +345,7 @@ namespace Artist
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
-                        int truth = !m_constraint_id_artist || m_constraint_id_artist.get().count( get<1>(*i)) ;
+                        int truth = !m_constraints_artist || m_constraints_artist.get().count( get<1>(*i)) ;
 
                         if( truth )
                         {

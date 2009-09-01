@@ -477,12 +477,12 @@ namespace Tracks
                 FragmentCache_t                         m_fragment_cache ;
                 std::string                             m_current_filter ;
                 StrV                                    m_frags ;
-                AQE::Constraints_t                      m_constraints_ext ;
-                AQE::Constraints_t                      m_constraints_aqe ;
+                AQE::Constraints_t                      m_constraintss_ext ;
+                AQE::Constraints_t                      m_constraintss_aqe ;
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
-                boost::optional<std::set<gint64> >      m_constraint_albums ;
-                boost::optional<std::set<gint64> >      m_constraint_artist ;
+                boost::optional<std::set<gint64> >      m_constraints_albums ;
+                boost::optional<std::set<gint64> >      m_constraints_artist ;
                 bool                                    m_advanced ;
                 bool                                    m_cache_enabled ;
 
@@ -552,7 +552,7 @@ namespace Tracks
                     const AQE::Constraint_t& c
                 )
                 {
-                    m_constraints_ext.push_back( c ) ;    
+                    m_constraintss_ext.push_back( c ) ;    
                     regen_mapping() ;
                 }
 
@@ -561,14 +561,14 @@ namespace Tracks
                     const AQE::Constraint_t& c
                 )
                 {
-                    m_constraints_ext.push_back( c ) ;    
+                    m_constraintss_ext.push_back( c ) ;    
                 }
 
                 virtual void
                 clear_synthetic_constraints(
                 )
                 {
-                    m_constraints_ext.clear() ;
+                    m_constraintss_ext.clear() ;
                     regen_mapping() ;
                 }
 
@@ -576,7 +576,7 @@ namespace Tracks
                 clear_synthetic_constraints_quiet(
                 )
                 {
-                    m_constraints_ext.clear() ;
+                    m_constraintss_ext.clear() ;
                     scan_active() ;
                 }
 
@@ -706,19 +706,19 @@ namespace Tracks
                     {
                         if( m_advanced )
                         {
-                            AQE::Constraints_t aque = m_constraints_aqe ;
+                            AQE::Constraints_t aque = m_constraintss_aqe ;
                             StrV frags = m_frags ;
 
-                            m_constraints_aqe.clear() ;
+                            m_constraintss_aqe.clear() ;
                             m_frags.clear() ;
-                            AQE::parse_advanced_query( m_constraints_aqe, text, m_frags ) ;
+                            AQE::parse_advanced_query( m_constraintss_aqe, text, m_frags ) ;
 
                             bool frag_diff = m_frags != frags ;
-                            bool aque_diff = m_constraints_aqe != aque ;
+                            bool aque_diff = m_constraintss_aqe != aque ;
 
                             if( frag_diff || aque_diff ) 
                             {
-                                if( aque.empty() && m_constraints_aqe.empty() && !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
+                                if( aque.empty() && m_constraintss_aqe.empty() && !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
                                 {
                                     m_current_filter = text ;
                                     regen_mapping_iterative() ;
@@ -756,7 +756,7 @@ namespace Tracks
 
                     if( !advanced )
                     {
-                        m_constraints_aqe.clear() ;
+                        m_constraintss_aqe.clear() ;
                     }
                 }
 
@@ -817,15 +817,15 @@ namespace Tracks
 
                     if( m_frags.empty() )
                     {
-                        if( m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                        if( m_constraintss_ext.empty() && m_constraintss_aqe.empty() )
                         {
-                            m_constraint_albums.reset() ;
-                            m_constraint_artist.reset() ;
+                            m_constraints_albums.reset() ;
+                            m_constraints_artist.reset() ;
                         }
                         else
                         {
-                            m_constraint_albums = std::set<gint64>() ;
-                            m_constraint_artist = std::set<gint64>() ;
+                            m_constraints_albums = std::set<gint64>() ;
+                            m_constraints_artist = std::set<gint64>() ;
                         }
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
@@ -834,11 +834,11 @@ namespace Tracks
 
                             const MPX::Track& track = get<4>(*i);
 
-                            if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, track ) ;
+                            if( !m_constraintss_ext.empty() )
+                                t1 = AQE::match_track( m_constraintss_ext, track ) ;
 
-                            if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
+                            if( !m_constraintss_aqe.empty() )
+                                t2 = AQE::match_track( m_constraintss_aqe, track ) ;
 
                             if( t1 && t2 )
                             {
@@ -849,11 +849,11 @@ namespace Tracks
                                     m_position = new_mapping.size()  - 1 ;
                                 }
 
-                                if( m_constraint_albums )
-                                    m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                                if( m_constraints_albums )
+                                    m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
 
-                                if( m_constraint_artist )
-                                    m_constraint_artist.get().insert( get<6>(*i) ) ;
+                                if( m_constraints_artist )
+                                    m_constraints_artist.get().insert( get<6>(*i) ) ;
                             }
                         }
                     }
@@ -894,7 +894,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_cache_enabled && m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                                if( m_cache_enabled && m_constraintss_ext.empty() && m_constraintss_aqe.empty() )
                                 {
                                     m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
@@ -924,8 +924,8 @@ namespace Tracks
                             }
                         }
 
-                        m_constraint_albums = std::set<gint64>() ;
-                        m_constraint_artist = std::set<gint64>() ;
+                        m_constraints_albums = std::set<gint64>() ;
+                        m_constraints_artist = std::set<gint64>() ;
 
                         for( ModelSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
@@ -933,11 +933,11 @@ namespace Tracks
 
                             const MPX::Track& track = get<4>(**i);
 
-                            if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, track ) ;
+                            if( !m_constraintss_ext.empty() )
+                                t1 = AQE::match_track( m_constraintss_ext, track ) ;
 
-                            if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
+                            if( !m_constraintss_aqe.empty() )
+                                t2 = AQE::match_track( m_constraintss_aqe, track ) ;
 
                             if( t1 && t2 )
                             {
@@ -948,8 +948,8 @@ namespace Tracks
                                     m_position = new_mapping.size()  - 1 ;
                                 }
 
-                                m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                                m_constraint_artist.get().insert( get<6>(**i) ) ;
+                                m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                                m_constraints_artist.get().insert( get<6>(**i) ) ;
                             }
                         }
                     }
@@ -978,15 +978,15 @@ namespace Tracks
 
                     if( m_frags.empty() )
                     {
-                        if( m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                        if( m_constraintss_ext.empty() && m_constraintss_aqe.empty() )
                         {
-                            m_constraint_albums.reset() ;
-                            m_constraint_artist.reset() ;
+                            m_constraints_albums.reset() ;
+                            m_constraints_artist.reset() ;
                         }
                         else
                         {
-                            m_constraint_albums = std::set<gint64>() ;
-                            m_constraint_artist = std::set<gint64>() ;
+                            m_constraints_albums = std::set<gint64>() ;
+                            m_constraints_artist = std::set<gint64>() ;
                         }
 
                         for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
@@ -995,11 +995,11 @@ namespace Tracks
 
                             const MPX::Track& track = get<4>(**i);
 
-                            if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, track ) ; 
+                            if( !m_constraintss_ext.empty() )
+                                t1 = AQE::match_track( m_constraintss_ext, track ) ; 
 
-                            if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, track ) ; 
+                            if( !m_constraintss_aqe.empty() )
+                                t2 = AQE::match_track( m_constraintss_aqe, track ) ; 
 
                             if( t1 && t2 )
                             {
@@ -1010,11 +1010,11 @@ namespace Tracks
                                     m_position = new_mapping.size()  - 1 ;
                                 } 
 
-                                if( m_constraint_albums )
-                                    m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                                if( m_constraints_albums )
+                                    m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
 
-                                if( m_constraint_artist )
-                                    m_constraint_artist.get().insert( get<6>(**i) ) ;
+                                if( m_constraints_artist )
+                                    m_constraints_artist.get().insert( get<6>(**i) ) ;
                             }
                         }
                     }
@@ -1055,7 +1055,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_cache_enabled && m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                                if( m_cache_enabled && m_constraintss_ext.empty() && m_constraintss_aqe.empty() )
                                 {
                                     m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
@@ -1085,8 +1085,8 @@ namespace Tracks
                             }
                         }
 
-                        m_constraint_albums = std::set<gint64>() ;
-                        m_constraint_artist = std::set<gint64>() ;
+                        m_constraints_albums = std::set<gint64>() ;
+                        m_constraints_artist = std::set<gint64>() ;
 
                         for( ModelSet_t::const_iterator i = output->begin() ; i != output->end(); ++i )
                         {
@@ -1094,18 +1094,18 @@ namespace Tracks
 
                             const MPX::Track& track = get<4>(**i) ;
 
-                            if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, track ) ; 
+                            if( !m_constraintss_ext.empty() )
+                                t1 = AQE::match_track( m_constraintss_ext, track ) ; 
 
-                            if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, track ) ; 
+                            if( !m_constraintss_aqe.empty() )
+                                t2 = AQE::match_track( m_constraintss_aqe, track ) ; 
 
                             if( t1 && t2 )
                             {
                                 new_mapping.push_back( *i ) ;
 
-                                m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                                m_constraint_artist.get().insert( get<6>(**i) ) ;
+                                m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                                m_constraints_artist.get().insert( get<6>(**i) ) ;
                             }
                         }
                     }

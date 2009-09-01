@@ -117,45 +117,6 @@ namespace
         return name ;
     }
 
-    std::string
-    TrackGetArtistName(
-          const MPX::Track&   t
-    )
-    {
-        using namespace MPX ;
-
-        std::string name ;
-
-        if( t.has(ATTRIBUTE_ALBUM_ARTIST) ) 
-        {
-            Glib::ustring in_utf8 = boost::get<std::string>(t[ATTRIBUTE_ALBUM_ARTIST].get()) ; 
-            gunichar c = in_utf8[0] ;
-
-            if( g_unichar_get_script( c ) != G_UNICODE_SCRIPT_LATIN && t.has(ATTRIBUTE_ALBUM_ARTIST_SORTNAME) ) 
-            {
-                    std::string in = boost::get<std::string>( t[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get() ) ; 
-
-                    boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
-                    boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
-
-                    if( !match1.empty() && match2.empty() ) 
-                    {
-                        name = std::string (match1.end(), in.end()) + " " + std::string (in.begin(), match1.begin());
-                    }
-                    else
-                    {
-                        name = in ;
-                    }
-
-                    return name ;
-            }
-
-            name = in_utf8 ;
-        }
-
-        return name ;
-    }
-
     bool
     CompareAlbumArtists(
           const MPX::SQL::Row&   r1
@@ -1211,19 +1172,8 @@ namespace MPX
 
         std::vector<std::string> info ;
 
-        info.push_back( TrackGetArtistName( t.get() )) ;
+        info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_ARTIST].get()) ) ;
         info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_TITLE].get()) ) ;
-
-/*
-        int id[] = { ATTRIBUTE_TITLE } ;
-        for( unsigned int n = 0; n < G_N_ELEMENTS(id) ; ++n ) 
-        {
-            if( t.get().has( n ) )
-            {
-                info.push_back( boost::get<std::string>(t.get()[id[n]].get()) ) ;
-            }
-        }
-*/
 
         m_control_status_icon->set_metadata( t.get() ) ;
         m_main_titleinfo->set_info( info ) ;
@@ -1342,7 +1292,7 @@ namespace MPX
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
-        private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
+        private_->FilterModelAlbums->set_constraints_artist( constraint ) ;
 
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelTracks->regen_mapping() ;
@@ -1444,15 +1394,21 @@ namespace MPX
     YoukiController::on_entry_clear_clicked(
     )
     {
-        m_Entry->set_text( "" ) ;
-
-        m_ListViewArtist->scroll_to_row( 0 ) ;
-        m_ListViewArtist->select_row( 0 ) ;
-
         m_conn1.block() ;
         m_conn2.block() ;
         m_conn3.block() ;
         m_conn4.block() ;
+
+        private_->FilterModelAlbums->clear_constraints_artist() ;
+        private_->FilterModelAlbums->clear_constraints_album() ;
+        private_->FilterModelArtist->clear_constraints_artist() ;
+
+        m_EntryText = "" ;
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+        on_entry_changed__process_filtering() ;
+
+        m_ListViewArtist->scroll_to_row( 0 ) ;
+        m_ListViewArtist->select_row( 0 ) ;
 
         m_ListViewAlbums->scroll_to_row( 0 ) ;
         m_ListViewAlbums->select_row( 0 ) ;
@@ -1569,9 +1525,9 @@ namespace MPX
     )
     {
         private_->FilterModelTracks->set_filter( m_EntryText ) ;
-        private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+        private_->FilterModelArtist->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;
         private_->FilterModelArtist->regen_mapping() ;
-        private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
+        private_->FilterModelAlbums->set_constraints_albums( private_->FilterModelTracks->m_constraints_albums ) ;
         private_->FilterModelAlbums->regen_mapping() ;
     }
 

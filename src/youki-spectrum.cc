@@ -22,7 +22,7 @@ namespace
     Color colors[] =
     {
           { 0xff, 0xb1, 0x6f },
-          { 0xff, 0xc8, 0x7f },
+//          { 0xff, 0xc8, 0x7f },
           { 0xff, 0xcf, 0x7e },
           { 0xf6, 0xe6, 0x99 },
           { 0xf1, 0xfc, 0xd4 },
@@ -32,7 +32,7 @@ namespace
           { 0xd5, 0xdd, 0xea },
           { 0xee, 0xc1, 0xc8 },
           { 0xee, 0xaa, 0xb7 },
-          { 0xec, 0xce, 0xb6 },
+//          { 0xec, 0xce, 0xb6 },
     };
 
     const int WIDTH = 10 ;
@@ -150,7 +150,8 @@ namespace MPX
     )
     {
         m_mode = Mode( !m_mode ) ; 
-        return true ;
+
+        return false ;
     }
 
     bool
@@ -191,21 +192,21 @@ namespace MPX
               Cairo::OPERATOR_ATOP
         ) ;
 
-        for( int n = 0; n < SPECT_BANDS; ++n ) 
+        for( int n = 0; n < 56 ; ++n ) 
         {
             int   x = 0
                 , y = 0
                 , w = 0
                 , h = 0 ;
 
-            x = a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n ; 
+            x = a.get_width()/2 - ((WIDTH+SPACING)*56)/2 + (WIDTH+SPACING)*n ; 
             w = WIDTH ;
 
             //// BAR 
         
             if( m_mode == SPECTRUM_MODE_VOCODER )
             {
-                int   bar = HEIGHT + m_spectrum_data[n] / 2 ;
+                int   bar = HEIGHT + (m_spectrum_data[n] / 2) ;
                 bar = (bar < 2) ? 2 : bar ;
                 y =   ( HEIGHT + bar ) / 2 ;
                 h =   - bar ; 
