@@ -216,7 +216,7 @@ namespace MPX
                           double(colors[n/6].r)/255.
                         , double(colors[n/6].g)/255.
                         , double(colors[n/6].b)/255.
-                        , ALPHA - (0.65 - ((0.65) * (bar/36.)))
+                        , ALPHA - (0.65 - ((0.65 * (1.0 - std::cos ((bar/36.) * G_PI)) / 1.5)))
                     ) ;
                     RoundedRectangle(
                           cairo
