@@ -1457,7 +1457,12 @@ namespace Albums
                             , row 
                         ) ;
 
-                        m_prop_vadj.get_value()->set_value( d  * m_row_height ) ; 
+                        if( d < std::size_t(m_visible_height/m_row_height ))
+                        {
+                            m_prop_vadj.get_value()->set_value( 0 ) ; 
+                        }
+                        else
+                            m_prop_vadj.get_value()->set_value( d  * m_row_height ) ; 
                     }
                 }
 

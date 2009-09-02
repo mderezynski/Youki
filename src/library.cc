@@ -783,6 +783,9 @@ namespace MPX
                                 if( row.count("title") )
                                         (*track.get())[ATTRIBUTE_TITLE] = get<std::string>(row["title"]);
 
+                                if( row.count("genre") )
+                                        (*track.get())[ATTRIBUTE_GENRE] = get<std::string>(row["genre"]);
+
                                 if( row.count("time") )
                                         (*track.get())[ATTRIBUTE_TIME] = gint64(get<gint64>(row["time"]));
 

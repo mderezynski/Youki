@@ -208,8 +208,8 @@ namespace MPX
             layout->get_pixel_size (width, height) ;
 
             cairo->move_to(
-                  (a.get_width () - width) / 2
-                , (a.get_height () - height) / 2
+                  ((a.get_width() - width) / 2)
+                , ((a.get_height() - height) / 2)
             ) ;
 
             const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ; 

@@ -477,8 +477,8 @@ namespace Tracks
                 FragmentCache_t                         m_fragment_cache ;
                 std::string                             m_current_filter ;
                 StrV                                    m_frags ;
-                AQE::Constraints_t                      m_constraintss_ext ;
-                AQE::Constraints_t                      m_constraintss_aqe ;
+                AQE::Constraints_t                      m_constraints_ext ;
+                AQE::Constraints_t                      m_constraints_aqe ;
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
                 boost::optional<std::set<gint64> >      m_constraints_albums ;
@@ -552,7 +552,7 @@ namespace Tracks
                     const AQE::Constraint_t& c
                 )
                 {
-                    m_constraintss_ext.push_back( c ) ;    
+                    m_constraints_ext.push_back( c ) ;    
                     regen_mapping() ;
                 }
 
@@ -561,14 +561,14 @@ namespace Tracks
                     const AQE::Constraint_t& c
                 )
                 {
-                    m_constraintss_ext.push_back( c ) ;    
+                    m_constraints_ext.push_back( c ) ;    
                 }
 
                 virtual void
                 clear_synthetic_constraints(
                 )
                 {
-                    m_constraintss_ext.clear() ;
+                    m_constraints_ext.clear() ;
                     regen_mapping() ;
                 }
 
@@ -576,7 +576,7 @@ namespace Tracks
                 clear_synthetic_constraints_quiet(
                 )
                 {
-                    m_constraintss_ext.clear() ;
+                    m_constraints_ext.clear() ;
                     scan_active() ;
                 }
 
@@ -688,10 +688,8 @@ namespace Tracks
                     using boost::algorithm::is_any_of;
                     using boost::algorithm::find_first;
 
-                    if( !m_advanced && !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
+                    if( !m_advanced )
                     {
-                        m_current_filter = text ; 
-
                         m_frags.clear() ;
 
                         if( !text.empty() ) 
@@ -700,50 +698,51 @@ namespace Tracks
                             split( m_frags, text_lc, is_any_of(" ") );
                         }
 
-                        regen_mapping_iterative() ;
-                    }
-                    else
-                    {
-                        if( m_advanced )
+                        if( !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
                         {
-                            AQE::Constraints_t aque = m_constraintss_aqe ;
-                            StrV frags = m_frags ;
-
-                            m_constraintss_aqe.clear() ;
-                            m_frags.clear() ;
-                            AQE::parse_advanced_query( m_constraintss_aqe, text, m_frags ) ;
-
-                            bool frag_diff = m_frags != frags ;
-                            bool aque_diff = m_constraintss_aqe != aque ;
-
-                            if( frag_diff || aque_diff ) 
-                            {
-                                if( aque.empty() && m_constraintss_aqe.empty() && !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) )
-                                {
-                                    m_current_filter = text ;
-                                    regen_mapping_iterative() ;
-                                }
-                                else
-                                {
-                                    m_current_filter = text ;
-                                    regen_mapping() ;
-                                }
-                            }
+                            m_current_filter = text ; 
+                            regen_mapping_iterative() ;
                         }
                         else
                         {
-                            m_current_filter = text; 
-
-                            m_frags.clear() ;
-
-                            if( !text.empty() ) 
-                            {
-                                std::string text_lc = Glib::ustring(text).lowercase() ;
-                                split( m_frags, text_lc, is_any_of(" ") );
-                            }
-
-                            regen_mapping();
+                            m_current_filter = text ; 
+                            regen_mapping() ;
                         }
+                    }
+                    else
+                    {
+/*
+                        AQE::Constraints_t aque = m_constraints_aqe ;
+                        StrV frags = m_frags ;
+*/
+
+                        m_constraints_aqe.clear() ;
+                        m_frags.clear() ;
+
+                        AQE::parse_advanced_query( m_constraints_aqe, text, m_frags ) ;
+
+/*
+                        bool frag_diff = m_frags != frags ;
+                        bool aque_diff = m_constraints_aqe != aque ;
+*/
+
+/*
+                        if( frag_diff || aque_diff ) 
+                        {
+*/
+                            if( /*!aque_diff &&*/ !m_current_filter.empty() && ( text.substr( 0, text.size() - 1 ) == m_current_filter ))
+                            {
+                                m_current_filter = text ;
+                                regen_mapping_iterative() ;
+                            }
+                            else
+                            {
+                                m_current_filter = text ;
+                                regen_mapping() ;
+                            }
+/*
+                        }
+*/
                     }
                 }
 
@@ -756,7 +755,7 @@ namespace Tracks
 
                     if( !advanced )
                     {
-                        m_constraintss_aqe.clear() ;
+                        m_constraints_aqe.clear() ;
                     }
                 }
 
@@ -817,16 +816,8 @@ namespace Tracks
 
                     if( m_frags.empty() )
                     {
-                        if( m_constraintss_ext.empty() && m_constraintss_aqe.empty() )
-                        {
-                            m_constraints_albums.reset() ;
-                            m_constraints_artist.reset() ;
-                        }
-                        else
-                        {
-                            m_constraints_albums = std::set<gint64>() ;
-                            m_constraints_artist = std::set<gint64>() ;
-                        }
+                        m_constraints_albums.reset() ;
+                        m_constraints_artist.reset() ;
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
@@ -834,11 +825,11 @@ namespace Tracks
 
                             const MPX::Track& track = get<4>(*i);
 
-                            if( !m_constraintss_ext.empty() )
-                                t1 = AQE::match_track( m_constraintss_ext, track ) ;
+                            if( !m_constraints_ext.empty() )
+                                t1 = AQE::match_track( m_constraints_ext, track ) ;
 
-                            if( !m_constraintss_aqe.empty() )
-                                t2 = AQE::match_track( m_constraintss_aqe, track ) ;
+                            if( !m_constraints_aqe.empty() )
+                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
 
                             if( t1 && t2 )
                             {
@@ -848,12 +839,6 @@ namespace Tracks
                                 {
                                     m_position = new_mapping.size()  - 1 ;
                                 }
-
-                                if( m_constraints_albums )
-                                    m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-
-                                if( m_constraints_artist )
-                                    m_constraints_artist.get().insert( get<6>(*i) ) ;
                             }
                         }
                     }
@@ -894,7 +879,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_cache_enabled && m_constraintss_ext.empty() && m_constraintss_aqe.empty() )
+                                if( m_cache_enabled && m_constraints_ext.empty() && m_constraints_aqe.empty() )
                                 {
                                     m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
@@ -933,11 +918,11 @@ namespace Tracks
 
                             const MPX::Track& track = get<4>(**i);
 
-                            if( !m_constraintss_ext.empty() )
-                                t1 = AQE::match_track( m_constraintss_ext, track ) ;
+                            if( !m_constraints_ext.empty() )
+                                t1 = AQE::match_track( m_constraints_ext, track ) ;
 
-                            if( !m_constraintss_aqe.empty() )
-                                t2 = AQE::match_track( m_constraintss_aqe, track ) ;
+                            if( !m_constraints_aqe.empty() )
+                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
 
                             if( t1 && t2 )
                             {
@@ -947,17 +932,17 @@ namespace Tracks
                                 {
                                     m_position = new_mapping.size()  - 1 ;
                                 }
-
-                                m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                                m_constraints_artist.get().insert( get<6>(**i) ) ;
                             }
+
+                            m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                            m_constraints_artist.get().insert( get<6>(**i) ) ;
                         }
                     }
 
                     if( new_mapping != m_mapping )
                     {
                         std::swap( new_mapping, m_mapping ) ;
-                        scan_active () ;
+                        scan_active() ;
                         find_position( id ) ;
                         m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
                     }                
@@ -978,16 +963,8 @@ namespace Tracks
 
                     if( m_frags.empty() )
                     {
-                        if( m_constraintss_ext.empty() && m_constraintss_aqe.empty() )
-                        {
-                            m_constraints_albums.reset() ;
-                            m_constraints_artist.reset() ;
-                        }
-                        else
-                        {
-                            m_constraints_albums = std::set<gint64>() ;
-                            m_constraints_artist = std::set<gint64>() ;
-                        }
+                        m_constraints_albums.reset() ;
+                        m_constraints_artist.reset() ;
 
                         for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
@@ -995,11 +972,11 @@ namespace Tracks
 
                             const MPX::Track& track = get<4>(**i);
 
-                            if( !m_constraintss_ext.empty() )
-                                t1 = AQE::match_track( m_constraintss_ext, track ) ; 
+                            if( !m_constraints_ext.empty() )
+                                t1 = AQE::match_track( m_constraints_ext, track ) ; 
 
-                            if( !m_constraintss_aqe.empty() )
-                                t2 = AQE::match_track( m_constraintss_aqe, track ) ; 
+                            if( !m_constraints_aqe.empty() )
+                                t2 = AQE::match_track( m_constraints_aqe, track ) ; 
 
                             if( t1 && t2 )
                             {
@@ -1009,12 +986,6 @@ namespace Tracks
                                 {
                                     m_position = new_mapping.size()  - 1 ;
                                 } 
-
-                                if( m_constraints_albums )
-                                    m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-
-                                if( m_constraints_artist )
-                                    m_constraints_artist.get().insert( get<6>(**i) ) ;
                             }
                         }
                     }
@@ -1055,7 +1026,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_cache_enabled && m_constraintss_ext.empty() && m_constraintss_aqe.empty() )
+                                if( m_cache_enabled && m_constraints_ext.empty() && m_constraints_aqe.empty() )
                                 {
                                     m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
@@ -1094,26 +1065,26 @@ namespace Tracks
 
                             const MPX::Track& track = get<4>(**i) ;
 
-                            if( !m_constraintss_ext.empty() )
-                                t1 = AQE::match_track( m_constraintss_ext, track ) ; 
+                            if( !m_constraints_ext.empty() )
+                                t1 = AQE::match_track( m_constraints_ext, track ) ; 
 
-                            if( !m_constraintss_aqe.empty() )
-                                t2 = AQE::match_track( m_constraintss_aqe, track ) ; 
+                            if( !m_constraints_aqe.empty() )
+                                t2 = AQE::match_track( m_constraints_aqe, track ) ; 
 
                             if( t1 && t2 )
                             {
                                 new_mapping.push_back( *i ) ;
-
-                                m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                                m_constraints_artist.get().insert( get<6>(**i) ) ;
                             }
+
+                            m_constraints_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                            m_constraints_artist.get().insert( get<6>(**i) ) ;
                         }
                     }
 
                     if( new_mapping != m_mapping )
                     {
                         std::swap( new_mapping, m_mapping ) ;
-                        scan_active () ;
+                        scan_active() ;
                         find_position( id ) ;
                         m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
                     }
