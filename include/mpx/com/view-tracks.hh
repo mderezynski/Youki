@@ -869,9 +869,9 @@ namespace Tracks
                                 {
                                     const Row_t& row = *i;
 
-                                    vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
-                                    vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
-                                    vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
+                                    vec[0] = Glib::ustring(boost::get<0>(row)).lowercase() ;
+                                    vec[1] = Glib::ustring(boost::get<1>(row)).lowercase() ;
+                                    vec[2] = Glib::ustring(boost::get<2>(row)).lowercase() ;
 
                                     if( Util::match_vec( m_frags[n], vec) )
                                     {
@@ -879,7 +879,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_cache_enabled && m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                                if( m_cache_enabled && !m_fragment_cache.count( m_frags[n] ))
                                 {
                                     m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
@@ -1016,9 +1016,9 @@ namespace Tracks
                                 {
                                     const Row_t& row = **i;
 
-                                    vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
-                                    vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
-                                    vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
+                                    vec[0] = Glib::ustring(boost::get<0>(row)).lowercase() ;
+                                    vec[1] = Glib::ustring(boost::get<1>(row)).lowercase() ;
+                                    vec[2] = Glib::ustring(boost::get<2>(row)).lowercase() ;
 
                                     if( Util::match_vec( m_frags[n], vec) )
                                     {
@@ -1026,7 +1026,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_cache_enabled && m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                                if( m_frags.size() == 1 && m_cache_enabled && !m_fragment_cache.count( m_frags[n] ))
                                 {
                                     m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }

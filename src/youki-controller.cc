@@ -1399,14 +1399,14 @@ namespace MPX
         private_->FilterModelArtist->clear_constraints_artist() ;
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
+        m_EntryText = "" ;
+        m_Entry->set_text( m_EntryText ) ;
+
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelArtist->regen_mapping() ;
 
         m_ListViewArtist->select_row( 0 ) ;
         m_ListViewAlbums->select_row( 0 ) ;
-
-        m_EntryText = "" ;
-        m_Entry->set_text( m_EntryText ) ;
 
         m_ListViewArtist->scroll_to_row( 0 ) ;
         m_ListViewAlbums->scroll_to_row( 0 ) ;
