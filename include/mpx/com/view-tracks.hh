@@ -879,7 +879,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_cache_enabled && !m_fragment_cache.count( m_frags[n] ))
+                                if( m_cache_enabled && !m_fragment_cache.count( m_frags[n] ) && m_constraints_ext.empty() && m_constraints_aqe.empty() )
                                 {
                                     m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
@@ -1026,7 +1026,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_frags.size() == 1 && m_cache_enabled && !m_fragment_cache.count( m_frags[n] ))
+                                if( m_frags.size() == 1 && m_cache_enabled && !m_fragment_cache.count( m_frags[n] ) && m_constraints_ext.empty() && m_constraints_aqe.empty() )
                                 {
                                     m_fragment_cache.insert( std::make_pair( m_frags[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }

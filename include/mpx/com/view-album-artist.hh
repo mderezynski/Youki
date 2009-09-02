@@ -922,6 +922,16 @@ namespace Artist
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
+    
+                    cairo->rectangle(
+                          0
+                        , 0
+                        , a.get_width()
+                        , a.get_height()
+                    ) ;
+    
+                    cairo->clip() ;
+
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     const ThemeColor& c_base_rules_hint = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;

@@ -22,6 +22,8 @@ namespace MPX
   };
 
   void RoundedRectangle (RefContext cr, double x, double y, double w, double h, double r, CairoCorners::CORNERS corners = CairoCorners::ALL);
+
+  void RoundedSplineRectangle (RefContext cr, double x, double y, double w, double h, double r ) ;
 }
 
 #endif /*CAIROEXTENSIONS_HH_*/

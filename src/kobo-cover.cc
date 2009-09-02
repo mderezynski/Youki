@@ -20,9 +20,14 @@ namespace MPX
         Glib::RefPtr<Gdk::Pixbuf> cover
     )
     {
-        m_cover = cover->scale_simple( 253, 255, Gdk::INTERP_BILINEAR ) ;
-        queue_draw () ;
+        const Gtk::Allocation& a = get_allocation() ;
 
+        if( cover )
+            m_cover = cover->scale_simple( 96, 96 , Gdk::INTERP_BILINEAR ) ;
+        else
+            m_cover = cover ;
+
+        queue_draw () ;
     }
     
     void
@@ -40,7 +45,7 @@ namespace MPX
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
         
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
-        cairo->set_source_rgba( 0.65, 0.65, 0.65, .4 ) ;
+        cairo->set_source_rgba( 0.1, 0.1, 0.1, 1. ) ;
         cairo->paint () ;     
 
         if( !m_cover )
@@ -100,18 +105,18 @@ namespace MPX
         Gdk::Cairo::set_source_pixbuf(    
               cairo
             , m_cover
-            , a.get_width()/2 - m_cover->get_width()/2 
-            , a.get_height() - m_cover->get_height() - 8 
+            , (a.get_width() - m_cover->get_width())/2.
+            , (a.get_height() - m_cover->get_height())/2.
         ) ;  
         RoundedRectangle(
               cairo
-            , a.get_width()/2 - m_cover->get_width()/2 
-            , a.get_height() - m_cover->get_height() - 8
+            , (a.get_width() - m_cover->get_width())/2.
+            , (a.get_height() - m_cover->get_height())/2.
             , m_cover->get_width()
             , m_cover->get_height()
-            , 6.
+            , 4.
         ) ;
-        cairo->fill_preserve () ;
+        cairo->fill() ;
 
 /*
         cairo->set_source_rgba( 0., 0., 0., 1. ) ;

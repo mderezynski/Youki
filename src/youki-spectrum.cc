@@ -208,8 +208,8 @@ namespace MPX
             {
                 int   bar = HEIGHT + (m_spectrum_data[n] / 2) ;
                 bar = (bar < 2) ? 2 : bar ;
-                y =   ( HEIGHT + bar ) / 2 ;
-                h =   - bar ; 
+                y   = (( HEIGHT + bar ) / 2) ; 
+                h   = - bar ; 
 
                 if( w && h ) 
                 {
@@ -222,7 +222,7 @@ namespace MPX
                     RoundedRectangle(
                           cairo
                         , x
-                        , (HEIGHT-y) + 4
+                        , (HEIGHT-y) + 8
                         , w
                         , - h
                         , 1.

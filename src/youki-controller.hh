@@ -222,23 +222,23 @@ namespace MPX
             Gtk::HPaned                     * m_Paned1 ;
             Gtk::HPaned                     * m_Paned2 ;
 
-            PercentualDistributionHBox      * m_MainHBox ;
+            PercentualDistributionHBox      * m_HBox_Main ;
+            Gtk::HBox                       * m_HBox_Bottom ;
+            Gtk::VBox                       * m_VBox_Bottom ;
             
             Gtk::Entry                      * m_Entry ;
             Glib::ustring                     m_EntryText ;
             Glib::ustring                     m_prediction ;
             Glib::ustring                     m_prediction_last ;
 
-/*
-            Gtk::CheckButton                * m_checkbutton_advanced ;
-            Gtk::Label                      * m_checkbutton_advanced_label ;
-*/
+            KoboCover                       * m_cover ;
 
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;
             Gtk::HBox                       * m_HBox_Info ;
             Gtk::HBox                       * m_HBox_Controls ;
             Gtk::Label                      * m_Label_Search ;
+
             Glib::Timer                       m_completion_timer ;
             bool                              m_predicted ;
 

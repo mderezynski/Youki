@@ -426,14 +426,67 @@ namespace MPX
             , rounding 
         ) ;
 
-        cairo->fill_preserve (); 
+        cairo->fill(); 
+
+        gradient = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y  
+            , r.x + r.width / 2
+            , r.y + (r.height / 1.7)
+        ) ;
+
+        gradient->add_color_stop_rgba(
+              0
+            , c.r
+            , c.g
+            , c.b
+            , alpha / 2.4 
+        ) ;
+        
+        gradient->add_color_stop_rgba(
+              0.5
+            , c.r
+            , c.g
+            , c.b
+            , alpha / 4.3 
+        ) ;
+        
+        gradient->add_color_stop_rgba(
+              1 
+            , c.r
+            , c.g
+            , c.b
+            , 0.08 
+        ) ;
+
+        cairo->set_source( gradient ) ;
+
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y
+            , r.width
+            , r.height / 1.7 
+            , rounding
+        ) ;
+
+        cairo->fill() ;
+
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , rounding 
+        ) ;
         cairo->set_source_rgba(
               c.r
             , c.g
             , c.b
             , .75
         ) ;
-        cairo->set_line_width( 0.5 ) ;
+        cairo->set_line_width( 0.75 ) ;
         cairo->stroke () ;
 
         cairo->restore () ;

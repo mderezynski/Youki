@@ -282,11 +282,13 @@ namespace MPX
         m_NotebookPlugins->property_tab_border() = 0 ;
         m_NotebookPlugins->property_tab_pos() = Gtk::POS_BOTTOM ;
 
-        m_MainHBox          = Gtk::manage( new PercentualDistributionHBox ) ;
+        m_HBox_Main          = Gtk::manage( new PercentualDistributionHBox ) ;
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
         m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Info         = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
+        m_HBox_Bottom       = Gtk::manage( new Gtk::HBox ) ;
+        m_VBox_Bottom       = Gtk::manage( new Gtk::VBox ) ;
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
         m_Entry->set_icon_from_pixbuf(
@@ -375,6 +377,11 @@ namespace MPX
         Gdk::Color background ;
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
+        m_cover = Gtk::manage( new KoboCover ) ;
+        m_cover->set_size_request( 96, 96 ) ;
+        m_HBox_Bottom->pack_start( *m_cover, false, false, 0 ) ;
+        m_HBox_Bottom->set_spacing( 4 ) ;
+
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(
             sigc::mem_fun(
@@ -422,7 +429,6 @@ namespace MPX
         m_HBox_Entry->set_border_width( 2 ) ;
         m_HBox_Entry->pack_start( *m_Label_Search, false, false, 0 ) ;
         m_HBox_Entry->pack_start( *m_Alignment_Entry, true, true, 0 ) ;
-//        m_HBox_Entry->pack_start( *m_checkbutton_advanced, false, false, 0 ) ;
 
         m_Alignment_Entry->add( *m_Entry ) ;
         m_Alignment_Entry->property_top_padding() = 2 ;
@@ -616,18 +622,13 @@ namespace MPX
                 , &YoukiController::on_entry_activated
         )) ;
 
-        m_MainHBox->add_percentage( 0.15 ) ;
-        m_MainHBox->add_percentage( 0.20 ) ;
-        m_MainHBox->add_percentage( 0.65 ) ;
+        m_HBox_Main->add_percentage( 0.15 ) ;
+        m_HBox_Main->add_percentage( 0.20 ) ;
+        m_HBox_Main->add_percentage( 0.65 ) ;
 
-        m_MainHBox->pack_start( *m_ScrolledWinArtist, true, true, 0 ) ;
-        m_MainHBox->pack_start( *m_ScrolledWinAlbums, true, true, 0 ) ;
-        m_MainHBox->pack_start( *m_ScrolledWinTracks, true, true, 0 ) ;
-
-//        m_Paned1->add1( *m_ScrolledWinArtist ) ;
-//        m_Paned1->add2( *m_ScrolledWinTracks ) ;
-//        m_Paned2->add1( *m_Paned1 ) ;
-//        m_Paned2->add2( *m_ScrolledWinAlbums ) ;
+        m_HBox_Main->pack_start( *m_ScrolledWinArtist, true, true, 0 ) ;
+        m_HBox_Main->pack_start( *m_ScrolledWinAlbums, true, true, 0 ) ;
+        m_HBox_Main->pack_start( *m_ScrolledWinTracks, true, true, 0 ) ;
 
         std::vector<Gtk::Widget*> v (6) ;
         v[0] = m_Entry ;
@@ -646,14 +647,25 @@ namespace MPX
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
-//        m_HBox_Info->pack_start( *m_main_love_button, false, false, 0 ) ;
         m_HBox_Info->property_spacing() = 2 ; 
 
+        m_VBox_Bottom->pack_start( *m_HBox_Info, false, false, 0 ) ;
+        m_VBox_Bottom->pack_start( *m_HBox_Controls, false, false, 0 ) ;
+        m_VBox_Bottom->pack_start( *m_main_spectrum, true, true, 0 ) ;
+
+        m_HBox_Bottom->pack_start( *m_VBox_Bottom, true, true, 0 ) ;
+
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
-        m_VBox->pack_start( *m_MainHBox, true, true, 0 ) ;
+        m_VBox->pack_start( *m_HBox_Main, true, true, 0 ) ;
+        m_VBox->pack_start( *m_HBox_Bottom, false, false, 0 ) ;
+
+        m_HBox_Bottom->show_all() ;
+
+/*
         m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_spectrum, false, false, 0 ) ;
+*/
 
         m_control_status_icon = new YoukiControllerStatusIcon ;
         m_control_status_icon->signal_clicked().connect(
@@ -744,7 +756,7 @@ namespace MPX
 
         //m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
         //m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_MainHBox->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_HBox_Main->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
         c.set_rgb_p( c_sel.r, c_sel.g, c_sel.b ) ; 
 
@@ -1091,7 +1103,6 @@ namespace MPX
         switch( status )
         {
             case PLAYSTATUS_PLAYING:
-//                m_main_love_button->set_sensitive( true ) ;
                 break ;
 
             case PLAYSTATUS_STOPPED:
@@ -1104,9 +1115,8 @@ namespace MPX
 
                 m_ListViewTracks->clear_active_track() ;
 
-//                m_main_love_button->set_sensitive( false ) ;
-
                 m_main_titleinfo->clear() ;
+                m_cover->set( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 m_main_position->set_position( 0, 0 ) ;
 
                 m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
@@ -1119,7 +1129,6 @@ namespace MPX
                 m_seek_position.reset() ; 
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
-//                m_main_love_button->set_sensitive( false ) ;
 
                 break ;
 
@@ -1151,6 +1160,7 @@ namespace MPX
                 const std::string& mbid = boost::get<std::string>(t.get()[ATTRIBUTE_MB_ALBUM_ID].get()) ;
 
                 boost::shared_ptr<Covers> covers = services->get<Covers>("mpx-service-covers") ;
+
                 Glib::RefPtr<Gdk::Pixbuf> cover ;
 
                 if( covers->fetch(
@@ -1159,10 +1169,12 @@ namespace MPX
                 ))
                 {
                     m_control_status_icon->set_image( cover ) ;
+                    m_cover->set( cover ) ; 
                 }
                 else
                 {
                     m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
+                    m_cover->set( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 }
         }
         else
