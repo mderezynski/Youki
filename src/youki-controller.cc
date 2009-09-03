@@ -1338,7 +1338,7 @@ namespace MPX
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
-//        private_->FilterModelTracks->cache_current_fragments() ;
+        private_->FilterModelTracks->cache_current_fragments() ;
         private_->FilterModelTracks->regen_mapping() ;
     }
 
@@ -1531,6 +1531,10 @@ namespace MPX
     YoukiController::on_entry_changed__process_filtering(
     )
     {
+        m_ListViewAlbums->clear_selection() ;
+        m_ListViewArtist->clear_selection() ;
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+
         private_->FilterModelTracks->set_filter( m_EntryText ) ;
         private_->FilterModelArtist->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;
         private_->FilterModelArtist->regen_mapping() ;

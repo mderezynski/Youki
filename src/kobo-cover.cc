@@ -82,7 +82,7 @@ namespace MPX
 
         const ThemeColor& c = m_Theme->get_color( THEME_COLOR_SELECT ) ;
 
-        cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
+        cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
 
         cairo->set_source_rgba(
               m_CurrentColor.get_red_p()
@@ -91,7 +91,7 @@ namespace MPX
             , 0.4
         ) ;
 
-        cairo->set_line_width( 0.75 ) ;
+        cairo->set_line_width( 1. ) ;
         cairo->stroke() ;
 
         return true ;
