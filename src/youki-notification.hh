@@ -63,12 +63,12 @@ namespace MPX
 
             void
             set_metadata(
-                const MPX::Track&
+                  const Glib::RefPtr<Gdk::Pixbuf>&
+                , const MPX::Track&
             ) ;
 
             void
-            set_image(
-                const Glib::RefPtr<Gdk::Pixbuf>&
+            clear(
             ) ;
 
         protected:

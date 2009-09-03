@@ -587,13 +587,12 @@ namespace MPX
                     c->fetch(
                           get<std::string>(r["mb_album_id"])
                         , cover_pb
+                        , 64
                     ) ;
                    
                     if( cover_pb ) 
                     {
-                        cover_is = Util::cairo_image_surface_from_pixbuf(
-                            cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
-                        ) ;
+                        cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
                     }
      
                     private_->FilterModelAlbums->append_album_quiet(
@@ -1118,10 +1117,10 @@ namespace MPX
                 m_ListViewTracks->clear_active_track() ;
 
                 m_main_titleinfo->clear() ;
-                m_cover->set( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
-                m_main_position->set_position( 0, 0 ) ;
+                m_control_status_icon->clear() ;
+                m_cover->clear() ;
 
-                m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
+                m_main_position->set_position( 0, 0 ) ;
                 m_main_window->queue_draw () ;    
 
                 break ;
@@ -1157,6 +1156,11 @@ namespace MPX
             m_ListViewTracks->scroll_to_id( id_track ) ;
         }
 
+        std::vector<std::string> info ;
+        info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_ARTIST].get()) ) ;
+        info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_TITLE].get()) ) ;
+        m_main_titleinfo->set_info( info ) ;
+
         if( t.get().has( ATTRIBUTE_MB_ALBUM_ID ) )
         {
                 const std::string& mbid = boost::get<std::string>(t.get()[ATTRIBUTE_MB_ALBUM_ID].get()) ;
@@ -1170,27 +1174,19 @@ namespace MPX
                     , cover
                 ))
                 {
-                    m_control_status_icon->set_image( cover ) ;
+                    m_control_status_icon->set_metadata( cover, t.get() ) ;
                     m_cover->set( cover ) ; 
                 }
                 else
                 {
-                    m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
+                    m_control_status_icon->set_metadata( Glib::RefPtr<Gdk::Pixbuf>(0), t.get() ) ;
                     m_cover->set( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 }
         }
         else
         {
-            m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
+            m_control_status_icon->set_metadata( Glib::RefPtr<Gdk::Pixbuf>(0), t.get() ) ;
         }
-
-        std::vector<std::string> info ;
-
-        info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_ARTIST].get()) ) ;
-        info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_TITLE].get()) ) ;
-
-        m_control_status_icon->set_metadata( t.get() ) ;
-        m_main_titleinfo->set_info( info ) ;
 
         if( m_track_previous )
         {
@@ -1205,25 +1201,10 @@ namespace MPX
                       boost::get<std::string>(m_track_previous.get()[ATTRIBUTE_ALBUM_ARTIST].get())
                 ) ;
 */
-        
-
-/*
-                Library::LovedHatedStatus status = Library::LovedHatedStatus(int(m_main_love_button->get_state())) ;
-                library->trackLovedHated(                
-                      boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
-                    , status
-                ) ;
-*/
-
                 m_track_previous.reset() ;
         }
 
         m_playqueue.push_back( id_track ) ; 
-
-//        TristateButtonState state = TristateButtonState(int(library->getTrackLovedHated( id_track ))) ;
-//        m_main_love_button->set_default_state( state ) ; 
-//        m_main_love_button->set_state( state ) ; 
-
         emit_track_new () ;
     }
 

@@ -127,8 +127,9 @@ namespace MPX
 
             bool
             fetch(
-              const std::string&                      /*mbid*/,
-              Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
+                  const std::string&                      /*mbid*/
+                , Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
+                , int                                     /*size*/ = -1
             );
 
             bool
@@ -177,15 +178,16 @@ namespace MPX
 
             bool
             fetch_back1(
-              const std::string&                      /*mbid*/,
-              Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
+                  const std::string&                      /*mbid*/
+                , Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
+                , int                                     /*size*/
             );
 
             bool
             fetch_back2(
-              const std::string&                      /*mbid*/,
-              Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/,
-              CoverSize                               /*size*/
+                  const std::string&                      /*mbid*/
+                , Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/
+                , CoverSize                               /*size*/
             );
 
             void

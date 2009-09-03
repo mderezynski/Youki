@@ -523,12 +523,17 @@ namespace MPX
 		if( G_UNLIKELY(!is_realized( )))
             realize () ;
 
-        m_update_connection.disconnect () ;
+        m_update_connection.disconnect() ;
+
 	    m_timer.stop () ;
 	    m_timer.reset () ;
-	    window_set_opacity (get_window (), 1.0) ;
+
+	    window_set_opacity( get_window(), 1.0 ) ;
+
 	    m_tooltip_mode = tooltip ;
+
 	    reposition () ;
+
 	    Window::show () ;
     }
 
@@ -548,9 +553,32 @@ namespace MPX
 	void
 		Notification::on_realize ()
 	{
-		Window::on_realize () ;
-		window_set_opacity (get_window (), 0.0) ;
-		update_mask () ;
+		Window::on_realize() ;
+
+		window_set_opacity( get_window(), 0.0 ) ;
+		update_mask() ;
+
+        const int text_size_px_1 = 26 ;
+        const int text_size_px_2 = 18 ;
+
+        int text_size_pt = 0 ;
+
+		std::string family = get_pango_context()->get_font_description().get_family() ;
+
+		PangoFontDescription * desc = pango_font_description_new() ;
+		pango_font_description_set_family( desc, family.c_str()) ;
+
+        text_size_pt = static_cast<int>((text_size_px_1 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+		pango_font_description_set_absolute_size( desc, text_size_pt * PANGO_SCALE ) ;
+		pango_font_description_set_weight( desc, PANGO_WEIGHT_BOLD ) ; 
+		pango_layout_set_font_description( m_layout_1->gobj(), desc ) ;
+
+        text_size_pt = static_cast<int>((text_size_px_2 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+		pango_font_description_set_absolute_size( desc, text_size_pt * PANGO_SCALE ) ;
+		pango_font_description_set_weight( desc, PANGO_WEIGHT_NORMAL ) ; 
+		pango_layout_set_font_description( m_layout_2->gobj(), desc ) ;
+
+		pango_font_description_free( desc ) ; 
 	}
 
 	void
@@ -568,7 +596,6 @@ namespace MPX
 
 		if( !m_tooltip_mode )
 		{
-			m_time_offset = 0.0 ;
 			m_timer.start () ;
 
 			m_update_connection = signal_timeout ().connect(
@@ -584,85 +611,69 @@ namespace MPX
 	void
 		Notification::on_unmap ()
 	{
+		Window::on_unmap () ;
+
 		if( !m_tooltip_mode )
 		{
 			m_update_connection.disconnect () ;
 			m_timer.stop () ;
 			m_timer.reset () ;
 		}
-
-		Window::on_unmap () ;
 	}
 
 
 	void
 		Notification::set_metadata(
-            const MPX::Track& t
+              const Glib::RefPtr<Gdk::Pixbuf>&    image
+            , const MPX::Track&                   t
         )
 	{
-        std::string artist = t.has(ATTRIBUTE_ARTIST) ? boost::get<std::string>(t[ATTRIBUTE_ARTIST].get()) : "" ;
-        std::string title  = t.has(ATTRIBUTE_TITLE)  ? boost::get<std::string>(t[ATTRIBUTE_TITLE].get()) : "" ;
-
-        m_layout_1->set_text( title ) ;
-        m_layout_2->set_text( artist ) ;
-
-        const int text_size_px_1 = 26 ;
-        const int text_size_px_2 = 18 ;
-
-        int text_size_pt = 0 ;
-
-		std::string family = get_pango_context()->get_font_description().get_family() ;
-
-		PangoFontDescription * desc = pango_font_description_new () ;
-		pango_font_description_set_family( desc, family.c_str())  ;
-
-        text_size_pt = static_cast<int> ((text_size_px_1 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
-		pango_font_description_set_absolute_size( desc, text_size_pt * PANGO_SCALE ) ;
-		pango_font_description_set_weight( desc, PANGO_WEIGHT_BOLD ) ; 
-		pango_layout_set_font_description( m_layout_1->gobj(), desc ) ;
-
-        text_size_pt = static_cast<int> ((text_size_px_2 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
-		pango_font_description_set_absolute_size( desc, text_size_pt * PANGO_SCALE ) ;
-		pango_font_description_set_weight( desc, PANGO_WEIGHT_NORMAL ) ; 
-		pango_layout_set_font_description( m_layout_2->gobj(), desc ) ;
-
-		pango_font_description_free (desc) ;
-
-		queue_update () ;
-	}
-
-    void
-        Notification::set_image(
-            const Glib::RefPtr<Gdk::Pixbuf>&    image
-        )
-    {
         if( image )
         {
             gtk_widget_set_size_request (GTK_WIDGET(m_kobo_position->gobj()), m_width - 102, -1 );
             gtk_fixed_move (GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 94, 82);
             m_image = image->scale_simple (82, 82, Gdk::INTERP_HYPER);
-            queue_draw () ;
         }
         else
         {
             gtk_widget_set_size_request (GTK_WIDGET(m_kobo_position->gobj()), m_width - 16, -1 );
             gtk_fixed_move (GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 8, 82);
             m_image = Glib::RefPtr<Gdk::Pixbuf>(0);
-            queue_draw () ;
         }
-    }
+
+        std::string artist = t.has(ATTRIBUTE_ARTIST) ? boost::get<std::string>(t[ATTRIBUTE_ARTIST].get()) : "" ;
+        std::string title  = t.has(ATTRIBUTE_TITLE)  ? boost::get<std::string>(t[ATTRIBUTE_TITLE].get()) : "" ;
+
+        m_layout_1->set_text( title ) ;
+        m_layout_2->set_text( artist ) ;
+
+        enable( false ) ;
+	}
+
+	void
+		Notification::clear(
+        )
+	{
+        gtk_widget_set_size_request (GTK_WIDGET(m_kobo_position->gobj()), m_width - 16, -1 );
+        gtk_fixed_move (GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 8, 82);
+        m_image = Glib::RefPtr<Gdk::Pixbuf>(0);
+
+        m_layout_1->set_text( "" ) ;
+        m_layout_2->set_text( "" ) ;
+
+        enable( false ) ;
+	}
 
 	void
 		Notification::queue_update(
         )
 	{
-		m_time_offset = get_popup_time_offset (m_fade) ;
-		m_timer.reset () ;
+		m_timer.reset() ;
 
 		if( is_mapped() )
 		{
-			reposition () ;
-			queue_draw () ;
+			reposition() ;
+			queue_draw() ;
 		}
 	}
 
@@ -705,19 +716,20 @@ namespace MPX
 	{
 		double time ;
 
-		time = m_timer.elapsed () + m_time_offset ;
+		time = m_timer.elapsed () ; 
 
-		if( time < get_popup_end_time (m_fade ))
+		if( time < get_popup_end_time( m_fade ))
 		{
-			double alpha = get_popup_alpha_at_time (time, m_fade) ;
-
-			window_set_opacity (get_window (), alpha) ;
-
+			double alpha = get_popup_alpha_at_time( time, m_fade ) ;
+			window_set_opacity( get_window(), alpha ) ;
 			return true ;
 		}
 		else
 		{
-			if( !m_tooltip_mode ) hide () ;
+			if( !m_tooltip_mode )
+            {
+                hide() ;
+            }
 
 			return false ;
 		}

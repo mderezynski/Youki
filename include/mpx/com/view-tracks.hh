@@ -104,10 +104,10 @@ namespace Tracks
         }
 */
 
-        typedef std::vector<Row_t>                                                                      Model_t ;
-        typedef boost::shared_ptr<Model_t>                                                              Model_SP_t ;
-        typedef std::map<gint64, Model_t::iterator>                                                     IdIterMap_t ;
-        typedef sigc::signal<void, gint64, bool>                                                        Signal1 ;
+        typedef std::vector<Row_t>                          Model_t ;
+        typedef boost::shared_ptr<Model_t>                  Model_SP_t ;
+        typedef std::map<gint64, Model_t::iterator>         IdIterMap_t ;
+        typedef sigc::signal<void, std::size_t, bool>       Signal1 ;
 
         struct Model_t_iterator_equal
         : std::binary_function<Model_t::iterator, Model_t::iterator, bool>
@@ -485,6 +485,7 @@ namespace Tracks
                 } ;
 
                 RowRowMapping_t             m_mapping ;
+                RowRowMapping_t             m_mapping_unfiltered ;
                 FragmentCache_t             m_fragment_cache ;
                 std::string                 m_current_filter ;
                 StrV                        m_frags ;
@@ -516,6 +517,7 @@ namespace Tracks
                 {
                     m_realmodel->clear () ;
                     m_mapping.clear() ;
+                    m_mapping_unfiltered.clear() ;
                     m_iter_map.clear() ;
                     clear_active_track() ;
                     m_changed.emit( 0, true ) ;
@@ -731,7 +733,7 @@ namespace Tracks
 
                         bool aqe_diff = m_constraints_aqe != aqe ;
 
-                        if( !aqe_diff && m_constraints_ext.empty() && ( text.substr( 0, text.size() - 1 ) == m_current_filter ) )
+                        if( !aqe_diff && ( text.substr( 0, text.size() - 1 ) == m_current_filter ) )
                         {
                             m_current_filter = text ;
                             regen_mapping_iterative() ;
@@ -770,7 +772,7 @@ namespace Tracks
 
                     for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                     {
-                        if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
+                        if( m_active_track && get<3>(**i) == m_active_track.get() )
                         {
                             m_local_active_track = std::distance( m_mapping.begin(), i ) ; 
                             return ;
@@ -866,20 +868,36 @@ namespace Tracks
                     using boost::algorithm::is_any_of;
                     using boost::algorithm::find_first;
 
-                    RowRowMapping_t new_mapping ;
+                    RowRowMapping_t new_mapping, new_mapping_unfiltered ;
 
                     IntersectVector_t intersect_v ; 
 
-                    gint64 id = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
+                    gint64 id ;
+        
+                    if( m_active_track )
+                    {
+                        id = m_active_track.get() ;
+                    }
+                    else
+                    if( m_position < m_mapping.size() )
+                    {
+                        id = get<3>(row( m_position )) ; 
+                    }
 
                     if( m_frags.empty() && (m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
                         m_constraints_albums.reset() ;
                         m_constraints_artist.reset() ;
 
+                        new_mapping.resize( m_realmodel->size() ) ;
+                        new_mapping_unfiltered.resize( m_realmodel->size() ) ;
+
+                        std::size_t n = 0 ;
+
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
-                            new_mapping.push_back( i ) ;
+                            new_mapping[n] = i ;
+                            new_mapping_unfiltered[n++] = i ;
                         }
                     }
                     else
@@ -891,6 +909,12 @@ namespace Tracks
                         ModelIteratorSet_sp model_iterator_set ( new ModelIteratorSet_t ) ;
 
                         intersect_v.push_back( model_iterator_set ) ; 
+
+                        new_mapping.resize( m_realmodel->size() ) ;
+                        new_mapping_unfiltered.resize( m_realmodel->size() ) ;
+
+                        std::size_t n = 0 ;
+                        std::size_t u = 0 ;
 
                         for( Model_t::const_iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i ) // determine all the matches
                         {
@@ -908,6 +932,8 @@ namespace Tracks
 
                             if( t2 )
                             {
+                                new_mapping_unfiltered[u++] = i ;
+
                                 m_constraints_albums->insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
                                 m_constraints_artist->insert( get<6>(row) ) ;
                             }
@@ -918,8 +944,11 @@ namespace Tracks
                             if( !t1 )
                                 continue ;
 
-                            new_mapping.push_back( i ) ; 
+                            new_mapping[n++] = i ; 
                         }
+
+                        new_mapping.resize( n ) ; 
+                        new_mapping_unfiltered.resize( u ) ; 
                     }
                     else
                     {
@@ -992,7 +1021,9 @@ namespace Tracks
                         }
 
                         new_mapping.resize( output->size() ) ;
+                        new_mapping_unfiltered.resize( output->size() ) ;
                         std::size_t n = 0 ;
+                        std::size_t u = 0 ;
 
                         m_constraints_albums = IdSet_sp( new IdSet_t ) ; 
                         m_constraints_artist = IdSet_sp( new IdSet_t ) ; 
@@ -1011,6 +1042,8 @@ namespace Tracks
 
                             if( t2 )
                             {
+                                new_mapping_unfiltered[u++] = *i ;
+
                                 m_constraints_albums->insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
                                 m_constraints_artist->insert( get<6>(**i) ) ;
                             }
@@ -1025,9 +1058,11 @@ namespace Tracks
                         }
 
                         new_mapping.resize( n ) ;
+                        new_mapping_unfiltered.resize( u ) ;
                     }
 
                     std::swap( new_mapping, m_mapping ) ;
+                    std::swap( new_mapping_unfiltered, m_mapping_unfiltered ) ;
                     scan_active() ;
                     find_position( id ) ;
                     m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
@@ -1042,20 +1077,36 @@ namespace Tracks
                     using boost::algorithm::is_any_of;
                     using boost::algorithm::find_first;
 
-                    RowRowMapping_t new_mapping ;
+                    RowRowMapping_t new_mapping, new_mapping_unfiltered ;
 
                     IntersectVector_t intersect_v ; 
 
-                    gint64 id = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
+                    gint64 id = - 1 ;
+
+                    if( m_active_track )
+                    {
+                        id = m_active_track.get() ;
+                    }
+                    else
+                    if( m_position < m_mapping.size() )
+                    {
+                        id = get<3>(row( m_position )) ; 
+                    }
 
                     if( m_frags.empty() && (m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
                         m_constraints_albums.reset() ;
                         m_constraints_artist.reset() ;
 
-                        for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                        new_mapping.resize( m_mapping_unfiltered.size() ) ;
+                        new_mapping_unfiltered.resize( m_mapping_unfiltered.size() ) ;
+
+                        std::size_t n = 0 ;
+
+                        for( RowRowMapping_t::iterator i = m_mapping_unfiltered.begin(); i != m_mapping_unfiltered.end(); ++i )
                         {
-                            new_mapping.push_back( *i ) ;
+                            new_mapping_unfiltered[n] = *i ;
+                            new_mapping[n++] = *i ;
                         }
                     }
                     else
@@ -1064,7 +1115,13 @@ namespace Tracks
                         m_constraints_albums = IdSet_sp( new IdSet_t ) ;
                         m_constraints_artist = IdSet_sp( new IdSet_t ) ;
 
-                        for( RowRowMapping_t::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                        new_mapping.resize( m_mapping_unfiltered.size() ) ;
+                        new_mapping_unfiltered.resize( m_mapping_unfiltered.size() ) ;
+
+                        std::size_t n = 0 ;
+                        std::size_t u = 0 ;
+
+                        for( RowRowMapping_t::const_iterator i = m_mapping_unfiltered.begin(); i != m_mapping_unfiltered.end(); ++i )
                         {
                             const Row_t& row = **i ;
 
@@ -1080,6 +1137,8 @@ namespace Tracks
 
                             if( t2 )
                             {
+                                new_mapping_unfiltered[u++] = *i ;
+
                                 m_constraints_albums->insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
                                 m_constraints_artist->insert( get<6>(row) ) ;
                             }
@@ -1090,8 +1149,11 @@ namespace Tracks
                             if( !t1 )
                                 continue ;
 
-                            new_mapping.push_back( *i ) ; 
+                            new_mapping[n++] = *i ; 
                         }
+
+                        new_mapping.resize( n ) ;
+                        new_mapping_unfiltered.resize( u ) ;
                     }
                     else
                     {
@@ -1118,7 +1180,7 @@ namespace Tracks
 
                                 intersect_v.push_back( model_iterator_set ) ; 
 
-                                for( RowRowMapping_t::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                                for( RowRowMapping_t::const_iterator i = m_mapping_unfiltered.begin(); i != m_mapping_unfiltered.end(); ++i )
                                 {
                                     const Row_t& row = **i ;
 
@@ -1166,7 +1228,10 @@ namespace Tracks
                         }
 
                         new_mapping.resize( output->size() ) ;
+                        new_mapping_unfiltered.resize( output->size() ) ;
+
                         std::size_t n = 0 ;
+                        std::size_t u = 0 ;
 
                         m_constraints_albums = IdSet_sp( new IdSet_t ) ;
                         m_constraints_artist = IdSet_sp( new IdSet_t ) ;
@@ -1185,6 +1250,8 @@ namespace Tracks
 
                             if( t2 )
                             {
+                                new_mapping_unfiltered[u++] = *i ;
+
                                 m_constraints_albums->insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
                                 m_constraints_artist->insert( get<6>(**i) ) ;
                             }
@@ -1199,9 +1266,11 @@ namespace Tracks
                         }
 
                         new_mapping.resize( n ) ;
+                        new_mapping_unfiltered.resize( n ) ;
                     }
 
                     std::swap( new_mapping, m_mapping ) ;
+                    std::swap( new_mapping_unfiltered, m_mapping_unfiltered ) ;
                     scan_active() ;
                     find_position( id ) ;
                     m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
@@ -2304,32 +2373,27 @@ namespace Tracks
 
                 void
                 on_model_changed(
-                      gint64    position
-                    , bool      size_changed
+                      std::size_t   position
+                    , bool          size_changed
                 )
                 {
                     if( size_changed ) 
                     {
+                        m_Model_I = Interval<std::size_t> (
+                                 Interval<std::size_t>::IN_EX
+                                , 0
+                                , m_model->size()
+                        ) ;
+
                         if( m_prop_vadj.get_value() && m_visible_height && m_row_height )
                         {
-                            std::size_t view_count = get_page_size() ;
-
                             m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
                             m_prop_vadj.get_value()->set_page_size( get_page_size() ) ;
 
-                            if( m_model->size() < view_count )
-                                m_prop_vadj.get_value()->set_value(0.) ;
-                            else
-                                m_prop_vadj.get_value()->set_value( position ) ; 
-                         }
+                            scroll_to_row( position ) ;
+                        }
 
-                         m_Model_I = Interval<std::size_t> (
-                                  Interval<std::size_t>::IN_EX
-                                , 0
-                                , m_model->size()
-                         ) ;
-
-                         m_selection.reset() ;
+                        m_selection.reset() ;
                     }
 
                     queue_draw() ;
@@ -2619,7 +2683,13 @@ namespace Tracks
                         , row 
                     ) ;
 
-                    m_prop_vadj.get_value()->set_value( d ) ; 
+                    if( m_model->m_mapping.size() < get_page_size()) 
+                        m_prop_vadj.get_value()->set_value( 0 ) ; 
+                    else
+                    if( row > (m_model->m_mapping.size() - get_page_size()) )
+                        m_prop_vadj.get_value()->set_value( m_model->m_mapping.size() - get_page_size() ) ; 
+                    else
+                        m_prop_vadj.get_value()->set_value( d ) ; 
                 }
 
                 void

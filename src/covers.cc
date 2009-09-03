@@ -381,8 +381,9 @@ namespace MPX
 
     bool
     Covers::fetch(
-        const std::string&      mbid,
-        RefPtr<Gdk::Pixbuf>&    cover
+          const std::string&        mbid
+        , RefPtr<Gdk::Pixbuf>&      cover
+        , int                       size
     )
     {
         return sigx::open_sync_tunnel(
@@ -393,6 +394,7 @@ namespace MPX
                     )
                     , mbid
                     , boost::ref(cover)
+                    , size
         ))() ;
     }
 
@@ -436,23 +438,37 @@ namespace MPX
 
     bool
     Covers::fetch_back1(
-        const std::string&      mbid,
-        RefPtr<Gdk::Pixbuf>&    cover
+          const std::string&      mbid_
+        , RefPtr<Gdk::Pixbuf>&    cover
+        , int                     size
     )
     {
-        PixbufCache::const_iterator i = m_pixbuf_cache.find(mbid);
+        std::string mbid ;
+
+        if( size != -1 )
+        {
+            mbid = (boost::format("%s-SIZE%d") % mbid_ % size ).str() ;
+        }
+        else
+        {
+            mbid = mbid_ ;
+        }
+
+        PixbufCache::const_iterator i = m_pixbuf_cache.find( mbid );
+
         if (i != m_pixbuf_cache.end())
         {
             cover = (*i).second; 
             return true;
         }
 
-        std::string thumb_path = get_thumb_path (mbid);
-        if (file_test( thumb_path, FILE_TEST_EXISTS ))
+        std::string thumb_path = get_thumb_path( mbid ) ;
+
+        if( file_test( thumb_path, FILE_TEST_EXISTS ))
         {
             try{
-              cover = Gdk::Pixbuf::create_from_file( thumb_path ); 
-              m_pixbuf_cache.insert (std::make_pair(mbid, cover));
+              cover = Gdk::Pixbuf::create_from_file( thumb_path ) ; 
+              m_pixbuf_cache.insert( std::make_pair( mbid, cover )) ;
               return true;
             }
             catch( Gdk::PixbufError )
@@ -462,20 +478,41 @@ namespace MPX
             {
             }
         }
+        else 
+        if( size != -1 )
+        {
+            std::string thumb_path = get_thumb_path( mbid_ ) ;
+
+            if( file_test( thumb_path, FILE_TEST_EXISTS ))
+            {
+                    try{
+                      cover = Gdk::Pixbuf::create_from_file( thumb_path )->scale_simple( size, size, Gdk::INTERP_BILINEAR ) ; 
+                      cover->save( get_thumb_path( mbid ), "png" );
+                      m_pixbuf_cache.insert( std::make_pair( mbid, cover )) ;
+                      return true;
+                    }
+                    catch( Gdk::PixbufError )
+                    {
+                    }
+                    catch( Glib::FileError )
+                    {
+                    }
+            }
+        }
 
         return false;
     }
 
     bool
     Covers::fetch_back2(
-        const std::string&                  mbid,
-        Cairo::RefPtr<Cairo::ImageSurface>& surface,
-        CoverSize                           size
+          const std::string&                    mbid
+        , Cairo::RefPtr<Cairo::ImageSurface>&   surface
+        , CoverSize                             size
     )
     {
         Glib::RefPtr<Gdk::Pixbuf> pb;
 
-        if(fetch( mbid, pb ))
+        if(fetch( mbid, pb, -1 ))
         {
             int px = pixel_size (size);
             

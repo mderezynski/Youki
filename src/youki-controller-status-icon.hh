@@ -47,24 +47,23 @@ namespace MPX
 
             void
             set_metadata(
-                const MPX::Track& t 
+                  const Glib::RefPtr<Gdk::Pixbuf>&      image
+                , const MPX::Track&                     t 
             )
             {
                 if( m_notification )
                 {
-                    m_notification->set_metadata( t ) ;
-                    m_notification->enable( false ) ;
+                    m_notification->set_metadata( image, t ) ;
                 }
             }
 
             void
-            set_image(
-                const Glib::RefPtr<Gdk::Pixbuf>&    image
+            clear(
             )
             {
                 if( m_notification )
                 {
-                    m_notification->set_image( image ) ;
+                    m_notification->clear() ;
                 }
             }
 
