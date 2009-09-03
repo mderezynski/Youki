@@ -210,8 +210,11 @@ namespace Artist
 
         struct DataModelFilter : public DataModel
         {
-                RowRowMapping_t                           m_mapping ;
-                boost::optional<std::set<gint64> >      m_constraints_artist ;
+                typedef std::set<gint64>                IdSet_t ;
+                typedef boost::shared_ptr<IdSet_t>      IdSet_sp ;
+
+                RowRowMapping_t        m_mapping ;
+                IdSet_sp               m_constraints_artist ;
 
                 DataModelFilter(DataModel_SP_t & model)
                     : DataModel( model->m_realmodel )
@@ -225,7 +228,7 @@ namespace Artist
 
                 virtual void
                 set_constraints_artist(
-                    const boost::optional<std::set<gint64> >& constraint
+                    const IdSet_sp& constraint
                 )
                 {
                     m_constraints_artist = constraint ;
@@ -345,7 +348,7 @@ namespace Artist
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
-                        int truth = !m_constraints_artist || m_constraints_artist.get().count( get<1>(*i)) ;
+                        int truth = !m_constraints_artist || m_constraints_artist->count( get<1>(*i)) ;
 
                         if( truth )
                         {
@@ -1158,9 +1161,8 @@ namespace Artist
                         if( !quiet )
                         {
                             m_SIGNAL_selection_changed.emit() ;
+                            queue_draw();
                         }
-
-                        queue_draw();
                     }
                 }
 

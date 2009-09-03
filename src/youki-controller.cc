@@ -290,6 +290,11 @@ namespace MPX
         m_HBox_Bottom       = Gtk::manage( new Gtk::HBox ) ;
         m_VBox_Bottom       = Gtk::manage( new Gtk::VBox ) ;
 
+        m_VBox_Bottom->set_spacing( 2 ) ;
+        m_HBox_Bottom->set_spacing( 4 ) ;
+        m_HBox_Controls->set_spacing( 2 ) ;
+        m_HBox_Info->set_spacing( 2 ) ; 
+
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
         m_Entry->set_icon_from_pixbuf(
               Gtk::IconTheme::get_default()->load_icon( "mpx-stock-entry-clear", 16 ) 
@@ -380,7 +385,6 @@ namespace MPX
         m_cover = Gtk::manage( new KoboCover ) ;
         m_cover->set_size_request( 96, 96 ) ;
         m_HBox_Bottom->pack_start( *m_cover, false, false, 0 ) ;
-        m_HBox_Bottom->set_spacing( 4 ) ;
 
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(
@@ -641,13 +645,11 @@ namespace MPX
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
-        m_HBox_Controls->set_spacing( 2 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
-        m_HBox_Info->property_spacing() = 2 ; 
 
         m_VBox_Bottom->pack_start( *m_HBox_Info, false, false, 0 ) ;
         m_VBox_Bottom->pack_start( *m_HBox_Controls, false, false, 0 ) ;
@@ -1266,7 +1268,6 @@ namespace MPX
     )
     {
         m_EntryText.clear() ;
-//        m_checkbutton_advanced->set_active( true ) ; 
         m_Entry->set_text( (boost::format("title %% \"%s\"") % text).str() ) ;
     }
 
@@ -1281,7 +1282,7 @@ namespace MPX
         boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
         boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
 
-        boost::optional<std::set<gint64> > constraint ; 
+        boost::shared_ptr<std::set<gint64> > constraint ; 
 
         if( id_artist ) 
         {
@@ -1291,8 +1292,8 @@ namespace MPX
             c.MatchType = AQE::MT_EQUAL ;
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
 
-            constraint = std::set<gint64>() ; 
-            constraint.get().insert( id_artist.get() ) ;
+            constraint = boost::shared_ptr<std::set<gint64> >( new std::set<gint64> ) ; 
+            constraint->insert( id_artist.get() ) ;
         }
 
         if( id_albums ) 
@@ -1337,6 +1338,7 @@ namespace MPX
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
+//        private_->FilterModelTracks->cache_current_fragments() ;
         private_->FilterModelTracks->regen_mapping() ;
     }
 
@@ -1494,7 +1496,7 @@ namespace MPX
 */
 
             m_EntryText = text ; 
-            m_Entry->set_text( m_EntryText ) ;  // FIXME temp
+//            m_Entry->set_text( m_EntryText ) ;  // FIXME temp
 
 /*
             m_prediction = new_prediction ; 
@@ -1535,20 +1537,6 @@ namespace MPX
         private_->FilterModelAlbums->set_constraints_albums( private_->FilterModelTracks->m_constraints_albums ) ;
         private_->FilterModelAlbums->regen_mapping() ;
     }
-
-/*
-    void
-    YoukiController::on_advanced_changed()
-    {
-        if( !m_checkbutton_advanced->get_active() )
-        {
-            m_EntryText.clear() ;
-        }
-
-        m_ListViewTracks->set_advanced( m_checkbutton_advanced->get_active() ) ;
-        m_Entry->set_text( m_EntryText ) ;
-    }
-*/
 
     void
     YoukiController::on_position_seek(

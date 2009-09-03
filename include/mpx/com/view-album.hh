@@ -317,16 +317,20 @@ namespace Albums
         struct DataModelFilter
         : public DataModel
         {
-            public:
-
-                RowRowMapping_t                             m_mapping ;
-
-                boost::optional<std::set<gint64> >          m_constraints_album ;
-                boost::optional<std::set<gint64> >          m_constraints_artist ;
+            typedef std::set<gint64>                        IdSet_t ;
+            typedef boost::shared_ptr<IdSet_t>              IdSet_sp ;
 
             public:
 
-                DataModelFilter(DataModel_SP_t & model)
+                RowRowMapping_t   m_mapping ;
+                IdSet_sp          m_constraints_album ;
+                IdSet_sp          m_constraints_artist ;
+
+            public:
+
+                DataModelFilter(
+                      DataModel_SP_t&   model
+                )
                 : DataModel(model->m_realmodel)
                 {
                     regen_mapping() ;
@@ -338,7 +342,7 @@ namespace Albums
 
                 virtual void
                 set_constraints_albums(
-                    const boost::optional<std::set<gint64> >& constraint
+                    const IdSet_sp& constraint
                 )
                 {
                     m_constraints_album = constraint ;
@@ -353,7 +357,7 @@ namespace Albums
 
                 virtual void
                 set_constraints_artist(
-                    const boost::optional<std::set<gint64> >& constraint
+                    const IdSet_sp& constraint
                 )
                 {
                     m_constraints_artist = constraint ;
@@ -514,9 +518,9 @@ namespace Albums
                     for( ; i != m_realmodel->end(); ++i )
                     {
                             int truth = 
-                                        (!m_constraints_album  || m_constraints_album.get().count( get<1>(*i)) )
+                                        (!m_constraints_album  || m_constraints_album->count( get<1>(*i)) )
                                                                         &&
-                                        (!m_constraints_artist || m_constraints_artist.get().count( get<2>(*i)) )
+                                        (!m_constraints_artist || m_constraints_artist->count( get<2>(*i)) )
                             ; 
 
                             if( truth )
@@ -1010,7 +1014,7 @@ namespace Albums
 
                                     if( row < get_upper_row() ) 
                                     {
-                                        m_prop_vadj.get_value()->set_value( (get_upper_row() + step) * m_row_height ) ; 
+                                        scroll_to_row( (get_upper_row() + step) ) ; 
                                     }
                                 }
                                 else
@@ -1051,7 +1055,7 @@ namespace Albums
 
                                     if( row > ( get_upper_row() + (m_visible_height/m_row_height) ) )
                                     {
-                                        m_prop_vadj.get_value()->set_value( (get_upper_row() + step) * m_row_height ) ; 
+                                        scroll_to_row( (get_upper_row() + step) ) ; 
                                     }
                                 }
                                 else
@@ -1157,7 +1161,7 @@ namespace Albums
                         {
                             if( m_Model_I.in( row )) 
                             {
-                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
+                                scroll_to_row( row ) ; 
                                 select_row( row ) ;
                             }
                         }
@@ -1351,16 +1355,11 @@ namespace Albums
                 {
                     if( size_changed && m_prop_vadj.get_value() && m_visible_height && m_row_height )
                     {
-                            std::size_t view_count = m_visible_height / m_row_height ;
-
                             m_prop_vadj.get_value()->set_upper( m_model->m_mapping.size() * m_row_height ) ;
                             m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
                             m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
 
-                            if( m_model->size() < view_count )
-                                m_prop_vadj.get_value()->set_value(0.) ;
-                            else
-                                m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                            scroll_to_row( position ) ;
 
                             m_Model_I = Interval<std::size_t>(
                                   Interval<std::size_t>::IN_EX
@@ -1383,8 +1382,8 @@ namespace Albums
                             quiet = ( id_1 == id_2 ) ; 
                         }
 
+                        scroll_to_row( row.get() ) ; 
                         select_row( row.get(), quiet ) ;
-                        m_prop_vadj.get_value()->set_value( row.get() * m_row_height ) ;
                     }
 
                     queue_draw() ;
@@ -1457,7 +1456,7 @@ namespace Albums
                             , row 
                         ) ;
 
-                        if( d < std::size_t(m_visible_height/m_row_height ))
+                        if( m_model->m_mapping.size() < std::size_t(m_visible_height/m_row_height) )
                         {
                             m_prop_vadj.get_value()->set_value( 0 ) ; 
                         }
@@ -1482,9 +1481,8 @@ namespace Albums
                         if( !quiet )
                         {
                             m_SIGNAL_selection_changed.emit() ;
+                            queue_draw();
                         }
-
-                        queue_draw();
                     }
                 }
 
