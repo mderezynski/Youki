@@ -236,6 +236,12 @@ namespace MPX
                 , &YoukiController::on_library_album_deleted
         )) ;
 
+        m_mlibman_dbus_proxy->signal_track_deleted().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_library_track_deleted
+        )) ;
+
         m_covers    = services->get<Covers>("mpx-service-covers").get() ;
         m_play      = services->get<Play>("mpx-service-play").get() ;
         m_library   = services->get<Library>("mpx-service-library").get() ;
@@ -571,12 +577,15 @@ namespace MPX
                     , ""
                     , ""
                     , ""
+                    , ""
                 ) ;
 
                 boost::shared_ptr<Covers> c = services->get<Covers>("mpx-service-covers") ;
 
                 SQL::RowV v ;
-                m_library->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album" ) ;
+
+                m_library->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album" ) ;
+
                 for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                 {
                     SQL::Row & r = *i;
@@ -604,6 +613,7 @@ namespace MPX
                         , get<std::string>(r["mb_album_id"])
                         , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
                         , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
+                        , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
                     ) ;
                 }
 
@@ -824,8 +834,8 @@ namespace MPX
     YoukiController::on_library_scan_start(
     )
     {
-        private_->FilterModelTracks->clear_fragment_cache() ;
         private_->FilterModelTracks->disable_fragment_cache() ;
+        private_->FilterModelTracks->clear_fragment_cache() ;
     }
 
     void
@@ -834,6 +844,7 @@ namespace MPX
     {
         push_new_tracks() ;
         private_->FilterModelTracks->enable_fragment_cache() ;
+        private_->FilterModelTracks->regen_mapping() ;
     }
 
     void
@@ -848,7 +859,7 @@ namespace MPX
     {
         SQL::RowV v ;
 
-        m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
+        m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
 
         g_return_if_fail( (v.size() == 1) ) ;
 
@@ -880,6 +891,7 @@ namespace MPX
             , get<std::string>(r["mb_album_id"])
             , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
             , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
+            , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
         ) ;
 
         if( !cover_pb )
@@ -964,6 +976,14 @@ namespace MPX
     )
     {
         private_->FilterModelArtist->erase_artist( id ) ; 
+    }
+
+    void
+    YoukiController::on_library_track_deleted(
+          gint64               id
+    )
+    {
+        private_->FilterModelTracks->erase_track( id ) ; 
     }
 
 ////////////////

@@ -320,6 +320,7 @@ namespace Tracks
                 erase_track(gint64 id)
                 {
                     IdIterMap_t::iterator i = m_iter_map.find(id);
+
                     if( i != m_iter_map.end() )
                     {
                         m_realmodel->erase( i->second );

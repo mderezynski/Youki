@@ -106,6 +106,13 @@ namespace
                 constraints.push_back(c) ;
             }
             else
+            if( attribute == "label" )
+            {
+                c.TargetValue = value ; 
+                c.TargetAttr = ATTRIBUTE_LABEL ;
+                constraints.push_back(c) ;
+            }
+            else
             if( attribute == "artist" )
             {
                 c.TargetValue = value ; 

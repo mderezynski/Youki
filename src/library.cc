@@ -71,6 +71,9 @@ namespace
                 {   "comment",
                         VALUE_TYPE_STRING   }, 
 
+                {   "label",
+                        VALUE_TYPE_STRING   }, 
+
                 {   "musicip_puid",
                         VALUE_TYPE_STRING   }, 
 

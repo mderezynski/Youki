@@ -45,6 +45,7 @@ protected:
     Signal_1int64           SignalNewTrack ;
     Signal_1int64           SignalArtistDeleted ;
     Signal_1int64           SignalAlbumDeleted ;
+    Signal_1int64           SignalTrackDeleted ;
 
 public:
 
@@ -88,6 +89,12 @@ public:
     signal_new_track ()
     {
         return SignalNewTrack ;
+    }
+
+    Signal_1int64
+    signal_track_deleted ()
+    {
+        return SignalTrackDeleted ;
     }
 
     /* signal handlers for this interface
@@ -151,6 +158,13 @@ public:
         SignalAlbumDeleted.emit( id ) ;
     }
 
+    virtual
+    void TrackDeleted(
+          const int64_t&        id
+    ) 
+    {
+        SignalTrackDeleted.emit( id ) ;
+    }
 };
 
 } } } 

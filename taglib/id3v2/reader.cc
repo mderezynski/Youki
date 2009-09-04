@@ -82,7 +82,7 @@ namespace MPX
             frame = find_utif (tag, String (mb_metadata_id3v2[n].id, String::UTF8));
             if(frame)
             {
-                std::string s = frame->toString().toCString (true);
+                std::string s = frame->toString().toCString( true ) ;
                 iterator_range <std::string::iterator> match = find_nth (s, mb_metadata_id3v2[n].id + std::string(" "), 0);
                 if(!match.empty())
                 {
@@ -98,57 +98,70 @@ namespace MPX
 
         // MB UFID
         FrameList const& map = tag->frameListMap()["UFID"];
-        if (!map.isEmpty())
+        if( !map.isEmpty() )
         {
-          for (FrameList::ConstIterator iter = map.begin(); iter != map.end(); ++iter)
-          {
-            ID3v2::UniqueFileIdentifierFrame *ufid = reinterpret_cast<ID3v2::UniqueFileIdentifierFrame*> (*iter);
-            if (ufid->owner() == "http://musicbrainz.org")
+            for (FrameList::ConstIterator iter = map.begin(); iter != map.end(); ++iter)
             {
-              ByteVector vec (ufid->identifier());
-              vec.append ('\0');
-              track[ATTRIBUTE_MB_TRACK_ID] = string (vec.data());
-              break;
+                ID3v2::UniqueFileIdentifierFrame *ufid = reinterpret_cast<ID3v2::UniqueFileIdentifierFrame*> (*iter);
+
+                if (ufid->owner() == "http://musicbrainz.org")
+                {
+                    ByteVector vec (ufid->identifier());
+                    vec.append ('\0');
+
+                    track[ATTRIBUTE_MB_TRACK_ID] = string (vec.data());
+
+                    break;
+                }
             }
-          }
         }
 
         // TDRC 
         {
-          FrameList const& map = tag->frameListMap()["TDRC"];
-          if (!map.isEmpty())
-          {
-            track[ATTRIBUTE_MB_RELEASE_DATE] = string (map.front()->toString().toCString (true));
-          }
+            FrameList const& map = tag->frameListMap()["TDRC"];
+            if( !map.isEmpty() )
+            {
+                track[ATTRIBUTE_MB_RELEASE_DATE] = string (map.front()->toString().toCString( true ) );
+            }
         }
 
         // TPE2 (Album Artist) 
         {
-          FrameList const& map = tag->frameListMap()["TPE2"];
-          if (!map.isEmpty())
-          {
-            track[ATTRIBUTE_ALBUM_ARTIST] = string (map.front()->toString().toCString (true));
-          }
+            FrameList const& map = tag->frameListMap()["TPE2"];
+            if( !map.isEmpty() )
+            {
+                track[ATTRIBUTE_ALBUM_ARTIST] = string (map.front()->toString().toCString( true ) );
+            }
         }
 
+        // TPUB (Label) 
+        {
+            FrameList const& map = tag->frameListMap()["TPUB"];
+            if( !map.isEmpty() )
+            {
+                track[ATTRIBUTE_LABEL] = string (map.front()->toString().toCString( true ) );
+            }
+        }
 
         // TSOP/XSOP (Artist Sort Name)
         {
-          const char *id3v2frame = 0;
+            const char *id3v2frame = 0;
 
-          if (!tag->frameListMap()["XSOP"].isEmpty())
-            id3v2frame = "XSOP";
-          else if (!tag->frameListMap()["TSOP"].isEmpty())
-            id3v2frame = "TSOP";
+            if( !tag->frameListMap()["XSOP"].isEmpty() )
+              id3v2frame = "XSOP" ;
+            else
+            if( !tag->frameListMap()["TSOP"].isEmpty() )
+              id3v2frame = "TSOP" ;
 
-          if (id3v2frame)
-          {
-            FrameList const& map = tag->frameListMap()[id3v2frame];
-            if (!map.isEmpty())
+            if( id3v2frame )
             {
-              track[ATTRIBUTE_ARTIST_SORTNAME] = string (map.front()->toString().toCString (true));
+                FrameList const& map = tag->frameListMap()[id3v2frame];
+
+                if( !map.isEmpty() )
+                {
+                    track[ATTRIBUTE_ARTIST_SORTNAME] = string (map.front()->toString().toCString( true ) );
+                }
             }
-          }
         }
     }
 

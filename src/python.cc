@@ -89,6 +89,7 @@ namespace MPX
 
         , MPX_ATTRIBUTE_GENRE
         , MPX_ATTRIBUTE_COMMENT
+        , MPX_ATTRIBUTE_LABEL
 
         , MPX_ATTRIBUTE_MUSICIP_PUID
 

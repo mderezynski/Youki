@@ -58,6 +58,9 @@ namespace
             {   "comment",
                     VALUE_TYPE_STRING   }, 
 
+            {   "label",
+                    VALUE_TYPE_STRING   }, 
+
             {   "musicip_puid",
                     VALUE_TYPE_STRING   }, 
 
@@ -995,7 +998,7 @@ MPX::LibraryScannerThread_MLibMan::get_album_id (Track& track, gint64 album_arti
 
     EntityInfo info ( 0, MPX::LibraryScannerThread_MLibMan::ENTITY_IS_UNDEFINED ) ;
 
-    if( track.has(ATTRIBUTE_MB_ALBUM_ID) )
+    if( track.has( ATTRIBUTE_MB_ALBUM_ID ))
     {
       char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s = '%q') AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
@@ -1022,15 +1025,15 @@ MPX::LibraryScannerThread_MLibMan::get_album_id (Track& track, gint64 album_arti
     {
       char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
-      sql = mprintf (select_album_f,
+      sql = mprintf( select_album_f,
 
              attrs[ATTRIBUTE_ALBUM].id,
-            (track.has(ATTRIBUTE_ALBUM)
+            (track.has( ATTRIBUTE_ALBUM )
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
                 : "IS NULL"), 
 
             attrs[ATTRIBUTE_ASIN].id,
-            (track.has(ATTRIBUTE_ASIN)
+            (track.has( ATTRIBUTE_ASIN )
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
                 : "IS NULL"), 
 
@@ -1040,77 +1043,86 @@ MPX::LibraryScannerThread_MLibMan::get_album_id (Track& track, gint64 album_arti
     }
 
     OVariant mbid ;
-    m_SQL->get (rows, sql); 
+    m_SQL->get( rows, sql ) ; 
 
-    if(!rows.empty())
+    if( !rows.empty() )
     {
         info = EntityInfo(
               get<gint64>(rows[0].find ("id")->second)
             , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NOT_NEW
         ) ;
 
-        if(rows[0].count("mb_album_id"))
+        if( rows[0].count("mb_album_id" ))
         {
-            track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(rows[0].find ("mb_album_id")->second) ;
+            track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>( rows[0].find("mb_album_id")->second ) ;
         }
     }
     else
-    if(!only_if_exists)
+    if( !only_if_exists )
     {
-      if( !track.has(ATTRIBUTE_MB_ALBUM_ID) )
-      {
-        track[ATTRIBUTE_MB_ALBUM_ID] = "mpx-" + get<std::string>(track[ATTRIBUTE_ARTIST].get())
-                                              + "-"
-                                              + get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
-      }
+        if( !track.has(ATTRIBUTE_MB_ALBUM_ID ))
+        {
+            track[ATTRIBUTE_MB_ALBUM_ID] = "mpx-" + get<std::string>(track[ATTRIBUTE_ARTIST].get())
+                                                  + "-"
+                                                  + get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
+        }
 
-      char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s, %s, %s, album_new) VALUES (%Q, %Q, %Q, %Q, %Q, %Q, %lld, %lld, 1);") ;
+        char const* insert_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s, %s, %s, %s, album_new) VALUES (%Q, %Q, %Q, %Q, %Q, %Q, %Q, %lld, %lld, 1);") ;
 
-      std::string sql = mprintf (set_album_f,
+        std::string sql = mprintf(
 
-          attrs[ATTRIBUTE_ALBUM].id,
-          attrs[ATTRIBUTE_MB_ALBUM_ID].id,
-          attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
-          attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id,
-          attrs[ATTRIBUTE_MB_RELEASE_TYPE].id,
-          attrs[ATTRIBUTE_ASIN].id,
-          "album_artist_j",
-          "album_insert_date",
+              insert_album_f
 
-          (track.has(ATTRIBUTE_ALBUM)
-              ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
-              : NULL) , 
+            , attrs[ATTRIBUTE_ALBUM].id
+            , attrs[ATTRIBUTE_MB_ALBUM_ID].id
+            , attrs[ATTRIBUTE_MB_RELEASE_DATE].id
+            , attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
+            , attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
+            , attrs[ATTRIBUTE_ASIN].id
+            , "album_label"
+            , "album_artist_j"
+            , "album_insert_date"
 
-          (track.has(ATTRIBUTE_MB_ALBUM_ID)
-              ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()
-              : NULL) , 
+            ,
 
-          (track.has(ATTRIBUTE_MB_RELEASE_DATE)
-              ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()
-              : NULL) , 
+            (track.has(ATTRIBUTE_ALBUM)
+                ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
+                : NULL) , 
 
-          (track.has(ATTRIBUTE_MB_RELEASE_COUNTRY)
-              ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_COUNTRY].get()).c_str()
-              : NULL) , 
+            (track.has(ATTRIBUTE_MB_ALBUM_ID)
+                ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()
+                : NULL) , 
 
-          (track.has(ATTRIBUTE_MB_RELEASE_TYPE)
-              ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_TYPE].get()).c_str()
-              : NULL) , 
+            (track.has(ATTRIBUTE_MB_RELEASE_DATE)
+                ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()
+                : NULL) , 
 
-          (track.has(ATTRIBUTE_ASIN)
-              ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
-              : NULL) , 
+            (track.has(ATTRIBUTE_MB_RELEASE_COUNTRY)
+                ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_COUNTRY].get()).c_str()
+                : NULL) , 
 
-          album_artist_id,
+            (track.has(ATTRIBUTE_MB_RELEASE_TYPE)
+                ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_TYPE].get()).c_str()
+                : NULL) , 
 
-          gint64(time(NULL))
+            (track.has(ATTRIBUTE_ASIN)
+                ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
+                : NULL) , 
 
-      ) ;
+            (track.has(ATTRIBUTE_LABEL)
+                ? get<std::string>(track[ATTRIBUTE_LABEL].get()).c_str()
+                : NULL) , 
 
-      info = EntityInfo(
-          m_SQL->exec_sql (sql)
-        , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NEW
-      ) ;
+            album_artist_id,
+
+            gint64(time(NULL))
+
+        ) ;
+
+        info = EntityInfo(
+            m_SQL->exec_sql (sql)
+          , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NEW
+        ) ;
     }
 
     return info ;

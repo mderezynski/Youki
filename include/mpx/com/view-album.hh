@@ -90,7 +90,7 @@ namespace View
 {
 namespace Albums
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string> Row_t ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string, std::string> Row_t ;
 
         typedef IndexedList<Row_t>                                                      Model_t ;
         typedef boost::shared_ptr<Model_t>                                              Model_SP_t ;
@@ -249,9 +249,10 @@ namespace Albums
                     , const std::string&                    mbid
                     , const std::string&                    type
                     , const std::string&                    year
+                    , const std::string&                    label
                 )
                 {
-                    Row_t row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year ) ; 
+                    Row_t row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year, label ) ; 
                     m_realmodel->push_back( row ) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -269,6 +270,7 @@ namespace Albums
                     , const std::string&                    mbid
                     , const std::string&                    type
                     , const std::string&                    year
+                    , const std::string&                    label
                 )
                 {
                     static OrderFunc order ;
@@ -282,6 +284,7 @@ namespace Albums
                         , mbid
                         , get_rt( type )
                         , year
+                        , label
                     ) ; 
 
                     Model_t::iterator i = m_realmodel->insert(
@@ -416,6 +419,7 @@ namespace Albums
                     , const std::string&                    mbid
                     , const std::string&                    type
                     , const std::string&                    year
+                    , const std::string&                    label
                 )
                 {
                     DataModel::append_album(
@@ -427,9 +431,10 @@ namespace Albums
                         , mbid
                         , type
                         , year
+                        , label
                     ) ;
 
-                    regen_mapping();
+                    regen_mapping() ;
                 }
                 
                 virtual void
@@ -442,6 +447,7 @@ namespace Albums
                     , const std::string&                        mbid
                     , const std::string&                        type
                     , const std::string&                        year
+                    , const std::string&                        label
                 )
                 {
                     DataModel::append_album(
@@ -453,6 +459,7 @@ namespace Albums
                         , mbid
                         , type
                         , year
+                        , label
                     ) ;
                 }
 
@@ -475,6 +482,7 @@ namespace Albums
                     , const std::string&                    mbid
                     , const std::string&                    type
                     , const std::string&                    year
+                    , const std::string&                    label
                 )
                 {
                     DataModel::insert_album(
@@ -486,6 +494,7 @@ namespace Albums
                         , mbid
                         , type
                         , year
+                        , label
                     ) ;
 
                     regen_mapping() ;
@@ -806,8 +815,16 @@ namespace Albums
                             ) ;
                             pango_cairo_show_layout( cairo->cobj(), layout[L2]->gobj() ) ;
 
-                            //// YEAR
-                            layout[L1]->set_text( get<7>(data_row) )  ;
+                            //// YEAR + LABEL
+
+                            std::string year_label ; 
+
+                            if( get<8>(data_row).empty() )
+                                year_label = get<7>(data_row) ; 
+                            else
+                                year_label = (boost::format("%s / %s") % get<7>(data_row) % get<8>(data_row)).str() ;
+
+                            layout[L1]->set_text( year_label ) ; 
                             layout[L1]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + 8 

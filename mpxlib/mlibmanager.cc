@@ -570,6 +570,12 @@ namespace MPX
                 , &MLibManager::album_deleted
         )) ;
 
+        library->signal_track_deleted().connect(
+            sigc::mem_fun(
+                  *this
+                , &MLibManager::track_deleted
+        )) ;
+
         /*- Setup Window Geometry -----------------------------------------*/ 
     
         gtk_widget_realize(GTK_WIDGET(gobj()));
@@ -759,6 +765,14 @@ namespace MPX
     )
     {
         AlbumDeleted( id ) ;
+    }
+
+    void
+    MLibManager::track_deleted(
+          const int64_t&        id
+    )
+    {
+        TrackDeleted( id ) ;
     }
 
     bool

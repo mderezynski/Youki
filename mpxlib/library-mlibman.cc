@@ -68,6 +68,9 @@ namespace
                 {   "genre",
                         VALUE_TYPE_STRING   }, 
 
+                {   "label",
+                        VALUE_TYPE_STRING   }, 
+
                 {   "comment",
                         VALUE_TYPE_STRING   }, 
 
@@ -357,13 +360,14 @@ namespace MPX
                         ///////////////////////////////////////////////////////////////
 
                         m_SQL->exec_sql((
-                            boost::format("CREATE TABLE IF NOT EXISTS album (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT NULL, '%s' FLOAT DEFAULT 0, UNIQUE ('%s', '%s', '%s', '%s', '%s', '%s', '%s'))")
+                            boost::format("CREATE TABLE IF NOT EXISTS album (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT NULL, '%s' FLOAT DEFAULT 0, UNIQUE ('%s', '%s', '%s', '%s', '%s', '%s', '%s'))")
                                 % attrs[ATTRIBUTE_ALBUM].id
                                 % attrs[ATTRIBUTE_MB_ALBUM_ID].id
                                 % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
                                 % attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
                                 % attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
                                 % attrs[ATTRIBUTE_ASIN].id
+                                % "album_label" 
                                 % "album_genre" 
                                 % "album_rating"
                                 % "album_artist_j"

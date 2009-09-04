@@ -170,6 +170,11 @@ namespace MPX
             ) ;
 
             void
+            track_deleted(
+                  const int64_t&
+            ) ;
+
+            void
             rescan_volumes () ;
 
 #ifdef HAVE_HAL

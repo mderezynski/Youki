@@ -462,6 +462,11 @@ namespace MPX
                   gint64
             ) ;
 
+            void
+            on_library_track_deleted(
+                  gint64
+            ) ;
+
         protected:
     
             bool

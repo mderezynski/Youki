@@ -54,6 +54,7 @@ namespace MPX
 
       , ATTRIBUTE_GENRE
       , ATTRIBUTE_COMMENT
+      , ATTRIBUTE_LABEL
 
       , ATTRIBUTE_MUSICIP_PUID
 

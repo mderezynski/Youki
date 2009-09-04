@@ -53,17 +53,17 @@ namespace MPX
 {
     enum ScanResult
     {
-        SCAN_RESULT_OK,
-        SCAN_RESULT_UPDATE,
-        SCAN_RESULT_UPTODATE
+          SCAN_RESULT_OK
+        , SCAN_RESULT_UPDATE
+        , SCAN_RESULT_UPTODATE
     };
 
     enum EntityType
     {
-        ENTITY_TRACK,
-        ENTITY_ALBUM,
-        ENTITY_ARTIST,
-        ENTITY_ALBUM_ARTIST
+          ENTITY_TRACK
+        , ENTITY_ALBUM
+        , ENTITY_ARTIST
+        , ENTITY_ALBUM_ARTIST
     };
 
     typedef std::pair<std::string, std::string> SSFileInfo;
