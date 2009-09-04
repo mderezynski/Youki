@@ -4,6 +4,7 @@
 #include "mpx/i-youki-theme-engine.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/widgets/cairo-extensions.hh"
+#include "mpx/util-graphics.hh"
 
 namespace MPX
 {
@@ -24,12 +25,12 @@ namespace MPX
         if( cover )
         {
             m_cover = cover->scale_simple( 50, 50 , Gdk::INTERP_HYPER ) ;
-            Glib::RefPtr<Gdk::Pixbuf> tiny = cover->scale_simple( 1, 1 , Gdk::INTERP_NEAREST ) ;
-            guchar * pixels = gdk_pixbuf_get_pixels( GDK_PIXBUF(tiny->gobj()) ) ;
-            m_CurrentColor.set_rgb_p( double(pixels[0])/255., double(pixels[1])/255., double(pixels[2])/255. ) ;
+            m_CurrentColor = Util::get_mean_color_for_pixbuf( cover ) ;
         }
         else
-            m_cover = cover ;
+        {
+            m_cover.reset() ;
+        }
 
         queue_draw () ;
     }
@@ -77,18 +78,16 @@ namespace MPX
         ) ;
         cairo->fill_preserve() ;
 
-        const ThemeColor& c = m_Theme->get_color( THEME_COLOR_SELECT ) ;
-
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
+        cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
 
         cairo->set_source_rgba(
               m_CurrentColor.get_red_p()
             , m_CurrentColor.get_green_p()
             , m_CurrentColor.get_blue_p()
-            , 0.4
+            , 1. 
         ) ;
 
-        cairo->set_line_width( 1. ) ;
+        cairo->set_line_width( 1.5 ) ;
         cairo->stroke() ;
 
         return true ;

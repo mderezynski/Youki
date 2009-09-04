@@ -142,27 +142,35 @@ namespace MPX
         ) ;
 
         volume_bar_back_gradient->add_color_stop_rgba(
-              .35
+              .2
             , c_base_gdk.get_red_p()
             , c_base_gdk.get_green_p()
             , c_base_gdk.get_blue_p()
-            , 0.18 
+            , 0.195 
         ) ;
 
         volume_bar_back_gradient->add_color_stop_rgba(
-              .5
+              .4
             , c_base_gdk.get_red_p()
             , c_base_gdk.get_green_p()
             , c_base_gdk.get_blue_p()
-            , 0.16 
+            , 0.185
+        ) ;
+
+        volume_bar_back_gradient->add_color_stop_rgba(
+              .6
+            , c_base_gdk.get_red_p()
+            , c_base_gdk.get_green_p()
+            , c_base_gdk.get_blue_p()
+            , 0.185
         ) ;
         
         volume_bar_back_gradient->add_color_stop_rgba(
-              .65
+              .9
             , c_base_gdk.get_red_p()
             , c_base_gdk.get_green_p()
             , c_base_gdk.get_blue_p()
-            , 0.18 
+            , 0.195
         ) ;
 
         volume_bar_back_gradient->add_color_stop_rgba(
@@ -271,7 +279,10 @@ namespace MPX
 
         if( m_duration > 0 ) 
         {
-            const ThemeColor& ct = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
+            ThemeColor ct = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
+            ct.a = 0.92 ;
+
+            /// POSITION
 
             const int text_size_px = 10 ;
             const Gtk::Allocation& a = get_allocation() ;
@@ -298,13 +309,20 @@ namespace MPX
                 , r.y 
             ) ;
 
-            cairo->set_source_rgba( 1., 1., 1., 1. ) ;
+            cairo->set_source_rgba(
+                  ct.r
+                , ct.g
+                , ct.b
+                , ct.a
+            ) ;
 
             cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
             pango_cairo_show_layout( cairo->cobj (), layout->gobj () ) ;
 
             if( ( m_duration - m_position ) > 1 )
             {
+                    /// DURATION
+
                     layout->set_markup(
                         (boost::format("<b>%02d</b>:<b>%02d</b>") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
                     ) ;

@@ -522,18 +522,19 @@ namespace MPX
               bool tooltip
         )
 	{
-		if( G_UNLIKELY(!is_realized( )))
-            realize () ;
+		if( G_UNLIKELY(!is_realized( )) )
+        {
+            realize() ;
+        }
 
-        m_update_connection.disconnect() ;
-
-	    m_timer.stop () ;
-	    m_timer.reset () ;
-
-	    window_set_opacity( get_window(), 1.0 ) ;
+        if( is_visible() )
+        {
+            hide() ;
+        }
 
 	    m_tooltip_mode = tooltip ;
 
+	    window_set_opacity( get_window(), 0. ) ;
 	    reposition () ;
 
 	    Window::show () ;
@@ -615,11 +616,11 @@ namespace MPX
 	{
 		Window::on_unmap () ;
 
-		if( !m_tooltip_mode )
+		if( m_update_connection ) 
 		{
-			m_update_connection.disconnect () ;
-			m_timer.stop () ;
-			m_timer.reset () ;
+			m_update_connection.disconnect() ;
+			m_timer.stop() ;
+			m_timer.reset() ;
 		}
 	}
 

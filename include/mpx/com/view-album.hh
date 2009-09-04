@@ -433,43 +433,14 @@ namespace Albums
                         , year
                         , label
                     ) ;
-
-                    regen_mapping() ;
                 }
                 
-                virtual void
-                append_album_quiet(
-                      Cairo::RefPtr<Cairo::ImageSurface>        surface
-                    , gint64                                    id_album
-                    , gint64                                    id_artist
-                    , const std::string&                        album
-                    , const std::string&                        album_artist
-                    , const std::string&                        mbid
-                    , const std::string&                        type
-                    , const std::string&                        year
-                    , const std::string&                        label
-                )
-                {
-                    DataModel::append_album(
-                          surface
-                        , id_album
-                        , id_artist
-                        , album
-                        , album_artist
-                        , mbid
-                        , type
-                        , year
-                        , label
-                    ) ;
-                }
-
                 void
                 erase_album(
                       gint64 id_album
                 )
                 {
                     DataModel::erase_album( id_album );
-                    regen_mapping();
                 }
 
                 virtual void
@@ -496,8 +467,6 @@ namespace Albums
                         , year
                         , label
                     ) ;
-
-                    regen_mapping() ;
                 }
 
                 virtual void
@@ -522,40 +491,42 @@ namespace Albums
                     m_position = 0 ;
     
                     Model_t::iterator i = m_realmodel->begin() ;
-                    new_mapping.push_back( i++ ) ;
+                    new_mapping.resize( m_realmodel->size() ) ;
+                    std::size_t n = 0 ;
+
+                    new_mapping[n++]= i++ ;
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
-                            int truth = 
-                                        (!m_constraints_album  || m_constraints_album->count( get<1>(*i)) )
-                                                                        &&
-                                        (!m_constraints_artist || m_constraints_artist->count( get<2>(*i)) )
-                            ; 
+                        int truth = 
+                                    (!m_constraints_album  || m_constraints_album->count( get<1>(*i)) )
+                                                                    &&
+                                    (!m_constraints_artist || m_constraints_artist->count( get<2>(*i)) )
+                        ; 
 
-                            if( truth )
+                        if( truth )
+                        {
+                            new_mapping[n++] = i ;
+
+                            if( id_cur && get<1>(*i) == id_cur.get() )
                             {
-                                new_mapping.push_back( i ) ;
-
-                                if( id_cur && get<1>(*i) == id_cur.get() )
-                                {
-                                    m_position = new_mapping.size()  - 1 ;
-                                }
-
-                                if( id_sel && get<1>(*i) == id_sel.get() )
-                                {
-                                    m_selected = id_sel ; 
-                                    m_selected_row = new_mapping.size()  - 1 ;
-                                }
+                                m_position = new_mapping.size() - 1 ;
                             }
-                       }
+
+                            if( id_sel && get<1>(*i) == id_sel.get() )
+                            {
+                                m_selected = id_sel ; 
+                                m_selected_row = new_mapping.size() - 1 ;
+                            }
+                        }
+                    }
+                
+                    new_mapping.resize( n ) ;
 
                     if( new_mapping != m_mapping )
                     {
-                        Row_t& row = *(m_realmodel->begin()) ;
-                        std::size_t sz = new_mapping.size() - 1 ;
-                        get<4>(row) = (boost::format(_("<b>%lld %s</b>")) % sz % ((sz > 1) ? _("Albums") : _("Album"))).str() ;
-
                         std::swap( new_mapping, m_mapping ) ;
+                        update_count() ;
 
                         if( !m_selected )
                         {
@@ -564,6 +535,15 @@ namespace Albums
 
                         m_changed.emit( m_position, m_mapping.size() != new_mapping.size() );
                     }                
+                }
+
+                void
+                update_count(
+                )
+                {
+                    Row_t& row = **m_mapping.begin() ;
+                    std::size_t model_size = m_mapping.size()-1 ;
+                    get<4>(row) = (boost::format(_("<b>%lld %s</b>")) % model_size % ((model_size > 1) ? _("Albums") : _("Album"))).str() ;
                 }
         };
 
@@ -722,10 +702,10 @@ namespace Albums
                             if( s )
                             {
                                 cairo->set_source_rgba(
-                                      .2 
-                                    , .2 
-                                    , .2 
-                                    , 1.
+                                      0.3 
+                                    , 0.3
+                                    , 0.3
+                                    , 0.5
                                 ) ; 
 
                                 RoundedRectangle(
@@ -737,7 +717,7 @@ namespace Albums
                                     , 4.
                                 ) ;
 
-                                cairo->set_line_width( 0.5 ) ;
+                                cairo->set_line_width( .75 ) ;
                                 cairo->stroke() ;
                             }
                     }
@@ -1462,7 +1442,7 @@ namespace Albums
                       std::size_t row
                 )
                 {
-                    if( m_visible_height && m_row_height )
+                    if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
                     {
                         Limiter<std::size_t> d ( 
                               Limiter<std::size_t>::ABS_ABS

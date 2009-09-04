@@ -41,89 +41,158 @@ namespace MPX
   namespace Util
   {
     Glib::RefPtr<Gdk::Pixbuf>
-    get_image_from_uri   (const std::string&);
+    get_image_from_uri(
+          const std::string&
+    ) ;
 
     void
-    window_set_busy      (GtkWindow* window);
+    window_set_busy(
+          GtkWindow*
+    ) ;
 
     void
-    window_set_idle      (GtkWindow* window);
+    window_set_idle(
+          GtkWindow*
+    ) ;
 
     void
-    window_set_busy      (Gtk::Window & window);
+    window_set_busy(
+          Gtk::Window&
+    ) ;
 
     void
-    window_set_idle      (Gtk::Window & window);
+    window_set_idle(
+          Gtk::Window&
+    ) ;
 
     double
-    screen_get_resolution   (Glib::RefPtr<Gdk::Screen> const& screen);
+    screen_get_resolution(
+          Glib::RefPtr<Gdk::Screen>
+    ) ;
 
     double
-    screen_get_x_resolution (Glib::RefPtr<Gdk::Screen> const& screen);
+    screen_get_x_resolution(
+          Glib::RefPtr<Gdk::Screen>
+    ) ;
 
     double
-    screen_get_y_resolution (Glib::RefPtr<Gdk::Screen> const& screen);
+    screen_get_y_resolution(
+          Glib::RefPtr<Gdk::Screen>
+    ) ;
 
     void
-    color_to_rgba (Gdk::Color const& color,
-                   double&           r,
-                   double&           g,
-                   double&           b,
-                   double&           a);
+    color_to_rgba(
+          const Gdk::Color&
+        , double& /*r*/
+        , double& /*g*/
+        , double& /*b*/
+        , double& /*a*/
+    ) ;
 
     Gdk::Color
-    color_adjust_brightness(Gdk::Color const& base, double br);
+    color_adjust_brightness(
+          const Gdk::Color&
+        , double /*brightness*/
+    ) ;
 
     Gdk::Color
-    color_shade(Gdk::Color const& base, double ratio);
+    color_shade(
+          const Gdk::Color&
+        , double /*ratio*/
+    ) ;
 
     Gdk::Color
-    color_from_hsb(double hue, double saturation, double brightness);
+    color_from_hsb(
+          double /*hue*/
+        , double /*saturation*/
+        , double /*brightness*/
+    ) ;
 
     void
     color_to_hsb(
-        Gdk::Color const& color,
-        double & hue,
-        double & saturation,
-        double & brightness
+          const Gdk::Color&
+        , double & /*hue*/
+        , double & /*saturation*/
+        , double & /*brightness*/
     );
 
 
     Cairo::RefPtr<Cairo::ImageSurface>
-    cairo_image_surface_from_pixbuf (Glib::RefPtr<Gdk::Pixbuf>);
+    cairo_image_surface_from_pixbuf(
+          Glib::RefPtr<Gdk::Pixbuf>
+    ) ;
 
     Glib::RefPtr<Gdk::Pixbuf>
-    cairo_image_surface_to_pixbuf (Cairo::RefPtr<Cairo::ImageSurface>);
+    cairo_image_surface_to_pixbuf(
+          Cairo::RefPtr<Cairo::ImageSurface>
+    ) ;
 
     void
-    cairo_rounded_rect (Cairo::RefPtr<Cairo::Context>& cr,
-                        double                         x,
-                        double                         y,
-                        double                         width,
-                        double                         height,
-                        double                         radius);
+    cairo_rounded_rect(
+          Cairo::RefPtr<Cairo::Context>
+         , double /*x*/
+         , double /*y*/
+         , double /*width*/
+         , double /*height*/
+         , double /*radius*/
+    ) ;
 
     Cairo::RefPtr<Cairo::ImageSurface>
-    cairo_image_surface_scale (Cairo::RefPtr<Cairo::ImageSurface> source, double width, double height);
+    cairo_image_surface_scale(
+          Cairo::RefPtr<Cairo::ImageSurface>    /*source*/
+        , double                                /*width*/
+        , double                                /*height*/
+    ) ;
 
     Cairo::RefPtr<Cairo::ImageSurface>
-    cairo_image_surface_round (Cairo::RefPtr<Cairo::ImageSurface> source, double radius);
+    cairo_image_surface_round(
+          Cairo::RefPtr<Cairo::ImageSurface>    /*source*/
+        , double                                /*radius*/
+    ) ;
 
     void 
-    cairo_image_surface_border (Cairo::RefPtr<Cairo::ImageSurface> & source, double width, double r = 0., double g = 0., double b = 0., double a = 1.);
+    cairo_image_surface_border(
+          Cairo::RefPtr<Cairo::ImageSurface>    /*source*/
+        , double                                /*width*/
+        , double                                r = 0.
+        , double                                g = 0.
+        , double                                b = 0.
+        , double                                a = 1.
+    ) ;
 
     void 
-    cairo_image_surface_rounded_border (Cairo::RefPtr<Cairo::ImageSurface> & source, double width, double radius, double r = 0., double g = 0., double b = 0., double a = 1.);
+    cairo_image_surface_rounded_border(
+          Cairo::RefPtr<Cairo::ImageSurface>    /*source*/
+        , double                                /*width*/
+        , double                                /*radius*/
+        , double                                r = 0.
+        , double                                g = 0.
+        , double                                b = 0.
+        , double                                a = 1.
+    ) ;
 
     Cairo::RefPtr<Cairo::ImageSurface>
-    cairo_image_surface_overlay (Cairo::RefPtr<Cairo::ImageSurface> source, Cairo::RefPtr<Cairo::ImageSurface> overlay, double x, double y, double alpha = 1.); 
+    cairo_image_surface_overlay(
+          Cairo::RefPtr<Cairo::ImageSurface>    /*source*/
+        , Cairo::RefPtr<Cairo::ImageSurface>    /*overlay*/
+        , double                                /*x*/
+        , double                                /*y*/
+        , double                                alpha = 1.
+    ) ; 
 
     void
-    draw_cairo_image (Cairo::RefPtr<Cairo::Context> const&      cr,
-                      Cairo::RefPtr<Cairo::ImageSurface> const& image,
-                      double                                    x,
-                      double                                    y,
-                      double                                    alpha);
+    draw_cairo_image(
+          Cairo::RefPtr<Cairo::Context>         /*cairo context*/
+        , Cairo::RefPtr<Cairo::ImageSurface>    /*image*/
+        , double                                /*x*/
+        , double                                /*y*/
+        , double                                /*alpha*/
+    ) ;
+
+    Gdk::Color
+    get_mean_color_for_pixbuf(
+          Glib::RefPtr<Gdk::Pixbuf>
+    ) ;
   } // Util
 } // MPX
 

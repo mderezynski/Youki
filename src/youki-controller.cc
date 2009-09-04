@@ -333,36 +333,8 @@ namespace MPX
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
 
         m_ListViewTracks        = Gtk::manage( new View::Tracks::Class ) ;
-        m_ListViewTracks->signal_track_activated().connect(
-            sigc::mem_fun(
-                      *this
-                    , &YoukiController::on_list_view_tr_track_activated
-        )) ;
-        m_ListViewTracks->signal_find_propagate().connect(
-            sigc::mem_fun(
-                      *this
-                    , &YoukiController::on_list_view_tr_find_propagate
-        )) ;
-
         m_ListViewArtist        = Gtk::manage( new View::Artist::Class ) ;
-        m_conn1 = m_ListViewArtist->signal_selection_changed().connect(
-            sigc::mem_fun(
-                  *this
-                , &YoukiController::on_list_view_aa_selection_changed
-        )) ;
-
-        m_ListViewArtist->signal_find_accepted().connect(
-            sigc::mem_fun(
-                  *m_ListViewTracks
-                , &Gtk::Widget::grab_focus
-        )) ;
-
         m_ListViewAlbums        = Gtk::manage( new View::Albums::Class ) ;
-        m_conn2 = m_ListViewAlbums->signal_selection_changed().connect(
-            sigc::mem_fun(
-                  *this
-                , &YoukiController::on_list_view_ab_selection_changed
-        )) ;
 
         m_ScrolledWinArtist = Gtk::manage( new RoundedScrolledWindow ) ;
         m_ScrolledWinAlbums = Gtk::manage( new RoundedScrolledWindow ) ;
@@ -390,7 +362,7 @@ namespace MPX
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
         m_cover = Gtk::manage( new KoboCover ) ;
-        m_cover->set_size_request( 52, 52 ) ;
+        m_cover->set_size_request( 54, 52 ) ;
 
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(
@@ -481,7 +453,7 @@ namespace MPX
                 {
                         SQL::Row & r = *i;
                         try{
-                            private_->FilterModelTracks->append_track_quiet(r, (*(m_library->sqlToTrack(r, true, false ).get()))) ;
+                            private_->FilterModelTracks->append_track(r, (*(m_library->sqlToTrack(r, true, false ).get()))) ;
                         } catch( Library::FileQualificationError )
                         {
                         }
@@ -538,7 +510,7 @@ namespace MPX
 
                 m_ListViewArtist->append_column(c1) ;
 
-                private_->FilterModelArtist->append_artist_quiet("<b>Empty</b>",-1);
+                private_->FilterModelArtist->append_artist("<b>Empty</b>",-1);
 
                 SQL::RowV v ;
                 m_library->getSQL(v, (boost::format("SELECT * FROM album_artist")).str()) ; 
@@ -547,7 +519,7 @@ namespace MPX
                 {
                     SQL::Row & r = *i;
 
-                    private_->FilterModelArtist->append_artist_quiet(
+                    private_->FilterModelArtist->append_artist(
                           RowGetArtistName( r )
                         , boost::get<gint64>(r["id"])
                     ) ;
@@ -568,7 +540,7 @@ namespace MPX
 
                 m_ListViewAlbums->append_column( c1 ) ;
 
-                private_->FilterModelAlbums->append_album_quiet(
+                private_->FilterModelAlbums->append_album(
                       Cairo::RefPtr<Cairo::ImageSurface>(0) 
                     , -1
                     , -1
@@ -591,7 +563,6 @@ namespace MPX
                     SQL::Row & r = *i;
 
                     Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
-                    Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
 
                     c->fetch(
                           get<std::string>(r["mb_album_id"])
@@ -599,12 +570,14 @@ namespace MPX
                         , 64
                     ) ;
                    
+                    Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
+
                     if( cover_pb ) 
                     {
                         cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
                     }
      
-                    private_->FilterModelAlbums->append_album_quiet(
+                    private_->FilterModelAlbums->append_album(
                           cover_is
                         , get<gint64>(r["id"])
                         , get<gint64>(r["album_artist_id"])
@@ -622,6 +595,39 @@ namespace MPX
                 m_ScrolledWinAlbums->add( *m_ListViewAlbums ) ;
                 m_ScrolledWinAlbums->show_all() ;
         }
+
+        private_->FilterModelArtist->regen_mapping() ;
+        private_->FilterModelAlbums->regen_mapping() ;
+        private_->FilterModelTracks->regen_mapping() ;
+
+        m_ListViewTracks->signal_track_activated().connect(
+            sigc::mem_fun(
+                      *this
+                    , &YoukiController::on_list_view_tr_track_activated
+        )) ;
+        m_ListViewTracks->signal_find_propagate().connect(
+            sigc::mem_fun(
+                      *this
+                    , &YoukiController::on_list_view_tr_find_propagate
+        )) ;
+
+        m_conn1 = m_ListViewArtist->signal_selection_changed().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_list_view_aa_selection_changed
+        )) ;
+
+        m_ListViewArtist->signal_find_accepted().connect(
+            sigc::mem_fun(
+                  *m_ListViewTracks
+                , &Gtk::Widget::grab_focus
+        )) ;
+
+        m_conn2 = m_ListViewAlbums->signal_selection_changed().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_list_view_ab_selection_changed
+        )) ;
 
         m_Entry->signal_key_press_event().connect(
             sigc::mem_fun(
@@ -671,12 +677,6 @@ namespace MPX
 
         m_HBox_Bottom->show_all() ;
 
-/*
-        m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
-        m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
-        m_VBox->pack_start( *m_main_spectrum, false, false, 0 ) ;
-*/
-
         m_control_status_icon = new YoukiControllerStatusIcon ;
         m_control_status_icon->signal_clicked().connect(
             sigc::mem_fun(
@@ -693,12 +693,6 @@ namespace MPX
                   *this
                 , &YoukiController::on_status_icon_scroll_down
         )) ;
-
-        private_->FilterModelTracks->regen_mapping() ;
-        private_->FilterModelAlbums->regen_mapping() ;
-        private_->FilterModelArtist->regen_mapping() ;
-
-        on_entry_clear_clicked() ;
     }
 
     YoukiController::~YoukiController ()
@@ -731,7 +725,6 @@ namespace MPX
         const ThemeColor& c_bg   = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
         const ThemeColor& c_base = theme->get_color( THEME_COLOR_BASE ) ; 
         const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ;
-        const ThemeColor& c_sel  = theme->get_color( THEME_COLOR_SELECT ) ;
 
         Gdk::Color c ;
         c.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
@@ -844,7 +837,6 @@ namespace MPX
     {
         push_new_tracks() ;
         private_->FilterModelTracks->enable_fragment_cache() ;
-        private_->FilterModelTracks->regen_mapping() ;
     }
 
     void
@@ -868,18 +860,18 @@ namespace MPX
         const std::string& mbid = get<std::string>(r["mb_album_id"]) ;
 
         Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
-        Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
 
         services->get<Covers>("mpx-service-covers")->fetch(
               mbid
             , cover_pb
+            , 64
         ) ;
-       
+
+        Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
+
         if( cover_pb ) 
         {
-            cover_is = Util::cairo_image_surface_from_pixbuf(
-                cover_pb->scale_simple( 52, 52, Gdk::INTERP_BILINEAR )
-            ) ;
+            cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
         }
         
         private_->FilterModelAlbums->insert_album(
@@ -943,6 +935,9 @@ namespace MPX
         }
 
         m_new_tracks.clear() ;
+
+        private_->FilterModelArtist->regen_mapping() ;
+        private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelTracks->regen_mapping() ;
     }
 

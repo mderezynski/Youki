@@ -626,20 +626,12 @@ namespace Tracks
                 append_track(SQL::Row& r, const MPX::Track& track)
                 {
                     DataModel::append_track(r, track);
-                    regen_mapping();
-                }
-
-                virtual void
-                append_track_quiet(SQL::Row& r, const MPX::Track& track)
-                {
-                    DataModel::append_track(r, track);
                 }
 
                 void
                 erase_track(gint64 id)
                 {
                     DataModel::erase_track( id );
-                    regen_mapping();
                 }
 
                 virtual void
@@ -2632,20 +2624,23 @@ namespace Tracks
                       std::size_t row
                 )
                 {
-                    Limiter<std::size_t> d ( 
-                          Limiter<std::size_t>::ABS_ABS
-                        , 0
-                        , m_model->m_mapping.size() - get_page_size()
-                        , row 
-                    ) ;
+                    if( m_visible_height && m_row_height )
+                    {
+                        Limiter<std::size_t> d ( 
+                              Limiter<std::size_t>::ABS_ABS
+                            , 0
+                            , m_model->m_mapping.size() - get_page_size()
+                            , row 
+                        ) ;
 
-                    if( m_model->m_mapping.size() < get_page_size()) 
-                        m_prop_vadj.get_value()->set_value( 0 ) ; 
-                    else
-                    if( row > (m_model->m_mapping.size() - get_page_size()) )
-                        m_prop_vadj.get_value()->set_value( m_model->m_mapping.size() - get_page_size() ) ; 
-                    else
-                        m_prop_vadj.get_value()->set_value( d ) ; 
+                        if( m_model->m_mapping.size() < get_page_size()) 
+                            m_prop_vadj.get_value()->set_value( 0 ) ; 
+                        else
+                        if( row > (m_model->m_mapping.size() - get_page_size()) )
+                            m_prop_vadj.get_value()->set_value( m_model->m_mapping.size() - get_page_size() ) ; 
+                        else
+                            m_prop_vadj.get_value()->set_value( d ) ; 
+                    }
                 }
 
                 void
