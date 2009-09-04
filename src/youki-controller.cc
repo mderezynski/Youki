@@ -1435,9 +1435,12 @@ namespace MPX
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
         private_->FilterModelTracks->set_filter( m_Entry->get_text() ) ;
+
         private_->FilterModelArtist->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;
         private_->FilterModelArtist->regen_mapping() ;
+
         private_->FilterModelAlbums->set_constraints_albums( private_->FilterModelTracks->m_constraints_albums ) ;
+        private_->FilterModelAlbums->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;
         private_->FilterModelAlbums->regen_mapping() ;
     }
 

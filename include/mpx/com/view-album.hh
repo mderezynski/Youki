@@ -496,6 +496,9 @@ namespace Albums
 
                     new_mapping[n++]= i++ ;
 
+                    g_message("Albums constraints: %d", int(bool(m_constraints_album))) ;
+                    g_message("Artist constraints: %d", int(bool(m_constraints_artist))) ;
+
                     for( ; i != m_realmodel->end(); ++i )
                     {
                         int truth = 

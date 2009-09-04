@@ -589,7 +589,6 @@ namespace Tracks
                 )
                 {
                     m_constraints_ext.clear() ;
-                    scan_active() ;
                 }
 
                 virtual std::size_t 
