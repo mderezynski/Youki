@@ -227,9 +227,6 @@ namespace MPX
             Gtk::VBox                       * m_VBox_Bottom ;
             
             Gtk::Entry                      * m_Entry ;
-            Glib::ustring                     m_EntryText ;
-            Glib::ustring                     m_prediction ;
-            Glib::ustring                     m_prediction_last ;
 
             KoboCover                       * m_cover ;
 
@@ -238,9 +235,6 @@ namespace MPX
             Gtk::HBox                       * m_HBox_Info ;
             Gtk::HBox                       * m_HBox_Controls ;
             Gtk::Label                      * m_Label_Search ;
-
-            Glib::Timer                       m_completion_timer ;
-            bool                              m_predicted ;
 
             Gtk::VBox                       * m_VBox ;
 
@@ -266,8 +260,6 @@ namespace MPX
                                             , m_conn3
                                             , m_conn4
                                             , m_conn5 ;
-
-            sigc::connection                  m_conn_completion ;
 
             guint                             m_C_SIG_ID_track_new ;
             guint                             m_C_SIG_ID_track_out ;
@@ -351,11 +343,7 @@ namespace MPX
             ) ;
 
             void
-            on_entry_changed__update_completion(
-            ) ;
-
-            void
-            on_entry_changed__process_filtering(
+            on_entry_changed(
             ) ;
 
             void
@@ -373,10 +361,6 @@ namespace MPX
 
             void
             on_entry_activated(
-            ) ;
-
-            bool
-            completion_timer_check(
             ) ;
 
             void
@@ -469,12 +453,6 @@ namespace MPX
 
         protected:
     
-            bool
-            on_completion_match(
-                  const Glib::ustring&
-                , const Gtk::TreeIter&
-            ) ;
-
             void
             initiate_quit() ;
 

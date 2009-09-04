@@ -1062,6 +1062,8 @@ namespace Artist
                         select_row( row.get(), quiet ) ; 
                         m_prop_vadj.get_value()->set_value( row.get() ) ; 
                     }
+
+                    queue_draw() ;
                 }
 
                 static gboolean

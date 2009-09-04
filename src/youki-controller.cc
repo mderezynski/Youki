@@ -15,8 +15,6 @@
 #include "mpx/com/view-album.hh"
 #include "mpx/com/view-tracks.hh"
 
-#include "mpx/algorithm/youki-markov-predictor.hh"
-
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/widgets/rounded-alignment.hh"
 #include "mpx/widgets/percentual-distribution-hbox.hh"
@@ -134,13 +132,6 @@ namespace MPX
         View::Artist::DataModelFilter_SP_t  FilterModelArtist ;
         View::Albums::DataModelFilter_SP_t  FilterModelAlbums ;
         View::Tracks::DataModelFilter_SP_t  FilterModelTracks ;
-
-        boost::shared_ptr<MarkovTypingPredictor> MarkovPredictor ;
-
-        Private ()
-        : MarkovPredictor( new MarkovTypingPredictor )
-        {
-        }
     } ;
 
     YoukiController::YoukiController(
@@ -314,21 +305,6 @@ namespace MPX
                     , &YoukiController::on_entry_clear_clicked
         )))) ;
 
-/*
-        m_checkbutton_advanced_label = Gtk::manage( new Gtk::Label(_("Advanced"))) ;
-
-        m_checkbutton_advanced = Gtk::manage( new Gtk::CheckButton) ;
-        m_checkbutton_advanced->add( *m_checkbutton_advanced_label ) ;
-        m_checkbutton_advanced->signal_toggled().connect(
-            sigc::mem_fun(
-                  *this
-                , &YoukiController::on_advanced_changed
-        )) ;
-*/
-
-        m_completion_timer.stop() ;
-        m_completion_timer.reset() ;
-
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
 
@@ -488,16 +464,10 @@ namespace MPX
                 m_ScrolledWinTracks->add( *m_ListViewTracks ) ;
                 m_ScrolledWinTracks->show_all() ;
 
-                m_conn3 = m_Entry->signal_changed().connect(
-                    sigc::mem_fun(
-                          *this
-                        , &YoukiController::on_entry_changed__update_completion
-                )) ;
-
                 m_conn4 = m_Entry->signal_changed().connect(
                     sigc::mem_fun(
                           *this
-                        , &YoukiController::on_entry_changed__process_filtering
+                        , &YoukiController::on_entry_changed
                 )) ;
         }
 
@@ -1197,12 +1167,6 @@ namespace MPX
                     , boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_ALBUM_ID].get())
                     , time(NULL)
                 ) ;
-
-/*
-                private_->MarkovPredictor->process_string(
-                      boost::get<std::string>(m_track_previous.get()[ATTRIBUTE_ALBUM_ARTIST].get())
-                ) ;
-*/
                 m_track_previous.reset() ;
         }
 
@@ -1250,7 +1214,6 @@ namespace MPX
           const std::string&    text
     )
     {
-        m_EntryText.clear() ;
         m_Entry->set_text( (boost::format("title %% \"%s\"") % text).str() ) ;
     }
 
@@ -1335,17 +1298,7 @@ namespace MPX
     YoukiController::on_entry_activated(
     )
     {
-        if( m_prediction_last.length() )
-        {
-            m_conn3.block() ;
-            m_conn4.block() ;
-            m_EntryText += m_prediction_last ;
-            m_Entry->select_region( -1, -1 ) ;
-            m_conn3.unblock() ;
-            m_conn4.unblock() ;
-        }
-
-        on_entry_changed__process_filtering() ;
+        on_entry_changed() ;
     }
 
     bool
@@ -1368,6 +1321,8 @@ namespace MPX
                         return true ;
                     }
                 }
+
+                break ;
             }
 
             case GDK_BackSpace:
@@ -1378,6 +1333,48 @@ namespace MPX
                     on_entry_clear_clicked() ;
                     return true ;
                 }
+
+                break ;
+            }
+
+            case GDK_c:
+            case GDK_C:
+            {
+                if( event->state & GDK_CONTROL_MASK )  
+                { 
+                    m_Entry->set_text( "" ) ;
+                   return true ;
+                }
+
+                break ;
+            }
+
+            case GDK_w:
+            case GDK_W:
+            {
+                if( event->state & GDK_CONTROL_MASK )  
+                {
+                    Glib::ustring text = m_Entry->get_text() ;
+
+                    if( text.rfind(' ') != Glib::ustring::npos ) 
+                    {
+                        text = text.substr( 0, text.rfind(' ')) ;
+                    }
+
+                    else
+
+                    if( !text.empty() )    
+                    {
+                        text.clear() ;
+                    }
+
+                    m_Entry->set_text( text ) ;
+                    m_Entry->set_position( -1 ) ;
+
+                    return true ;
+                }
+
+                break ;
             }
 
             default: break ;
@@ -1395,8 +1392,7 @@ namespace MPX
         private_->FilterModelArtist->clear_constraints_artist() ;
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
-        m_EntryText = "" ;
-        m_Entry->set_text( m_EntryText ) ;
+        m_Entry->set_text( "" ) ;
 
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelArtist->regen_mapping() ;
@@ -1430,104 +1426,15 @@ namespace MPX
         }
     }
 
-    bool
-    YoukiController::completion_timer_check(
-    ) 
-    {
-        if( m_completion_timer.elapsed() > 0.15 ) 
-        {
-            m_completion_timer.stop() ;
-            m_completion_timer.reset() ;
-
-            m_conn3.block() ;
-            m_conn4.block() ;
-
-            m_prediction_last = m_prediction ;
-            m_prediction.clear() ;
-
-            m_Entry->set_text( m_EntryText + m_prediction_last ) ; 
-            m_Entry->select_region( m_EntryText.length(), -1 ) ;
-
-            m_conn3.unblock() ;
-            m_conn4.unblock() ;
-
-            return false ;
-        }
-        if( m_completion_timer.elapsed() < 0 ) 
-            return false ;
-
-        return true ;
-    }
-
     void
-    YoukiController::on_entry_changed__update_completion()
-    {
-/*
-        m_completion_timer.stop() ;
-        m_completion_timer.reset() ;
-*/
-
-        Glib::ustring text = m_Entry->get_text() ;
-
-        if( text.size() > 0 )
-        {
-/*
-            if( text == m_EntryText + m_prediction_last ) 
-            {
-                return ;
-            }
-
-            Glib::ustring new_prediction = private_->MarkovPredictor->predict( text ) ;
-
-            if( text == m_EntryText && new_prediction == m_prediction_last ) 
-            {
-                m_prediction.clear() ;
-                m_prediction_last.clear() ;
-                return ;
-            }
-*/
-
-            m_EntryText = text ; 
-//            m_Entry->set_text( m_EntryText ) ;  // FIXME temp
-
-/*
-            m_prediction = new_prediction ; 
-*/
-
-/*
-            if( !m_prediction.empty() && !m_conn_completion ) 
-            {
-                m_conn_completion = Glib::signal_timeout().connect(
-                    sigc::mem_fun(
-                          *this
-                        , &YoukiController::completion_timer_check
-                    )
-                    , 50
-                ) ;
-            }
-
-            m_completion_timer.start() ;
-*/
-        }
-        else
-        {
-            m_EntryText.clear() ;
-/*
-            m_prediction.clear() ;
-            m_prediction_last.clear() ;
-*/
-        }
-    }
-
-    void
-    YoukiController::on_entry_changed__process_filtering(
+    YoukiController::on_entry_changed(
     )
     {
         m_ListViewAlbums->clear_selection() ;
         m_ListViewArtist->clear_selection() ;
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
-        private_->FilterModelTracks->set_filter( m_EntryText ) ;
+        private_->FilterModelTracks->set_filter( m_Entry->get_text() ) ;
         private_->FilterModelArtist->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;
         private_->FilterModelArtist->regen_mapping() ;
         private_->FilterModelAlbums->set_constraints_albums( private_->FilterModelTracks->m_constraints_albums ) ;
