@@ -495,13 +495,11 @@ namespace Tracks
                 boost::optional<gint64>     m_local_active_track ;
                 IdSet_sp                    m_constraints_albums ;
                 IdSet_sp                    m_constraints_artist ;
-                bool                        m_advanced ;
                 bool                        m_cache_enabled ;
 
                 DataModelFilter( DataModel_SP_t& model )
 
                     : DataModel( model->m_realmodel )
-                    , m_advanced( true )
                     , m_cache_enabled( true )
 
                 {
@@ -701,61 +699,24 @@ namespace Tracks
                     using boost::algorithm::is_any_of;
                     using boost::algorithm::find_first;
 
-                    if( !m_advanced )
+                    AQE::Constraints_t aqe = m_constraints_aqe ;
+
+                    m_constraints_aqe.clear() ;
+                    m_frags.clear() ;
+
+                    AQE::parse_advanced_query( m_constraints_aqe, text, m_frags ) ;
+
+                    bool aqe_diff = m_constraints_aqe != aqe ;
+
+                    if( !aqe_diff && ( text.substr( 0, text.size() - 1 ) == m_current_filter ) )
                     {
-                        m_frags.clear() ;
-
-                        if( !text.empty() ) 
-                        {
-                            std::string text_lc = Glib::ustring(text).lowercase() ;
-                            split( m_frags, text_lc, is_any_of(" ") );
-                        }
-
-                        if( !m_current_filter.empty() && (text.substr(0, text.size()-1) == m_current_filter) ) 
-                        {
-                            m_current_filter = text ; 
-                            regen_mapping_iterative() ;
-                        }
-                        else
-                        {
-                            m_current_filter = text ; 
-                            regen_mapping() ;
-                        }
+                        m_current_filter = text ;
+                        regen_mapping_iterative() ;
                     }
                     else
                     {
-                        AQE::Constraints_t aqe = m_constraints_aqe ;
-
-                        m_constraints_aqe.clear() ;
-                        m_frags.clear() ;
-
-                        AQE::parse_advanced_query( m_constraints_aqe, text, m_frags ) ;
-
-                        bool aqe_diff = m_constraints_aqe != aqe ;
-
-                        if( !aqe_diff && ( text.substr( 0, text.size() - 1 ) == m_current_filter ) )
-                        {
-                            m_current_filter = text ;
-                            regen_mapping_iterative() ;
-                        }
-                        else
-                        {
-                            m_current_filter = text ;
-                            regen_mapping() ;
-                        }
-                    }
-                }
-
-                virtual void
-                set_advanced(
-                      bool advanced
-                )
-                {
-                    m_advanced = advanced ;
-
-                    if( !advanced )
-                    {
-                        m_constraints_aqe.clear() ;
+                        m_current_filter = text ;
+                        regen_mapping() ;
                     }
                 }
 
@@ -1227,8 +1188,8 @@ namespace Tracks
                             }
                         }
 
-                        new_mapping.resize( output->size() ) ;
-                        new_mapping_unfiltered.resize( output->size() ) ;
+                        new_mapping.resize( m_realmodel->size() ) ;
+                        new_mapping_unfiltered.resize( m_realmodel->size() ) ; 
 
                         std::size_t n = 0 ;
                         std::size_t u = 0 ;
@@ -1266,7 +1227,7 @@ namespace Tracks
                         }
 
                         new_mapping.resize( n ) ;
-                        new_mapping_unfiltered.resize( n ) ;
+                        new_mapping_unfiltered.resize( u ) ;
                     }
 
                     std::swap( new_mapping, m_mapping ) ;
@@ -2579,12 +2540,6 @@ namespace Tracks
                 signal_find_propagate()
                 {
                     return m_SIGNAL_find_propagate ;
-                }
-
-                void
-                set_advanced (bool advanced)
-                {
-                    m_model->set_advanced(advanced) ;
                 }
 
                 void

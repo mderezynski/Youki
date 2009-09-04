@@ -117,20 +117,65 @@ namespace MPX
         const ThemeColor& c = theme->get_color( THEME_COLOR_SELECT ) ;
 
         Gdk::Color cgdk ;
-        cgdk.set_rgb_p( c.r, c.g, c.b ) ;
-
         double h, s, b ;
 
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ;
         Util::color_to_hsb( cgdk, h, s, b ) ;
+
         Gdk::Color c_base_gdk = Util::color_from_hsb( h, s, b ) ;
 
-        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
-        cairo->set_source_rgba(
-              c_base_gdk.get_red_p()
+        // BAR BACKGROUND
+
+        Cairo::RefPtr<Cairo::LinearGradient> volume_bar_back_gradient = Cairo::LinearGradient::create(
+              a.get_width() / 2 
+            , 1 
+            , a.get_width() / 2 
+            , 14
+        ) ;
+
+        volume_bar_back_gradient->add_color_stop_rgba(
+              0. 
+            , c_base_gdk.get_red_p()
             , c_base_gdk.get_green_p()
             , c_base_gdk.get_blue_p()
             , 0.2 
         ) ;
+
+        volume_bar_back_gradient->add_color_stop_rgba(
+              .35
+            , c_base_gdk.get_red_p()
+            , c_base_gdk.get_green_p()
+            , c_base_gdk.get_blue_p()
+            , 0.18 
+        ) ;
+
+        volume_bar_back_gradient->add_color_stop_rgba(
+              .5
+            , c_base_gdk.get_red_p()
+            , c_base_gdk.get_green_p()
+            , c_base_gdk.get_blue_p()
+            , 0.16 
+        ) ;
+        
+        volume_bar_back_gradient->add_color_stop_rgba(
+              .65
+            , c_base_gdk.get_red_p()
+            , c_base_gdk.get_green_p()
+            , c_base_gdk.get_blue_p()
+            , 0.18 
+        ) ;
+
+        volume_bar_back_gradient->add_color_stop_rgba(
+              1. 
+            , c_base_gdk.get_red_p()
+            , c_base_gdk.get_green_p()
+            , c_base_gdk.get_blue_p()
+            , 0.2 
+        ) ;
+
+        cairo->set_source( volume_bar_back_gradient ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+
         RoundedRectangle(
               cairo
             , 1 
@@ -140,6 +185,8 @@ namespace MPX
             , 2.
         ) ;
         cairo->fill () ;
+
+        // BAR
 
         double factor       = 1. ;
         gint64 position     = m_clicked ? m_seek_position : m_position ;

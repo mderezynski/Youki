@@ -283,7 +283,9 @@ namespace MPX
         )
 	{
 		if( event->button == 1 )
-			disappear () ;
+        {
+            hide() ;
+        }
 
 		return false ;
 	}

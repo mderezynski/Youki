@@ -282,14 +282,15 @@ namespace MPX
         m_NotebookPlugins->property_tab_border() = 0 ;
         m_NotebookPlugins->property_tab_pos() = Gtk::POS_BOTTOM ;
 
-        m_HBox_Main          = Gtk::manage( new PercentualDistributionHBox ) ;
+        m_HBox_Main         = Gtk::manage( new PercentualDistributionHBox ) ;
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
         m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Info         = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Bottom       = Gtk::manage( new Gtk::HBox ) ;
         m_VBox_Bottom       = Gtk::manage( new Gtk::VBox ) ;
-
+        
+        m_VBox->set_spacing( 2 ) ;
         m_VBox_Bottom->set_spacing( 2 ) ;
         m_HBox_Bottom->set_spacing( 4 ) ;
         m_HBox_Controls->set_spacing( 2 ) ;
@@ -383,8 +384,7 @@ namespace MPX
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
         m_cover = Gtk::manage( new KoboCover ) ;
-        m_cover->set_size_request( 96, 96 ) ;
-        m_HBox_Bottom->pack_start( *m_cover, false, false, 0 ) ;
+        m_cover->set_size_request( 52, 52 ) ;
 
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(
@@ -650,15 +650,14 @@ namespace MPX
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
 
-        m_VBox_Bottom->pack_start( *m_HBox_Info, false, false, 0 ) ;
-        m_VBox_Bottom->pack_start( *m_HBox_Controls, false, false, 0 ) ;
-        m_VBox_Bottom->pack_start( *m_main_spectrum, true, true, 0 ) ;
-
-        m_HBox_Bottom->pack_start( *m_VBox_Bottom, true, true, 0 ) ;
+        m_HBox_Bottom->pack_start( *m_cover, false, false, 0 ) ;
+        m_HBox_Bottom->pack_start( *m_main_spectrum, true, true, 0 ) ;
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Main, true, true, 0 ) ;
+        m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Bottom, false, false, 0 ) ;
+        m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
 
         m_HBox_Bottom->show_all() ;
 
@@ -742,6 +741,7 @@ namespace MPX
         m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
         c.set_rgb_p( c_bg.r, c_bg.g, c_bg.b ) ; 
+
         m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
@@ -755,11 +755,9 @@ namespace MPX
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c2 ) ;
 
-        //m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        //m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_HBox_Main->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
-        c.set_rgb_p( c_sel.r, c_sel.g, c_sel.b ) ; 
+        c.set_rgb_p( 0.1, 0.1, 0.1 ) ; 
 
         m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
@@ -791,20 +789,9 @@ namespace MPX
         m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
-/*
-        m_checkbutton_advanced_label->modify_base( Gtk::STATE_NORMAL, c ) ;
-        m_checkbutton_advanced_label->modify_base( Gtk::STATE_ACTIVE, c ) ;
-        m_checkbutton_advanced_label->modify_base( Gtk::STATE_PRELIGHT, c ) ;
-        m_checkbutton_advanced_label->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_checkbutton_advanced_label->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
-        m_checkbutton_advanced_label->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
-*/
-
         c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
-//        m_checkbutton_advanced_label->modify_text( Gtk::STATE_NORMAL, c ) ;
-//        m_checkbutton_advanced_label->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
         Gdk::Color cgdk ;
         cgdk.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
@@ -880,7 +867,7 @@ namespace MPX
         if( cover_pb ) 
         {
             cover_is = Util::cairo_image_surface_from_pixbuf(
-                cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
+                cover_pb->scale_simple( 52, 52, Gdk::INTERP_BILINEAR )
             ) ;
         }
         
@@ -1287,9 +1274,9 @@ namespace MPX
         }
 
         private_->FilterModelAlbums->set_constraints_artist( constraint ) ;
-
         private_->FilterModelAlbums->regen_mapping() ;
-        private_->FilterModelTracks->regen_mapping() ;
+
+        private_->FilterModelTracks->regen_mapping_iterative() ;
     }
 
     void
@@ -1319,8 +1306,7 @@ namespace MPX
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
-        private_->FilterModelTracks->cache_current_fragments() ;
-        private_->FilterModelTracks->regen_mapping() ;
+        private_->FilterModelTracks->regen_mapping_iterative() ;
     }
 
     void
@@ -1400,11 +1386,21 @@ namespace MPX
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelArtist->regen_mapping() ;
 
-        m_ListViewArtist->select_row( 0 ) ;
-        m_ListViewAlbums->select_row( 0 ) ;
+        m_conn1.block() ;
+        m_conn2.block() ;
+        m_conn3.block() ;
+        m_conn4.block() ;
 
         m_ListViewArtist->scroll_to_row( 0 ) ;
+        m_ListViewArtist->select_row( 0 ) ;
+
         m_ListViewAlbums->scroll_to_row( 0 ) ;
+        m_ListViewAlbums->select_row( 0 ) ;
+
+        m_conn1.unblock() ;
+        m_conn2.unblock() ;
+        m_conn3.unblock() ;
+        m_conn4.unblock() ;
 
         boost::optional<MPX::Track> t = m_track_current ;
 

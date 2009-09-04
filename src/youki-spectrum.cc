@@ -47,10 +47,10 @@ namespace MPX
     )
     : m_spectrum_data( SPECT_BANDS, 0 )
     , m_spectrum_peak( SPECT_BANDS, 0 )
-    , m_mode( SPECTRUM_MODE_LINEAR )
+    , m_mode( SPECTRUM_MODE_VOCODER )
     {
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
-        set_size_request( -1, 44 ) ;
+        set_size_request( -1, 52 ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
         const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
@@ -221,8 +221,8 @@ namespace MPX
                     ) ;
                     RoundedRectangle(
                           cairo
-                        , x
-                        , (HEIGHT-y) + 8
+                        , x - 26
+                        , (HEIGHT-y) + 12
                         , w
                         , - h
                         , 1.
@@ -246,8 +246,8 @@ namespace MPX
                     ) ;
                     RoundedRectangle(
                           cairo
-                        , x
-                        , y + 4 
+                        , x - 26
+                        , y + 8 
                         , w
                         , h
                         , 1.

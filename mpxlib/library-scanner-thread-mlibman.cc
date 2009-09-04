@@ -1161,7 +1161,7 @@ MPX::LibraryScannerThread_MLibMan::get_track_id (Track& track) const
                                 % mprintf ("%q", get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str())).str()) ;
   }
 
-  if (rows.size() && (rows[0].count("id") != 0))
+  if( rows.size() && (rows[0].count("id") != 0) )
   {
     return boost::get<gint64>( rows[0].find("id")->second )  ;
   }
@@ -1381,6 +1381,9 @@ MPX::LibraryScannerThread_MLibMan::prioritize(
 
     TrackInfo_p_Vector v2 ;
 
+    // This is basically an awkward way to sort the tracks by MIME type in the current preference
+    // order
+
     if( m_PrioritizeByFileType )
     {
             for( MIME_Types_t::const_iterator t = m_MIME_Types.begin(); t != m_MIME_Types.end(); ++t )
@@ -1396,6 +1399,11 @@ MPX::LibraryScannerThread_MLibMan::prioritize(
                 if( !v2.empty() )
                     break ;
             }
+            
+            if( v2.empty() )
+            {
+                v2 = v ;
+            }
     }
     else
     {
@@ -1404,7 +1412,9 @@ MPX::LibraryScannerThread_MLibMan::prioritize(
 
     if( v2.size() == 1 || !m_PrioritizeByBitrate )
     {
-        return v2[0] ;
+        return v2[0] ;  // If it's just 1 track anyway, or we don't want to further prioritze by bitrate anyway,
+                        // we just return in. Otherwise, we go through the tracks again and find the one with the
+                        // highest bitrate
     }
     else
     {
@@ -1629,6 +1639,7 @@ MPX::LibraryScannerThread_MLibMan::insert(
     {
         track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
     } 
+
   } catch( SqlConstraintError & cxe )
   {
     RowV rv ;

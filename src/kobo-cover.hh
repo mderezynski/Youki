@@ -11,12 +11,8 @@ namespace MPX
     {
         protected:
 
-            Glib::RefPtr<Gdk::Pixbuf>       m_jewelcase_bot ;
-            Glib::RefPtr<Gdk::Pixbuf>       m_jewelcase_top ;
             Glib::RefPtr<Gdk::Pixbuf>       m_cover ;
-
             IYoukiThemeEngine             * m_Theme ;
-
             Gdk::Color                      m_CurrentColor ;
 
         public:

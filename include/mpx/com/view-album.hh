@@ -542,10 +542,8 @@ namespace Albums
 
                     if( new_mapping != m_mapping )
                     {
-                        Row_t & row = *(m_realmodel->begin()) ;
-
-                        long long int sz = new_mapping.size() - 1 ;
-
+                        Row_t& row = *(m_realmodel->begin()) ;
+                        std::size_t sz = new_mapping.size() - 1 ;
                         get<4>(row) = (boost::format(_("<b>%lld %s</b>")) % sz % ((sz > 1) ? _("Albums") : _("Album"))).str() ;
 
                         std::swap( new_mapping, m_mapping ) ;

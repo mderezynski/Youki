@@ -9,9 +9,6 @@ namespace MPX
 {
     KoboCover::KoboCover ()
     {
-        m_jewelcase_bot = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "jewelcase_bot.png" ))->scale_simple( 289, 262, Gdk::INTERP_BILINEAR) ;
-        m_jewelcase_top = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "jewelcase_top.png" ))->scale_simple( 253, 255, Gdk::INTERP_BILINEAR) ;
-
         m_Theme = (services->get<IYoukiThemeEngine>("mpx-service-theme")).get() ;
     }
     
@@ -26,7 +23,7 @@ namespace MPX
     {
         if( cover )
         {
-            m_cover = cover->scale_simple( 94, 94 , Gdk::INTERP_BILINEAR ) ;
+            m_cover = cover->scale_simple( 50, 50 , Gdk::INTERP_HYPER ) ;
             Glib::RefPtr<Gdk::Pixbuf> tiny = cover->scale_simple( 1, 1 , Gdk::INTERP_NEAREST ) ;
             guchar * pixels = gdk_pixbuf_get_pixels( GDK_PIXBUF(tiny->gobj()) ) ;
             m_CurrentColor.set_rgb_p( double(pixels[0])/255., double(pixels[1])/255., double(pixels[2])/255. ) ;
