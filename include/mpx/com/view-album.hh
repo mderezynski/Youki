@@ -909,7 +909,10 @@ namespace Albums
                 std::size_t
                 get_upper_row ()
                 {
-                    return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
+                    if( m_prop_vadj.get_value() && m_row_height )
+                        return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
+                    else
+                        return 0 ;
                 }
 
                 bool

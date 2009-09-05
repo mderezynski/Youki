@@ -585,6 +585,7 @@ namespace Artist
                     if( m_model->m_mapping.size() )
                     {
                         m_model->set_current_row( get_upper_row() ) ;
+                        queue_draw() ;
                     }
                 }
 
@@ -601,7 +602,10 @@ namespace Artist
                 inline std::size_t
                 get_upper_row ()
                 {
-                    return m_prop_vadj.get_value()->get_value() ; 
+                    if( m_prop_vadj.get_value() )
+                        return m_prop_vadj.get_value()->get_value() ; 
+                    else
+                        return 0 ;
                 }
 
                 inline std::size_t

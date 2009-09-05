@@ -2556,7 +2556,10 @@ namespace Tracks
                 get_upper_row(
                 )
                 {
-                    return m_prop_vadj.get_value()->get_value() ;
+                    if( m_prop_vadj.get_value() )
+                        return m_prop_vadj.get_value()->get_value() ;
+                    else
+                        return 0 ;
                 }
 
                 inline std::size_t
