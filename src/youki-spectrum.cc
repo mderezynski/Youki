@@ -221,7 +221,7 @@ namespace MPX
                     ) ;
                     RoundedRectangle(
                           cairo
-                        , x - 26
+                        , x
                         , (HEIGHT-y) + 8
                         , w
                         , - h
@@ -246,7 +246,7 @@ namespace MPX
                     ) ;
                     RoundedRectangle(
                           cairo
-                        , x - 26
+                        , x
                         , y + 8 
                         , w
                         , h

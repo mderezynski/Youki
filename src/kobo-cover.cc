@@ -24,7 +24,7 @@ namespace MPX
     {
         if( cover )
         {
-            m_cover = cover->scale_simple( 50, 50 , Gdk::INTERP_HYPER ) ;
+            m_cover = cover->scale_simple( 94, 94 , Gdk::INTERP_HYPER ) ;
             m_CurrentColor = Util::get_mean_color_for_pixbuf( cover ) ;
         }
         else
@@ -96,7 +96,7 @@ namespace MPX
 
         double h, s, b ;
     
-        double alpha = 0.12 ;
+        double alpha = 0.25 ;
         
         Util::color_to_hsb( cgdk, h, s, b ) ;
         b *= 0.90 ; 

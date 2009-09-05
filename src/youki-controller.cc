@@ -338,7 +338,7 @@ namespace MPX
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
         m_cover = Gtk::manage( new KoboCover ) ;
-        m_cover->set_size_request( 54, 52 ) ;
+        m_cover->set_size_request( 96, 96 ) ;
 
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(
@@ -649,13 +649,18 @@ namespace MPX
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
 
         m_HBox_Bottom->pack_start( *m_cover, false, false, 0 ) ;
-        m_HBox_Bottom->pack_start( *m_main_spectrum, true, true, 0 ) ;
+
+        m_VBox_Bottom->pack_start( *m_HBox_Info, false, false, 0 ) ;
+        m_VBox_Bottom->pack_start( *m_main_spectrum, false, false, 0 ) ;
+        m_VBox_Bottom->pack_start( *m_HBox_Controls, false, false, 0 ) ;
+
+        m_HBox_Bottom->pack_start( *m_VBox_Bottom, true, true, 0 ) ;
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Main, true, true, 0 ) ;
-        m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
+//        m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Bottom, false, false, 0 ) ;
-        m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
+//        m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
 
         m_HBox_Bottom->show_all() ;
 
