@@ -321,50 +321,53 @@ namespace Artist
                     }
 
                     RowRowMapping_t new_mapping;
+                    new_mapping.reserve( m_realmodel->size() ) ;
 
-                    boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ;
-                    boost::optional<gint64> id_sel = m_selected ;
+                    boost::optional<gint64> id_top ;
+                    boost::optional<gint64> id_sel ; 
+
+                    if( m_position < m_mapping.size() )
+                    {
+                        id_top = get<1>(row( m_position )) ;
+                    }
+
+                    if( m_selected )
+                    {
+                        id_sel = m_selected ;
+                    }
 
                     m_selected.reset() ;
                     m_selected_row.reset() ;
                     m_position = 0 ;
 
                     Model_t::iterator i = m_realmodel->begin() ; 
-                    new_mapping.resize( m_realmodel->size() ) ;
-                    std::size_t n = 0 ;
-                    new_mapping[n++] = i++ ;
+                    new_mapping.push_back( i++ ) ;
+
+                    IdVector_t * constraints_artist = m_constraints_artist.get() ;
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
-                        int truth = !m_constraints_artist || (*(m_constraints_artist.get()))[get<1>(*i)] ;
+                        gint64 id_row = get<1>( *i ) ;
 
-                        if( truth )
+                        if( !constraints_artist || (*m_constraints_artist)[id_row] )
                         {
-                            new_mapping[n++] = i ;
-
-                            if( id_cur && get<1>(*i) == id_cur.get() )
+                            if( id_top && id_row == id_top.get() )
                             {
-                                m_position = new_mapping.size()  - 1 ;
+                                m_position = new_mapping.size() ;
                             }
 
-                            if( id_sel && get<1>(*i) == id_sel.get() )
+                            if( id_sel && id_row == id_sel.get() )
                             {
                                 m_selected = id_sel ; 
-                                m_selected_row = new_mapping.size()  - 1 ;
+                                m_selected_row = new_mapping.size() ;
                             }
+
+                            new_mapping.push_back( i ) ;
                         }
                     }
 
-                    new_mapping.resize( n ) ;
-
                     std::swap( m_mapping, new_mapping ) ;
                     update_count() ;
-
-                    if( !m_selected )
-                    {
-                        m_selected_row = 0 ;                        
-                    }
-
                     m_changed.emit( m_position, m_mapping.size() != new_mapping.size() );
                 }
 
@@ -866,6 +869,19 @@ namespace Artist
                     return true ;
                 }
 
+                void
+                configure_vadj(
+                      std::size_t   upper
+                    , std::size_t   page_size
+                )
+                {
+                    if( m_prop_vadj.get_value() )
+                    {
+                        m_prop_vadj.get_value()->set_upper( upper ) ; 
+                        m_prop_vadj.get_value()->set_page_size( page_size ) ; 
+                    }
+                }
+
                 bool
                 on_configure_event(
                     GdkEventConfigure* event
@@ -875,8 +891,7 @@ namespace Artist
 
                     if( m_row_height )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
-                        m_prop_vadj.get_value()->set_page_size( get_page_size() ) ; 
+                        configure_vadj( m_model->size(), get_page_size() ) ;
                     }
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
@@ -1025,42 +1040,22 @@ namespace Artist
                     , bool              size_changed
                 )
                 {
-                    boost::optional<std::size_t> row = m_model->get_selected_row() ;
-
-                    if( size_changed && m_prop_vadj.get_value() && m_visible_height && m_row_height )
+                    if( size_changed ) 
                     {
-                        std::size_t view_count = get_page_size() ;
-
-                        m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
-                        m_prop_vadj.get_value()->set_page_size( get_page_size() ) ; 
-
-                        if( !row )
-                        {
-                            if( m_model->size() < view_count )
-                            {
-                                m_prop_vadj.get_value()->set_value( 0. ) ;
-                            }
-                            else
-                            {
-                                m_prop_vadj.get_value()->set_value( position ) ; 
-                            }
-                        }
+                        configure_vadj( m_model->size(), get_page_size() ) ;
                     }
 
-                    if( row && m_prop_vadj.get_value() )
+                    boost::optional<std::size_t> row = m_model->get_selected_row() ;
+
+                    if( row ) 
                     {
-                        bool quiet = false ;
-
-                        if( m_selection )
-                        {
-                            gint64 id_1 = get<1>(m_selection.get()) ;
-                            gint64 id_2 = get<1>(m_model->row( row.get() )) ;
-
-                            quiet = ( id_1 == id_2 ) ; 
-                        }
-
-                        select_row( row.get(), quiet ) ; 
-                        m_prop_vadj.get_value()->set_value( row.get() ) ; 
+                        select_row( row.get(), true ) ; 
+                        scroll_to_row( row.get() ) ;
+                    }
+                    else
+                    {
+                        select_row( position, true ) ; 
+                        scroll_to_row( position ) ;
                     }
 
                     queue_draw() ;
@@ -1124,22 +1119,23 @@ namespace Artist
                       std::size_t row
                 )
                 {
-                    if( m_visible_height && m_row_height )
+                    if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
                     {
-                        Limiter<std::size_t> d (
-                              Limiter<std::size_t>::ABS_ABS
-                            , 0
-                            , m_model->m_mapping.size() - get_page_size()
-                            , row
-                        ) ;
-
-                        if( m_model->m_mapping.size() < get_page_size())
+                        if( m_model->m_mapping.size() < get_page_size() )
+                        {
                             m_prop_vadj.get_value()->set_value( 0 ) ;
+                        }
                         else
-                        if( row > (m_model->m_mapping.size() - get_page_size()) )
-                            m_prop_vadj.get_value()->set_value( m_model->m_mapping.size() - get_page_size() ) ;
-                        else
+                        {
+                            Limiter<std::size_t> d (
+                                  Limiter<std::size_t>::ABS_ABS
+                                , 0
+                                , m_model->m_mapping.size() - get_page_size()
+                                , row
+                            ) ;
+
                             m_prop_vadj.get_value()->set_value( d ) ;
+                        }
                     }
                 }
 

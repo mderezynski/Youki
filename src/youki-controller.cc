@@ -1150,8 +1150,8 @@ namespace MPX
         g_return_if_fail( bool(t) ) ;
 
         gint64 id_track = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
+        m_ListViewTracks->set_currently_playing_track( id_track ) ;
 
-        m_ListViewTracks->set_active_track( id_track ) ;
         if( m_follow_track )
         {
             m_ListViewTracks->scroll_to_id( id_track ) ;

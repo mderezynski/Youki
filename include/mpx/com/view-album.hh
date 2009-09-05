@@ -158,7 +158,7 @@ namespace Albums
         {
                 Model_SP_t                      m_realmodel ;
                 IdIterMap_t                     m_iter_map ;
-                std::size_t                     m_position ;
+                std::size_t                     m_top_row ;
                 boost::optional<gint64>         m_selected ;
                 boost::optional<std::size_t>    m_selected_row ;
 
@@ -166,13 +166,13 @@ namespace Albums
                 Signal_1                        m_changed ;
 
                 DataModel()
-                : m_position( 0 )
+                : m_top_row( 0 )
                 {
                     m_realmodel = Model_SP_t(new Model_t); 
                 }
 
                 DataModel(Model_SP_t model)
-                : m_position( 0 )
+                : m_top_row( 0 )
                 {
                     m_realmodel = model; 
                 }
@@ -221,7 +221,7 @@ namespace Albums
                     std::size_t row
                 )
                 {
-                    m_position = row ;
+                    m_top_row = row ;
                 }
 
                 virtual void
@@ -326,7 +326,7 @@ namespace Albums
             public:
 
                 RowRowMapping_t   m_mapping ;
-                IdVector_sp       m_constraints_album ;
+                IdVector_sp       m_constraints_albums ;
                 IdVector_sp       m_constraints_artist ;
 
             public:
@@ -348,14 +348,14 @@ namespace Albums
                     const IdVector_sp& constraint
                 )
                 {
-                    m_constraints_album = constraint ;
+                    m_constraints_albums = constraint ;
                 }
 
                 virtual void
                 clear_constraints_album(
                 )
                 {
-                    m_constraints_album.reset() ;
+                    m_constraints_albums.reset() ;
                 }
 
                 virtual void
@@ -406,7 +406,7 @@ namespace Albums
                 swap( std::size_t p1, std::size_t p2 )
                 {
                     std::swap( m_mapping[p1], m_mapping[p2] ) ;
-                    m_changed.emit( m_position, false ) ;
+                    m_changed.emit( m_top_row, false ) ;
                 }
 
                 virtual void
@@ -481,59 +481,64 @@ namespace Albums
                     } 
 
                     RowRowMapping_t new_mapping ;
+                    new_mapping.reserve( m_realmodel->size() ) ;
 
-                    boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ; 
-                    boost::optional<gint64> id_sel = m_selected ; 
+                    boost::optional<gint64> id_top ;
+                    boost::optional<gint64> id_sel ;
+
+                    if( m_top_row < m_mapping.size() )
+                    {
+                        id_top = get<1>( row( m_top_row )) ;
+                    }
+
+                    if( m_selected )
+                    {
+                        id_sel = m_selected ; 
+                    }
 
                     m_selected.reset() ;
                     m_selected_row.reset() ;
-
-                    m_position = 0 ;
+                    m_top_row = 0 ;
     
                     Model_t::iterator i = m_realmodel->begin() ;
-                    new_mapping.resize( m_realmodel->size() ) ;
-                    std::size_t n = 0 ;
 
-                    new_mapping[n++]= i++ ;
+                    new_mapping.push_back( i++ ) ;
+
+                    IdVector_t * constraints_albums = m_constraints_albums.get() ;
+                    IdVector_t * constraints_artist = m_constraints_artist.get() ;
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
                         int truth = 
-                                    (!m_constraints_album  || (*(m_constraints_album.get()))[get<1>(*i)] == 1 )
+                                    (!constraints_albums || (*constraints_albums)[get<1>(*i)] == 1 )
                                                                     &&
-                                    (!m_constraints_artist || (*(m_constraints_artist.get()))[get<2>(*i)] == 1 )
+                                    (!constraints_artist || (*constraints_artist)[get<2>(*i)] == 1 )
                         ; 
 
                         if( truth )
                         {
-                            new_mapping[n++] = i ;
+                            gint64 id_row = get<1>( *i ) ;
 
-                            if( id_cur && get<1>(*i) == id_cur.get() )
+                            if( id_top && id_row == id_top.get() )
                             {
-                                m_position = new_mapping.size() - 1 ;
+                                m_top_row = new_mapping.size() ;
                             }
 
-                            if( id_sel && get<1>(*i) == id_sel.get() )
+                            if( id_sel && id_row == id_sel.get() )
                             {
                                 m_selected = id_sel ; 
-                                m_selected_row = new_mapping.size() - 1 ;
+                                m_selected_row = new_mapping.size() ;
                             }
+
+                            new_mapping.push_back( i ) ;
                         }
                     }
                 
-                    new_mapping.resize( n ) ;
-
                     if( new_mapping != m_mapping )
                     {
                         std::swap( new_mapping, m_mapping ) ;
                         update_count() ;
-
-                        if( !m_selected )
-                        {
-                            m_selected_row = 0 ;                        
-                        }
-
-                        m_changed.emit( m_position, m_mapping.size() != new_mapping.size() );
+                        m_changed.emit( m_top_row, m_mapping.size() != new_mapping.size() );
                     }                
                 }
 
@@ -802,7 +807,7 @@ namespace Albums
                             if( get<8>(data_row).empty() )
                                 year_label = get<7>(data_row) ; 
                             else
-                                year_label = (boost::format("%s / %s") % get<7>(data_row) % get<8>(data_row)).str() ;
+                                year_label = (boost::format("%s • %s") % get<7>(data_row) % get<8>(data_row)).str() ;
 
                             layout[L1]->set_text( year_label ) ; 
                             layout[L1]->get_pixel_size( width, height ) ;
@@ -1188,6 +1193,21 @@ namespace Albums
                     return true ;
                 }
 
+                void
+                configure_vadj(
+                      std::size_t   upper
+                    , std::size_t   page_size
+                    , std::size_t   step_increment
+                )
+                {
+                    if( m_prop_vadj.get_value() )
+                    {
+                        m_prop_vadj.get_value()->set_upper( upper ) ; 
+                        m_prop_vadj.get_value()->set_page_size( page_size ) ; 
+                        m_prop_vadj.get_value()->set_step_increment( step_increment ) ; 
+                    }
+                }
+
                 bool
                 on_configure_event(
                     GdkEventConfigure* event
@@ -1197,9 +1217,11 @@ namespace Albums
 
                     if( m_row_height )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->m_mapping.size() * m_row_height ) ;
-                        m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
-                        m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
+                        configure_vadj(
+                              m_model->m_mapping.size() * m_row_height
+                            , m_visible_height
+                            , m_row_height
+                        ) ; 
                     }
 
                     double n                       = m_columns.size() ; 
@@ -1348,13 +1370,13 @@ namespace Albums
                     , bool          size_changed
                 )
                 {
-                    if( size_changed && m_prop_vadj.get_value() && m_visible_height && m_row_height )
+                    if( size_changed ) 
                     {
-                            m_prop_vadj.get_value()->set_upper( m_model->m_mapping.size() * m_row_height ) ;
-                            m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
-                            m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
-
-                            scroll_to_row( position ) ;
+                            configure_vadj(
+                                  m_model->m_mapping.size() * m_row_height
+                                , m_visible_height
+                                , m_row_height
+                            ) ; 
 
                             m_Model_I = Interval<std::size_t>(
                                   Interval<std::size_t>::IN_EX
@@ -1367,18 +1389,13 @@ namespace Albums
 
                     if( row )
                     {
-                        bool quiet = false ;
-
-                        if( m_selection )
-                        {
-                            gint64 id_1 = get<1>(m_selection.get()) ;
-                            gint64 id_2 = get<1>(m_model->row( row.get() )) ;
-
-                            quiet = ( id_1 == id_2 ) ; 
-                        }
-
                         scroll_to_row( row.get() ) ; 
-                        select_row( row.get(), quiet ) ;
+                        select_row( row.get(), true ) ;
+                    }
+                    else
+                    {
+                        scroll_to_row( position ) ; 
+                        select_row( position, true ) ; 
                     }
 
                     queue_draw() ;
@@ -1444,19 +1461,21 @@ namespace Albums
                 {
                     if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
                     {
-                        Limiter<std::size_t> d ( 
-                              Limiter<std::size_t>::ABS_ABS
-                            , 0
-                            , m_model->m_mapping.size() - (m_visible_height/m_row_height) 
-                            , row 
-                        ) ;
-
                         if( m_model->m_mapping.size() < std::size_t(m_visible_height/m_row_height) )
                         {
                             m_prop_vadj.get_value()->set_value( 0 ) ; 
                         }
                         else
+                        {
+                            Limiter<std::size_t> d ( 
+                                  Limiter<std::size_t>::ABS_ABS
+                                , 0
+                                , m_model->m_mapping.size() - (m_visible_height/m_row_height) 
+                                , row 
+                            ) ;
+
                             m_prop_vadj.get_value()->set_value( d  * m_row_height ) ; 
+                        }
                     }
                 }
 

@@ -487,8 +487,8 @@ namespace Tracks
                 StrV                        m_frags ;
                 AQE::Constraints_t          m_constraints_ext ;
                 AQE::Constraints_t          m_constraints_aqe ;
-                boost::optional<gint64>     m_active_track ;
-                boost::optional<gint64>     m_local_active_track ;
+                boost::optional<gint64>     m_id_currently_playing ;
+                boost::optional<gint64>     m_id_currently_playing_in_mapping ;
                 IdVector_sp                 m_constraints_albums ;
                 IdVector_sp                 m_constraints_artist ;
                 bool                        m_cache_enabled ;
@@ -542,7 +542,7 @@ namespace Tracks
                 void
                 clear_active_track()
                 {
-                    m_local_active_track.reset() ;
+                    m_id_currently_playing_in_mapping.reset() ;
                 }
 
                 void
@@ -564,16 +564,18 @@ namespace Tracks
                 }
 
                 void
-                set_active_track(gint64 id)
+                set_currently_playing_track(gint64 id)
                 {
-                    m_active_track = id ;
-                    scan_active () ;
+                    m_id_currently_playing = id ;
+                    m_id_currently_playing_in_mapping.reset() ;
+
+                    scan_for_currently_playing () ;
                 }
 
                 boost::optional<gint64>
                 get_local_active_track ()
                 {
-                    return m_local_active_track ;
+                    return m_id_currently_playing_in_mapping ;
                 }
 
                 void
@@ -624,7 +626,10 @@ namespace Tracks
                 swap( std::size_t p1, std::size_t p2 )
                 {
                     std::swap( m_mapping[p1], m_mapping[p2] ) ;
-                    scan_active() ;
+
+                    m_id_currently_playing_in_mapping.reset() ;
+                    scan_for_currently_playing() ;
+
                     m_changed.emit( m_position, false ) ;
                 }
 
@@ -632,9 +637,13 @@ namespace Tracks
                 erase( std::size_t p )
                 {
                     RowRowMapping_t::iterator i = m_mapping.begin() ;
+
                     std::advance( i, p ) ;
                     m_mapping.erase( i ) ;
-                    scan_active() ;
+
+                    m_id_currently_playing_in_mapping.reset() ;
+                    scan_for_currently_playing() ;
+
                     m_changed.emit( m_position, true ) ;
                 }
 
@@ -730,18 +739,17 @@ namespace Tracks
                 }
 
                 void
-                scan_active_find_position(
-                      gint64 id
+                scan_for_currently_playing_find_top_row(
+                      boost::optional<gint64> id_top
                 )
                 {
                     using boost::get;
 
-                    bool found_active = false, found_position = false ;
+                    bool found_currently_playing = false, found_top_row = false ;
 
-                    if( !m_active_track )
+                    if( !m_id_currently_playing )
                     {
-                        m_local_active_track.reset() ;
-                        find_position( id ) ;
+                        find_top_row( id_top ) ;
                         return ;
                     }
 
@@ -749,60 +757,66 @@ namespace Tracks
                     {
                         gint64 val = get<3>(**i) ;
 
-                        if( !found_active && m_active_track && val == m_active_track.get() )
+                        if( !found_currently_playing && val == m_id_currently_playing.get() )
                         {
-                            m_local_active_track = std::distance( m_mapping.begin(), i ) ; 
-                            found_active = true ;
+                            m_id_currently_playing_in_mapping = std::distance( m_mapping.begin(), i ) ; 
+                            found_currently_playing = true ;
                         }
 
-                        if( !found_position && id >= 0 )
+                        if( !found_top_row && id_top )
                         {
-                            if( val == id )
+                            if( val == id_top.get() )
                             {
                                 m_position = std::distance( m_mapping.begin(), i ) ;
-                                found_position = true ;
+                                found_top_row = true ;
                             }
                         }
 
-                        if( found_active && found_position )
+                        if( found_currently_playing && found_top_row )
+                        {
                             return ;
+                        }
                     }
-
-                    if( !found_active )
-                        m_local_active_track.reset() ;
                 }
 
                 void
-                scan_active ()
+                scan_for_currently_playing(
+                )
                 {
                     using boost::get;
 
-                    if( !m_active_track )
+                    if( !m_id_currently_playing )
                     {
-                        m_local_active_track.reset() ;
+                        m_id_currently_playing_in_mapping.reset() ;
                         return ;
                     }
 
+                    gint64 id_realval = m_id_currently_playing.get() ; 
+
                     for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                     {
-                        if( m_active_track && get<3>(**i) == m_active_track.get() )
+                        if( get<3>(**i) == id_realval ) 
                         {
-                            m_local_active_track = std::distance( m_mapping.begin(), i ) ; 
+                            m_id_currently_playing_in_mapping = std::distance( m_mapping.begin(), i ) ; 
                             return ;
                         }
                     }
 
-                    m_local_active_track.reset() ;
+                    m_id_currently_playing_in_mapping.reset() ;
                 }
 
                 void
-                find_position( gint64 id )
+                find_top_row(
+                      boost::optional<gint64> id_top
+                )
                 {
-                    if( id >= 0 )
+                    if( id_top ) 
                     {
+                        gint64 id_realval = id_top.get() ;
+
                         for( RowRowMapping_t::iterator i = m_mapping.begin() ; i != m_mapping.end() ; ++i )
                         {
-                            if( boost::get<3>(**i) == id )
+                            if( boost::get<3>(**i) == id_realval )
                             {
                                 m_position = std::distance( m_mapping.begin(), i ) ;
                                 return ;
@@ -879,17 +893,20 @@ namespace Tracks
 
                     RowRowMapping_t new_mapping, new_mapping_unfiltered ;
 
-                    gint64 id = -1 ;
+                    boost::optional<gint64> id ; 
         
-                    if( m_active_track )
+                    if( m_id_currently_playing )
                     {
-                        id = m_active_track.get() ;
+                        id = m_id_currently_playing.get() ;
                     }
                     else
                     if( m_position < m_mapping.size() )
                     {
                         id = get<3>(row( m_position )) ; 
                     }
+
+                    m_id_currently_playing_in_mapping.reset() ;
+                    m_position = 0 ;
 
                     if( m_frags.empty() && (m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
@@ -1077,7 +1094,7 @@ namespace Tracks
                     std::swap( new_mapping, m_mapping ) ;
                     std::swap( new_mapping_unfiltered, m_mapping_unfiltered ) ;
 
-                    scan_active_find_position( id ) ;
+                    scan_for_currently_playing_find_top_row( id ) ;
 
                     m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
                 }
@@ -1093,17 +1110,20 @@ namespace Tracks
 
                     RowRowMapping_t new_mapping, new_mapping_unfiltered ;
 
-                    gint64 id = -1 ; 
-
-                    if( m_active_track )
+                    boost::optional<gint64> id ; 
+        
+                    if( m_id_currently_playing )
                     {
-                        id = m_active_track.get() ;
+                        id = m_id_currently_playing.get() ;
                     }
                     else
                     if( m_position < m_mapping.size() )
                     {
                         id = get<3>(row( m_position )) ; 
                     }
+
+                    m_id_currently_playing_in_mapping.reset() ;
+                    m_position = 0 ;
 
                     if( m_frags.empty() && (m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
@@ -1305,7 +1325,7 @@ namespace Tracks
                     std::swap( new_mapping, m_mapping ) ;
                     std::swap( new_mapping_unfiltered, m_mapping_unfiltered ) ;
 
-                    scan_active_find_position( id ) ;
+                    scan_for_currently_playing_find_top_row( id ) ;
 
                     m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
                 }
@@ -1565,7 +1585,7 @@ namespace Tracks
                 bool                                m_clicked ;
                 bool                                m_highlight ;
 
-                boost::optional<gint64>             m_active_track ;
+                boost::optional<gint64>             m_id_currently_playing ;
                 boost::optional<gint64>             m_hover_track ;
                 boost::optional<gint64>             m_terminal_track ;
 
@@ -2031,6 +2051,19 @@ namespace Tracks
                     return true ;
                 }
 
+                void
+                configure_vadj(
+                      std::size_t   upper
+                    , std::size_t   page_size
+                )
+                {
+                    if( m_prop_vadj.get_value() )
+                    {
+                        m_prop_vadj.get_value()->set_upper( upper ) ; 
+                        m_prop_vadj.get_value()->set_page_size( page_size ) ; 
+                    }
+                }
+
                 bool
                 on_configure_event(
                     GdkEventConfigure* event
@@ -2040,11 +2073,7 @@ namespace Tracks
 
                     m_visible_height = event->height - m_row_start ;
 
-                    if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
-                    {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
-                        m_prop_vadj.get_value()->set_page_size( get_page_size() ) ;
-                    }
+                    configure_vadj( m_model->size(), get_page_size() ) ;
 
                     int width = event->width - 32 ;
 
@@ -2318,7 +2347,7 @@ namespace Tracks
 
                         const int icon_x[2] = { 16, 0 } ;
 
-                        if( compare_id_to_optional( r_data, m_active_track )) 
+                        if( compare_id_to_optional( r_data, m_id_currently_playing )) 
                         {
                             Gdk::Cairo::set_source_pixbuf(
                                   cairo
@@ -2419,17 +2448,14 @@ namespace Tracks
                                 , m_model->size()
                         ) ;
 
-                        if( m_prop_vadj.get_value() && m_visible_height && m_row_height )
-                        {
-                            m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
-                            m_prop_vadj.get_value()->set_page_size( get_page_size() ) ;
-
-                            scroll_to_row( position ) ;
-                        }
-
-                        m_selection.reset() ;
+                        configure_vadj(
+                              m_model->size()
+                            , get_page_size()
+                        ) ;
                     }
 
+                    scroll_to_row( position ) ;
+                    m_selection.reset() ;
                     queue_draw() ;
                 }
 
@@ -2568,10 +2594,12 @@ namespace Tracks
                 {
                     if( m_model )
                     {
-                        boost::optional<gint64> active_track = m_model->m_active_track ;
+                        boost::optional<gint64> active_track = m_model->m_id_currently_playing ;
+
                         m_model = model;
-                        m_model->m_active_track = active_track ;
-                        m_model->scan_active() ;
+
+                        m_model->m_id_currently_playing = active_track ;
+                        m_model->scan_for_currently_playing() ;
                     }
                     else
                     {
@@ -2618,22 +2646,22 @@ namespace Tracks
                 void
                 clear_active_track()
                 {
-                    m_active_track.reset() ;
+                    m_id_currently_playing.reset() ;
                     m_model->clear_active_track() ;
                 }
 
                 void
-                set_active_track(gint64 id)
+                set_currently_playing_track(gint64 id)
                 {
-                    m_active_track = id ;
-                    m_model->set_active_track( id ) ;
+                    m_id_currently_playing = id ;
+                    m_model->set_currently_playing_track( id ) ;
                     queue_draw () ;
                 }
 
                 boost::optional<gint64>
                 get_local_active_track ()
                 {
-                    return m_model->m_local_active_track ;
+                    return m_model->m_id_currently_playing_in_mapping ;
                 }
 
                 void
