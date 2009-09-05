@@ -1010,7 +1010,6 @@ namespace Tracks
                             for( std::size_t n = 1 ; n < intersect.size() ; ++n )
                             {
                                 ModelIteratorSet_sp intersect_out( new ModelIteratorSet_t ) ;
-                                intersect_out->reserve( output->size() ) ;
 
                                 std::set_intersection(
 
@@ -1239,7 +1238,6 @@ namespace Tracks
                             for( std::size_t n = 1 ; n < intersect.size() ; ++n )
                             {
                                 ModelIteratorSet_sp intersect_out( new ModelIteratorSet_t ) ;
-                                intersect_out->reserve( output->size() ) ;
 
                                 std::set_intersection(
 
