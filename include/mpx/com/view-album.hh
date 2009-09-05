@@ -320,14 +320,14 @@ namespace Albums
         struct DataModelFilter
         : public DataModel
         {
-            typedef std::set<gint64>                        IdSet_t ;
-            typedef boost::shared_ptr<IdSet_t>              IdSet_sp ;
+            typedef std::vector<int>                        IdVector_t ;
+            typedef boost::shared_ptr<IdVector_t>           IdVector_sp ;
 
             public:
 
                 RowRowMapping_t   m_mapping ;
-                IdSet_sp          m_constraints_album ;
-                IdSet_sp          m_constraints_artist ;
+                IdVector_sp       m_constraints_album ;
+                IdVector_sp       m_constraints_artist ;
 
             public:
 
@@ -345,7 +345,7 @@ namespace Albums
 
                 virtual void
                 set_constraints_albums(
-                    const IdSet_sp& constraint
+                    const IdVector_sp& constraint
                 )
                 {
                     m_constraints_album = constraint ;
@@ -360,7 +360,7 @@ namespace Albums
 
                 virtual void
                 set_constraints_artist(
-                    const IdSet_sp& constraint
+                    const IdVector_sp& constraint
                 )
                 {
                     m_constraints_artist = constraint ;
@@ -496,15 +496,12 @@ namespace Albums
 
                     new_mapping[n++]= i++ ;
 
-                    g_message("Albums constraints: %d", int(bool(m_constraints_album))) ;
-                    g_message("Artist constraints: %d", int(bool(m_constraints_artist))) ;
-
                     for( ; i != m_realmodel->end(); ++i )
                     {
                         int truth = 
-                                    (!m_constraints_album  || m_constraints_album->count( get<1>(*i)) )
+                                    (!m_constraints_album  || (*(m_constraints_album.get()))[get<1>(*i)] == 1 )
                                                                     &&
-                                    (!m_constraints_artist || m_constraints_artist->count( get<2>(*i)) )
+                                    (!m_constraints_artist || (*(m_constraints_artist.get()))[get<2>(*i)] == 1 )
                         ; 
 
                         if( truth )

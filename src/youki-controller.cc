@@ -566,6 +566,18 @@ namespace MPX
                 m_ScrolledWinAlbums->show_all() ;
         }
 
+        SQL::RowV v ;
+
+        m_library->getSQL(v, (boost::format("SELECT max(id) AS id FROM album_artist")).str()) ; 
+        gint64 max_artist = boost::get<gint64>(v[0]["id"]) ;
+
+        v.clear();
+
+        m_library->getSQL(v, (boost::format("SELECT max(id) AS id FROM album")).str()) ; 
+        gint64 max_albums = boost::get<gint64>(v[0]["id"]) ;
+
+        private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+
         private_->FilterModelArtist->regen_mapping() ;
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelTracks->regen_mapping() ;
@@ -619,14 +631,14 @@ namespace MPX
         m_HBox_Main->pack_start( *m_ScrolledWinAlbums, true, true, 0 ) ;
         m_HBox_Main->pack_start( *m_ScrolledWinTracks, true, true, 0 ) ;
 
-        std::vector<Gtk::Widget*> v (6) ;
-        v[0] = m_Entry ;
-        v[1] = m_ScrolledWinArtist ;
-        v[2] = m_ScrolledWinAlbums ;
-        v[3] = m_ScrolledWinTracks ;
-        v[4] = m_main_position ;
-        v[5] = m_main_volume ;
-        m_main_window->set_focus_chain( v ) ;
+        std::vector<Gtk::Widget*> widget_v( 6 ) ;
+        widget_v[0] = m_Entry ;
+        widget_v[1] = m_ScrolledWinArtist ;
+        widget_v[2] = m_ScrolledWinAlbums ;
+        widget_v[3] = m_ScrolledWinTracks ;
+        widget_v[4] = m_main_position ;
+        widget_v[5] = m_main_volume ;
+        m_main_window->set_focus_chain( widget_v ) ;
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
@@ -810,6 +822,40 @@ namespace MPX
     }
 
     void
+    YoukiController::on_library_new_track(
+          gint64 id
+    )
+    {
+        m_new_tracks.push_back( id ) ;
+       
+        if( m_new_tracks.size() == 200 )  
+        {
+            push_new_tracks() ;
+        }
+    }
+
+    void
+    YoukiController::on_library_new_artist(
+          gint64               id
+    )
+    {
+        SQL::RowV v ;
+
+        m_library->getSQL( v, (boost::format( "SELECT * FROM album_artist WHERE id = '%lld'" ) % id ).str() ) ; 
+        g_return_if_fail( (v.size() == 1) ) ;
+
+        private_->FilterModelArtist->insert_artist(
+              RowGetArtistName( v[0] )
+            , id 
+        ) ; 
+
+        gint64 max_artist, max_albums ;
+        private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
+        max_artist++ ;
+        private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+    }
+
+    void
     YoukiController::on_library_new_album(
           gint64                id
         , const std::string&    s1
@@ -843,7 +889,17 @@ namespace MPX
         {
             cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
         }
-        
+        else
+        {
+            RequestQualifier rq ; 
+            rq.mbid     =   s1 ;
+            rq.asin     =   s2 ;
+            rq.uri      =   s3 ;
+            rq.artist   =   s4 ;
+            rq.album    =   s5 ;
+            m_covers->cache( rq, true ) ;
+        }
+
         private_->FilterModelAlbums->insert_album(
               cover_is
             , get<gint64>(r["id"])
@@ -856,31 +912,44 @@ namespace MPX
             , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
         ) ;
 
-        if( !cover_pb )
-        {
-            RequestQualifier rq ; 
-
-            rq.mbid     =   s1 ;
-            rq.asin     =   s2 ;
-            rq.uri      =   s3 ;
-            rq.artist   =   s4 ;
-            rq.album    =   s5 ;
-
-            m_covers->cache( rq, true ) ;
-        }
+        gint64 max_artist, max_albums ;
+        private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
+        max_albums++ ;
+        private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
     }
 
     void
-    YoukiController::on_library_new_track(
-          gint64 id
+    YoukiController::on_library_artist_deleted(
+          gint64               id
     )
     {
-        m_new_tracks.push_back( id ) ;
-       
-        if( m_new_tracks.size() == 200 )  
-        {
-            push_new_tracks() ;
-        }
+        private_->FilterModelArtist->erase_artist( id ) ; 
+
+        gint64 max_artist, max_albums ;
+        private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
+        max_artist-- ;
+        private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+    }
+
+    void
+    YoukiController::on_library_album_deleted(
+          gint64               id
+    )
+    {
+        private_->FilterModelAlbums->erase_album( id ) ; 
+
+        gint64 max_artist, max_albums ;
+        private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
+        max_albums-- ;
+        private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+    }
+
+    void
+    YoukiController::on_library_track_deleted(
+          gint64               id
+    )
+    {
+        private_->FilterModelTracks->erase_track( id ) ; 
     }
 
     void
@@ -909,46 +978,6 @@ namespace MPX
         private_->FilterModelArtist->regen_mapping() ;
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelTracks->regen_mapping() ;
-    }
-
-    void
-    YoukiController::on_library_new_artist(
-          gint64               id
-    )
-    {
-        SQL::RowV v ;
-
-        m_library->getSQL( v, (boost::format( "SELECT * FROM album_artist WHERE id = '%lld'" ) % id ).str() ) ; 
-        g_return_if_fail( (v.size() == 1) ) ;
-
-        private_->FilterModelArtist->insert_artist(
-              RowGetArtistName( v[0] )
-            , id 
-        ) ; 
-    }
-
-    void
-    YoukiController::on_library_album_deleted(
-          gint64               id
-    )
-    {
-        private_->FilterModelAlbums->erase_album( id ) ; 
-    }
-
-    void
-    YoukiController::on_library_artist_deleted(
-          gint64               id
-    )
-    {
-        private_->FilterModelArtist->erase_artist( id ) ; 
-    }
-
-    void
-    YoukiController::on_library_track_deleted(
-          gint64               id
-    )
-    {
-        private_->FilterModelTracks->erase_track( id ) ; 
     }
 
 ////////////////
@@ -1228,7 +1257,7 @@ namespace MPX
         boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
         boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
 
-        boost::shared_ptr<std::set<gint64> > constraint ; 
+        boost::shared_ptr<std::vector<int> > constraint ; 
 
         if( id_artist ) 
         {
@@ -1238,8 +1267,11 @@ namespace MPX
             c.MatchType = AQE::MT_EQUAL ;
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
 
-            constraint = boost::shared_ptr<std::set<gint64> >( new std::set<gint64> ) ; 
-            constraint->insert( id_artist.get() ) ;
+            constraint = boost::shared_ptr<std::vector<int> >( new std::vector<int> ) ; 
+            gint64 max_artist, max_albums ;
+            private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
+            constraint->resize( max_artist ) ;
+            (*(constraint.get()))[id_artist.get()] = 1 ;
         }
 
         if( id_albums ) 

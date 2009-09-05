@@ -540,9 +540,8 @@ MPX::LibraryScannerThread_MLibMan::on_scan_all(
         else
         {
             gint64 id = get<gint64>((*i)["id"]) ;
-            pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
-
             m_SQL->exec_sql(mprintf( delete_track_f, id)) ;
+            pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
         }
 
 
@@ -792,9 +791,8 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
                 if( !file->query_exists() )
                 {
                     gint64 id = get<gint64>((*i)["id"]) ;
-                    pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
-
                     m_SQL->exec_sql(mprintf( delete_track_f, id)) ;
+                    pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
                 }
 
                 if( check_abort_scan() ) 
@@ -1344,8 +1342,8 @@ MPX::LibraryScannerThread_MLibMan::create_insertion_track(
 
         if( id != 0 )
         {
-            pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
             m_SQL->exec_sql(mprintf( delete_track_f, id)) ;
+            pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
         }
 
         quarantine_file( uri )  ;
@@ -1740,9 +1738,8 @@ MPX::LibraryScannerThread_MLibMan::do_remove_dangling ()
   {
         if (idset1.find (*i) == idset1.end())
         {
-            pthreaddata->EntityDeleted( *i , ENTITY_ARTIST ) ;
-
             m_SQL->exec_sql((delete_f % "artist" % (*i)).str()) ;
+            pthreaddata->EntityDeleted( *i , ENTITY_ARTIST ) ;
         }
   }
 
@@ -1766,9 +1763,8 @@ MPX::LibraryScannerThread_MLibMan::do_remove_dangling ()
   {
         if (idset1.find (*i) == idset1.end())
         {
-            pthreaddata->EntityDeleted( *i , ENTITY_ALBUM ) ;
-
             m_SQL->exec_sql((delete_f % "album" % (*i)).str()) ;
+            pthreaddata->EntityDeleted( *i , ENTITY_ALBUM ) ;
         }
   }
 
@@ -1791,9 +1787,8 @@ MPX::LibraryScannerThread_MLibMan::do_remove_dangling ()
   {
         if (idset1.find (*i) == idset1.end())
         {
-            pthreaddata->EntityDeleted( *i , ENTITY_ALBUM_ARTIST ) ;
-
             m_SQL->exec_sql((delete_f % "album_artist" % (*i)).str()) ;
+            pthreaddata->EntityDeleted( *i , ENTITY_ALBUM_ARTIST ) ;
         }
   }
 
@@ -1825,9 +1820,8 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum()
                       Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri) ;
                       if( !file->query_exists() )
                       {
-                              pthreaddata->EntityDeleted( get<gint64>((*i)["id"]) , ENTITY_TRACK ) ;
-
                               m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
+                              pthreaddata->EntityDeleted( get<gint64>((*i)["id"]) , ENTITY_TRACK ) ;
                       }
               } catch(Glib::Error) {
                         g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str()) ;
@@ -1880,9 +1874,8 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum_volume_list(
                               Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri) ;
                               if( !file->query_exists() )
                               {
-                                      pthreaddata->EntityDeleted( get<gint64>((*i)["id"]), ENTITY_TRACK ) ;
-
                                       m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
+                                      pthreaddata->EntityDeleted( get<gint64>((*i)["id"]), ENTITY_TRACK ) ;
                               }
                       } catch(Glib::Error) {
                                 g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str()) ;

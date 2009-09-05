@@ -210,14 +210,14 @@ namespace Artist
 
         struct DataModelFilter : public DataModel
         {
-                typedef std::set<gint64>                IdSet_t ;
-                typedef boost::shared_ptr<IdSet_t>      IdSet_sp ;
+                typedef std::vector<int>                IdVector_t ;
+                typedef boost::shared_ptr<IdVector_t>   IdVector_sp ;
 
                 RowRowMapping_t        m_mapping ;
-                IdSet_sp               m_constraints_artist ;
+                IdVector_sp            m_constraints_artist ;
 
                 DataModelFilter(DataModel_SP_t & model)
-                    : DataModel( model->m_realmodel )
+                : DataModel( model->m_realmodel )
                 {
                     regen_mapping() ;
                 }
@@ -228,7 +228,7 @@ namespace Artist
 
                 virtual void
                 set_constraints_artist(
-                    const IdSet_sp& constraint
+                    const IdVector_sp& constraint
                 )
                 {
                     m_constraints_artist = constraint ;
@@ -336,7 +336,7 @@ namespace Artist
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
-                        int truth = !m_constraints_artist || m_constraints_artist->count( get<1>(*i)) ;
+                        int truth = !m_constraints_artist || (*(m_constraints_artist.get()))[get<1>(*i)] ;
 
                         if( truth )
                         {

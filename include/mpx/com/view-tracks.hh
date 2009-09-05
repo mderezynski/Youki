@@ -456,22 +456,17 @@ namespace Tracks
         struct DataModelFilter
         : public DataModel
         {
-                typedef std::set<gint64>                        IdSet_t ;
-                typedef boost::shared_ptr<IdSet_t>              IdSet_sp ;
-
+                typedef std::vector<int>                        IdVector_t ;
+                typedef boost::shared_ptr<IdVector_t>           IdVector_sp ;
                 typedef std::set<Model_t::const_iterator>       ModelIteratorSet_t ;
                 typedef boost::shared_ptr<ModelIteratorSet_t>   ModelIteratorSet_sp ;
-
                 typedef std::vector<ModelIteratorSet_sp>        IntersectVector_t ;
-
                 typedef std::vector<Model_t::const_iterator>    RowRowMapping_t;
 
-                struct CachedResult
-                {
-                    ModelIteratorSet_sp ModelIteratorSet ;
-                } ;
+                gint64  m_max_size_constraints_artist ;
+                gint64  m_max_size_constraints_albums ;
 
-                typedef std::map<std::string, CachedResult>     FragmentCache_t ;
+                typedef std::map<std::string, ModelIteratorSet_sp>  FragmentCache_t ;
 
                 struct IntersectSort
                     : std::binary_function<ModelIteratorSet_sp, ModelIteratorSet_sp, bool>
@@ -494,13 +489,15 @@ namespace Tracks
                 AQE::Constraints_t          m_constraints_aqe ;
                 boost::optional<gint64>     m_active_track ;
                 boost::optional<gint64>     m_local_active_track ;
-                IdSet_sp                    m_constraints_albums ;
-                IdSet_sp                    m_constraints_artist ;
+                IdVector_sp                 m_constraints_albums ;
+                IdVector_sp                 m_constraints_artist ;
                 bool                        m_cache_enabled ;
 
                 DataModelFilter( DataModel_SP_t& model )
 
                     : DataModel( model->m_realmodel )
+                    , m_max_size_constraints_artist( 0 )
+                    , m_max_size_constraints_albums( 0 )
                     , m_cache_enabled( true )
 
                 {
@@ -509,6 +506,26 @@ namespace Tracks
 
                 virtual ~DataModelFilter()
                 {
+                }
+
+                void
+                set_sizes(
+                      gint64    max_size_artist
+                    , gint64    max_size_albums
+                )
+                {
+                    m_max_size_constraints_artist = max_size_artist ;
+                    m_max_size_constraints_albums = max_size_albums ;
+                }
+
+                void
+                get_sizes(
+                      gint64&   max_size_artist
+                    , gint64&   max_size_albums
+                )
+                {
+                    max_size_artist = m_max_size_constraints_artist ; 
+                    max_size_albums = m_max_size_constraints_albums ; 
                 }
 
                 virtual void
@@ -713,6 +730,49 @@ namespace Tracks
                 }
 
                 void
+                scan_active_find_position(
+                      gint64 id
+                )
+                {
+                    using boost::get;
+
+                    bool found_active = false, found_position = false ;
+
+                    if( !m_active_track )
+                    {
+                        m_local_active_track.reset() ;
+                        find_position( id ) ;
+                        return ;
+                    }
+
+                    for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                    {
+                        gint64 val = get<3>(**i) ;
+
+                        if( !found_active && m_active_track && val == m_active_track.get() )
+                        {
+                            m_local_active_track = std::distance( m_mapping.begin(), i ) ; 
+                            found_active = true ;
+                        }
+
+                        if( !found_position && id >= 0 )
+                        {
+                            if( val == id )
+                            {
+                                m_position = std::distance( m_mapping.begin(), i ) ;
+                                found_position = true ;
+                            }
+                        }
+
+                        if( found_active && found_position )
+                            return ;
+                    }
+
+                    if( !found_active )
+                        m_local_active_track.reset() ;
+                }
+
+                void
                 scan_active ()
                 {
                     using boost::get;
@@ -742,8 +802,7 @@ namespace Tracks
                     {
                         for( RowRowMapping_t::iterator i = m_mapping.begin() ; i != m_mapping.end() ; ++i )
                         {
-                            const Row_t& row = **i ;
-                            if( boost::get<3>(row) == id )
+                            if( boost::get<3>(**i) == id )
                             {
                                 m_position = std::distance( m_mapping.begin(), i ) ;
                                 return ;
@@ -777,7 +836,7 @@ namespace Tracks
 
                     for( std::size_t n = 0 ; n < m_frags.size(); ++n )
                     {
-                        if( m_frags[n].empty() ) // the fragment is an empty string, so just contine and do nothing (FIXME> Perhaps just add the track instead?)
+                        if( m_frags[n].empty() )
                         {
                             continue ;
                         }
@@ -804,10 +863,7 @@ namespace Tracks
                                 }
                             }
     
-                            CachedResult r ;
-                            r.ModelIteratorSet = model_iterator_set ;
-
-                            m_fragment_cache.insert( std::make_pair( m_frags[n], r )) ;
+                            m_fragment_cache.insert( std::make_pair( m_frags[n], model_iterator_set )) ;
                         }
                     }
                 }
@@ -823,9 +879,7 @@ namespace Tracks
 
                     RowRowMapping_t new_mapping, new_mapping_unfiltered ;
 
-                    IntersectVector_t intersect_v ; 
-
-                    gint64 id ;
+                    gint64 id = -1 ;
         
                     if( m_active_track )
                     {
@@ -842,32 +896,29 @@ namespace Tracks
                         m_constraints_albums.reset() ;
                         m_constraints_artist.reset() ;
 
-                        new_mapping.resize( m_realmodel->size() ) ;
-                        new_mapping_unfiltered.resize( m_realmodel->size() ) ;
-
-                        std::size_t n = 0 ;
+                        new_mapping.reserve( m_realmodel->size() ) ;
+                        new_mapping_unfiltered.reserve( m_realmodel->size() ) ;
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
-                            new_mapping[n] = i ;
-                            new_mapping_unfiltered[n++] = i ;
+                            new_mapping.push_back( i ) ;
+                            new_mapping_unfiltered.push_back( i ) ;
                         }
                     }
                     else
                     if( m_frags.empty() && !(m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
-                        m_constraints_albums = IdSet_sp( new IdSet_t ) ; 
-                        m_constraints_artist = IdSet_sp( new IdSet_t ) ; 
+                        m_constraints_albums = IdVector_sp( new IdVector_t ) ; 
+                        m_constraints_albums->resize( m_max_size_constraints_albums + 1 ) ;
 
-                        ModelIteratorSet_sp model_iterator_set ( new ModelIteratorSet_t ) ;
+                        m_constraints_artist = IdVector_sp( new IdVector_t ) ; 
+                        m_constraints_artist->resize( m_max_size_constraints_artist + 1 ) ;
 
-                        intersect_v.push_back( model_iterator_set ) ; 
+                        IdVector_t& constraints_artist = *(m_constraints_artist.get()) ;
+                        IdVector_t& constraints_albums = *(m_constraints_albums.get()) ;
 
-                        new_mapping.resize( m_realmodel->size() ) ;
-                        new_mapping_unfiltered.resize( m_realmodel->size() ) ;
-
-                        std::size_t n = 0 ;
-                        std::size_t u = 0 ;
+                        new_mapping.reserve( m_realmodel->size() ) ;
+                        new_mapping_unfiltered.reserve( m_realmodel->size() ) ;
 
                         for( Model_t::const_iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i ) // determine all the matches
                         {
@@ -885,10 +936,10 @@ namespace Tracks
 
                             if( t2 )
                             {
-                                new_mapping_unfiltered[u++] = i ;
+                                new_mapping_unfiltered.push_back( i ) ;
 
-                                m_constraints_albums->insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                                m_constraints_artist->insert( get<6>(row) ) ;
+                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = 1 ;
+                                constraints_artist[get<6>(row)] = 1 ;
                             }
 
                             if( !m_constraints_ext.empty() )
@@ -897,89 +948,102 @@ namespace Tracks
                             if( !t1 )
                                 continue ;
 
-                            new_mapping[n++] = i ; 
+                            new_mapping.push_back( i ) ; 
                         }
-
-                        new_mapping.resize( n ) ; 
-                        new_mapping_unfiltered.resize( u ) ; 
                     }
                     else
                     {
-                        std::vector<std::string> vec( 3 ) ;
+                        IntersectVector_t intersect ;
+                        intersect.reserve( m_frags.size() ) ; 
+
+                        StrV vec( 3 ) ;
 
                         for( std::size_t n = 0 ; n < m_frags.size(); ++n )
                         {
-                            if( m_frags[n].empty() ) // the fragment is an empty string, so just contine and do nothing (FIXME> Perhaps just add the track instead?)
+                            if( m_frags[n].empty() )
                             {
                                 continue ;
                             }
 
-                            FragmentCache_t::iterator it = m_fragment_cache.find( m_frags[n] ) ; // do we have this text fragment's result set cached?
-
-                            if( m_cache_enabled && it != m_fragment_cache.end() ) // yes, this text fragment's result set is already cached
+                            if( m_cache_enabled ) 
                             {
-                                const CachedResult& result = it->second ;
-                                intersect_v.push_back( result.ModelIteratorSet ) ;
-                            }
-                            else // no we don't: we need to determine the result set
-                            {
-                                ModelIteratorSet_sp model_iterator_set ( new ModelIteratorSet_t ) ;
-                                intersect_v.push_back( model_iterator_set ) ; 
+                                FragmentCache_t::iterator cache_iter = m_fragment_cache.find( m_frags[n] ) ;
 
-                                for( Model_t::const_iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i ) // determine all the matches
+                                if( cache_iter != m_fragment_cache.end() )
                                 {
-                                    const Row_t& row = *i;
-
-                                    vec[0] = Glib::ustring(boost::get<0>(row)).lowercase() ;
-                                    vec[1] = Glib::ustring(boost::get<1>(row)).lowercase() ;
-                                    vec[2] = Glib::ustring(boost::get<2>(row)).lowercase() ;
-
-                                    if( Util::match_vec( m_frags[n], vec ))
-                                    {
-                                        model_iterator_set->insert( i ) ; 
-                                    }
-                                }
-
-                                if( m_cache_enabled && !m_fragment_cache.count( m_frags[n] ) && m_constraints_ext.empty() && m_constraints_aqe.empty() )
-                                {
-                                    CachedResult r ;
-                                    r.ModelIteratorSet = model_iterator_set ;
-
-                                    m_fragment_cache.insert( std::make_pair( m_frags[n], r )) ; // insert newly determined result set for fragment into the fragment cache
+                                    intersect.push_back( cache_iter->second ) ;
+                                    continue ;
                                 }
                             }
-                        }
 
-                        std::sort( intersect_v.begin(), intersect_v.end(), IntersectSort() ) ;
-                        ModelIteratorSet_sp output ( new ModelIteratorSet_t ) ; 
+                            ModelIteratorSet_sp model_iterator_set( new ModelIteratorSet_t ) ;
 
-                        if( !intersect_v.empty() )
-                        { 
-                            output = intersect_v[0] ; 
-
-                            for( std::size_t n = 1 ; n < intersect_v.size() ; ++n )
+                            for( Model_t::const_iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                             {
-                                ModelIteratorSet_sp tmp ( new ModelIteratorSet_t ) ;
+                                const Row_t& row = *i;
 
-                                for( ModelIteratorSet_t::const_iterator i = intersect_v[n]->begin(); i != intersect_v[n]->end(); ++i )
+                                vec[0] = Glib::ustring(boost::get<0>(row)).lowercase() ;
+                                vec[1] = Glib::ustring(boost::get<1>(row)).lowercase() ;
+                                vec[2] = Glib::ustring(boost::get<2>(row)).lowercase() ;
+
+                                if( Util::match_vec( m_frags[n], vec ))
                                 {
-                                    if( output->find( *i ) != output->end() )
-                                    {
-                                        tmp->insert( *i ) ;
-                                    }
+                                    model_iterator_set->insert( i ) ; 
                                 }
+                            }
 
-                                output = tmp ; 
+                            intersect.push_back( model_iterator_set ) ; 
+
+                            if( m_cache_enabled && !m_fragment_cache.count( m_frags[n] ) && m_constraints_ext.empty() && m_constraints_aqe.empty() )
+                            {
+                                m_fragment_cache.insert( std::make_pair( m_frags[n], model_iterator_set )) ;
                             }
                         }
 
-                        new_mapping.resize( output->size() ) ;
-                        new_mapping_unfiltered.resize( output->size() ) ;
-                        std::size_t n = 0 ;
-                        std::size_t u = 0 ;
+                        std::sort( intersect.begin(), intersect.end(), IntersectSort() ) ;
+                        ModelIteratorSet_sp output( new ModelIteratorSet_t ) ; 
 
-                        m_constraints_albums = IdSet_sp( new IdSet_t ) ; 
-                        m_constraints_artist = IdSet_sp( new IdSet_t ) ; 
+                        if( !intersect.empty() )
+                        {
+                            output = intersect[0] ;
+
+                            for( std::size_t n = 1 ; n < intersect.size() ; ++n )
+                            {
+                                ModelIteratorSet_sp intersect_out( new ModelIteratorSet_t ) ;
+                                intersect_out->reserve( output->size() ) ;
+
+                                std::set_intersection(
+
+                                    // Set 1
+                                      output->begin()
+                                    , output->end()
+
+                                    // Set 2 
+                                    , intersect[n]->begin()
+                                    , intersect[n]->end()
+
+                                    // Result insertion 
+                                    , std::inserter(
+                                            *intersect_out.get()
+                                           , intersect_out->end()
+                                      )
+                                ) ;
+
+                                output = intersect_out ;
+                            }
+                        }
+
+                        new_mapping.reserve( output->size() ) ;
+                        new_mapping_unfiltered.reserve( output->size() ) ;
+
+                        m_constraints_albums = IdVector_sp( new IdVector_t ) ; 
+                        m_constraints_albums->resize( m_max_size_constraints_albums + 1 ) ;
+
+                        m_constraints_artist = IdVector_sp( new IdVector_t ) ; 
+                        m_constraints_artist->resize( m_max_size_constraints_artist + 1 ) ;
+
+                        IdVector_t& constraints_artist = *(m_constraints_artist.get()) ;
+                        IdVector_t& constraints_albums = *(m_constraints_albums.get()) ;
 
                         for( ModelIteratorSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
@@ -995,10 +1059,10 @@ namespace Tracks
 
                             if( t2 )
                             {
-                                new_mapping_unfiltered[u++] = *i ;
+                                new_mapping_unfiltered.push_back( *i ) ;
 
-                                m_constraints_albums->insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                                m_constraints_artist->insert( get<6>(**i) ) ;
+                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = 1 ; 
+                                constraints_artist[get<6>(**i)] = 1 ;
                             }
 
                             if( !m_constraints_ext.empty() )
@@ -1007,17 +1071,15 @@ namespace Tracks
                             if( !t1 )
                                 continue ;
 
-                            new_mapping[n++] = *i ;
+                            new_mapping.push_back( *i ) ;
                         }
-
-                        new_mapping.resize( n ) ;
-                        new_mapping_unfiltered.resize( u ) ;
                     }
 
                     std::swap( new_mapping, m_mapping ) ;
                     std::swap( new_mapping_unfiltered, m_mapping_unfiltered ) ;
-                    scan_active() ;
-                    find_position( id ) ;
+
+                    scan_active_find_position( id ) ;
+
                     m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
                 }
 
@@ -1032,9 +1094,7 @@ namespace Tracks
 
                     RowRowMapping_t new_mapping, new_mapping_unfiltered ;
 
-                    IntersectVector_t intersect_v ; 
-
-                    gint64 id = - 1 ;
+                    gint64 id = -1 ; 
 
                     if( m_active_track )
                     {
@@ -1051,28 +1111,29 @@ namespace Tracks
                         m_constraints_albums.reset() ;
                         m_constraints_artist.reset() ;
 
-                        new_mapping.resize( m_mapping_unfiltered.size() ) ;
-                        new_mapping_unfiltered.resize( m_mapping_unfiltered.size() ) ;
-
-                        std::size_t n = 0 ;
+                        new_mapping.reserve( m_mapping_unfiltered.size() ) ;
+                        new_mapping_unfiltered.reserve( m_mapping_unfiltered.size() ) ;
 
                         for( RowRowMapping_t::iterator i = m_mapping_unfiltered.begin(); i != m_mapping_unfiltered.end(); ++i )
                         {
-                            new_mapping_unfiltered[n] = *i ;
-                            new_mapping[n++] = *i ;
+                            new_mapping_unfiltered.push_back( *i ) ;
+                            new_mapping.push_back( *i ) ;
                         }
                     }
                     else
                     if( m_frags.empty() && !(m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
-                        m_constraints_albums = IdSet_sp( new IdSet_t ) ;
-                        m_constraints_artist = IdSet_sp( new IdSet_t ) ;
+                        m_constraints_albums = IdVector_sp( new IdVector_t ) ; 
+                        m_constraints_albums->resize( m_max_size_constraints_albums + 1 ) ;
 
-                        new_mapping.resize( m_mapping_unfiltered.size() ) ;
-                        new_mapping_unfiltered.resize( m_mapping_unfiltered.size() ) ;
+                        m_constraints_artist = IdVector_sp( new IdVector_t ) ; 
+                        m_constraints_artist->resize( m_max_size_constraints_artist + 1 ) ;
 
-                        std::size_t n = 0 ;
-                        std::size_t u = 0 ;
+                        IdVector_t& constraints_artist = *(m_constraints_artist.get()) ;
+                        IdVector_t& constraints_albums = *(m_constraints_albums.get()) ;
+
+                        new_mapping.reserve( m_mapping_unfiltered.size() ) ;
+                        new_mapping_unfiltered.reserve( m_mapping_unfiltered.size() ) ;
 
                         for( RowRowMapping_t::const_iterator i = m_mapping_unfiltered.begin(); i != m_mapping_unfiltered.end(); ++i )
                         {
@@ -1090,10 +1151,10 @@ namespace Tracks
 
                             if( t2 )
                             {
-                                new_mapping_unfiltered[u++] = *i ;
+                                new_mapping_unfiltered.push_back( *i ) ;
 
-                                m_constraints_albums->insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                                m_constraints_artist->insert( get<6>(row) ) ;
+                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = 1 ; 
+                                constraints_artist[get<6>(row)] = 1 ;
                             }
 
                             if( !m_constraints_ext.empty() )
@@ -1102,92 +1163,116 @@ namespace Tracks
                             if( !t1 )
                                 continue ;
 
-                            new_mapping[n++] = *i ; 
+                            new_mapping.push_back( *i ) ; 
                         }
-
-                        new_mapping.resize( n ) ;
-                        new_mapping_unfiltered.resize( u ) ;
                     }
                     else
                     {
-                        std::vector<std::string> vec( 3 ) ;
+                        IntersectVector_t intersect ; 
+                        intersect.reserve( m_frags.size() ) ;
+
+                        StrV vec( 3 ) ;
 
                         for( std::size_t n = 0 ; n < m_frags.size(); ++n )
                         {
-                            if( m_frags[n].empty() ) // the fragment is an empty string, so just contine and do nothing (FIXME> Perhaps just add the track instead?)
+                            if( m_frags[n].empty() ) 
                             {
                                 continue ;
                             }
 
-                            FragmentCache_t::iterator it = m_fragment_cache.find( m_frags[n] ) ; // do we have this text fragment's result set cached?
-
-                            if( m_cache_enabled && it != m_fragment_cache.end() ) // yes, this text fragment's result set is already cached
+                            if( m_cache_enabled ) 
                             {
-                                const CachedResult& result = it->second ;
+                                FragmentCache_t::iterator cache_iter = m_fragment_cache.find( m_frags[n] ) ;
 
-                                intersect_v.push_back( result.ModelIteratorSet ) ;
-                            }
-                            else // no we don't: we need to determine the result set
-                            {
-                                ModelIteratorSet_sp model_iterator_set ( new ModelIteratorSet_t ) ;
-
-                                intersect_v.push_back( model_iterator_set ) ; 
-
-                                for( RowRowMapping_t::const_iterator i = m_mapping_unfiltered.begin(); i != m_mapping_unfiltered.end(); ++i )
+                                if( cache_iter != m_fragment_cache.end() )
                                 {
-                                    const Row_t& row = **i ;
-
-                                    vec[0] = Glib::ustring(boost::get<0>(row)).lowercase() ;
-                                    vec[1] = Glib::ustring(boost::get<1>(row)).lowercase() ;
-                                    vec[2] = Glib::ustring(boost::get<2>(row)).lowercase() ;
-
-                                    if( Util::match_vec( m_frags[n], vec ))
-                                    {
-                                        model_iterator_set->insert( *i ) ; 
-                                    }
-                                }
-
-                                if( m_cache_enabled && m_frags.size() == 1 && !m_fragment_cache.count( m_frags[n] ) && m_constraints_ext.empty() && m_constraints_aqe.empty() )
-                                {
-                                    CachedResult r ;
-
-                                    r.ModelIteratorSet = model_iterator_set ;
-                                    m_fragment_cache.insert( std::make_pair( m_frags[n], r )) ; // insert newly determined result set for fragment into the fragment cache
+                                    intersect.push_back( cache_iter->second ) ;
+                                    continue ;
                                 }
                             }
-                        }
 
-                        std::sort( intersect_v.begin(), intersect_v.end(), IntersectSort() ) ;
-                        ModelIteratorSet_sp output ( new ModelIteratorSet_t ) ; 
+                            ModelIteratorSet_sp model_iterator_set ( new ModelIteratorSet_t ) ;
 
-                        if( !intersect_v.empty() )
-                        { 
-                            output = intersect_v[0] ; 
-
-                            for( std::size_t n = 1 ; n < intersect_v.size() ; ++n )
+                            for( RowRowMapping_t::const_iterator i = m_mapping_unfiltered.begin(); i != m_mapping_unfiltered.end(); ++i )
                             {
-                                ModelIteratorSet_sp tmp ( new ModelIteratorSet_t ) ;
+                                const Row_t& row = **i ;
 
-                                for( ModelIteratorSet_t::const_iterator i = intersect_v[n]->begin(); i != intersect_v[n]->end(); ++i )
+                                vec[0] = Glib::ustring(boost::get<0>(row)).lowercase() ;
+                                vec[1] = Glib::ustring(boost::get<1>(row)).lowercase() ;
+                                vec[2] = Glib::ustring(boost::get<2>(row)).lowercase() ;
+
+                                if( Util::match_vec( m_frags[n], vec ))
                                 {
-                                    if( output->find( *i ) != output->end() )
-                                    {
-                                        tmp->insert( *i ) ;
-                                    }
+                                    model_iterator_set->insert( *i ) ; 
                                 }
+                            }
 
-                                output = tmp ; 
+                            intersect.push_back( model_iterator_set ) ; 
+
+                            // We cannot cache results which are preconstrainted i.e. through ext or aqe constraints.
+                            // If there is more than 1 frag then the result set, since we go through a previous projection,
+                            // the controller mapping (m_mapping_unfiltered) is already constrainted through the preceding frags
+                            // i.e. in previous calls to regen_mapping_iterative m_mapping_unfiltered has already become a
+                            // projection of the base model through the previous frags
+
+                            if(
+                                m_cache_enabled
+                                        &&
+                                m_frags.size() == 1
+                                        &&
+                                m_constraints_ext.empty()
+                                        &&
+                                m_constraints_aqe.empty()
+                            )
+                            {
+                                m_fragment_cache.insert( std::make_pair( m_frags[n], model_iterator_set )) ;
                             }
                         }
 
-                        new_mapping.resize( m_realmodel->size() ) ;
-                        new_mapping_unfiltered.resize( m_realmodel->size() ) ; 
+                        std::sort( intersect.begin(), intersect.end(), IntersectSort() ) ;
+                        ModelIteratorSet_sp output( new ModelIteratorSet_t ) ; 
 
-                        std::size_t n = 0 ;
-                        std::size_t u = 0 ;
+                        if( !intersect.empty() )
+                        {
+                            output = intersect[0] ;
 
-                        m_constraints_albums = IdSet_sp( new IdSet_t ) ;
-                        m_constraints_artist = IdSet_sp( new IdSet_t ) ;
+                            for( std::size_t n = 1 ; n < intersect.size() ; ++n )
+                            {
+                                ModelIteratorSet_sp intersect_out( new ModelIteratorSet_t ) ;
+                                intersect_out->reserve( output->size() ) ;
+
+                                std::set_intersection(
+
+                                    // Set 1
+                                      output->begin()
+                                    , output->end()
+
+                                    // Set 2 
+                                    , intersect[n]->begin()
+                                    , intersect[n]->end()
+
+                                    // Result insertion 
+                                    , std::inserter(
+                                            *intersect_out.get()
+                                           , intersect_out->end()
+                                      )
+                                ) ;
+
+                                output = intersect_out ;
+                            }
+                        }
+
+                        new_mapping.reserve( m_realmodel->size() ) ;
+                        new_mapping_unfiltered.reserve( m_realmodel->size() ) ; 
+
+                        m_constraints_albums = IdVector_sp( new IdVector_t ) ; 
+                        m_constraints_albums->resize( m_max_size_constraints_albums + 1 ) ;
+
+                        m_constraints_artist = IdVector_sp( new IdVector_t ) ; 
+                        m_constraints_artist->resize( m_max_size_constraints_artist + 1 ) ;
+
+                        IdVector_t& constraints_artist = *(m_constraints_artist.get()) ;
+                        IdVector_t& constraints_albums = *(m_constraints_albums.get()) ;
 
                         for( ModelIteratorSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
@@ -1203,10 +1288,10 @@ namespace Tracks
 
                             if( t2 )
                             {
-                                new_mapping_unfiltered[u++] = *i ;
+                                new_mapping_unfiltered.push_back( *i ) ;
 
-                                m_constraints_albums->insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                                m_constraints_artist->insert( get<6>(**i) ) ;
+                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = 1 ;
+                                constraints_artist[get<6>(**i)] = 1 ;
                             }
 
                             if( !m_constraints_ext.empty() )
@@ -1215,17 +1300,15 @@ namespace Tracks
                             if( !t1 )
                                 continue ;
 
-                            new_mapping[n++] = *i ;
+                            new_mapping.push_back( *i ) ;
                         }
-
-                        new_mapping.resize( n ) ;
-                        new_mapping_unfiltered.resize( u ) ;
                     }
 
                     std::swap( new_mapping, m_mapping ) ;
                     std::swap( new_mapping_unfiltered, m_mapping_unfiltered ) ;
-                    scan_active() ;
-                    find_position( id ) ;
+
+                    scan_active_find_position( id ) ;
+
                     m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
                 }
         };
