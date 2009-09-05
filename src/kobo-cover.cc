@@ -80,7 +80,7 @@ namespace MPX
             , r.y 
             , r.width 
             , r.height 
-            , 2.
+            , 3.
         ) ;
         cairo->fill() ;
 
@@ -96,7 +96,7 @@ namespace MPX
 
         double h, s, b ;
     
-        double alpha = 0.25 ;
+        double alpha = 0.35 ;
         
         Util::color_to_hsb( cgdk, h, s, b ) ;
         b *= 0.90 ; 
@@ -111,21 +111,21 @@ namespace MPX
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
 
         gradient->add_color_stop_rgba(
-              0. 
+              1. 
             , c3.get_red_p()
             , c3.get_green_p()
             , c3.get_blue_p()
-            , alpha / 4.
+            , alpha / 3.
         ) ;
         gradient->add_color_stop_rgba(
               .40
             , c2.get_red_p()
             , c2.get_green_p()
             , c2.get_blue_p()
-            , alpha / 3.
+            , alpha / 2.
         ) ;
         gradient->add_color_stop_rgba(
-              1.
+              0.
             , c1.get_red_p()
             , c1.get_green_p()
             , c1.get_blue_p()
@@ -139,7 +139,7 @@ namespace MPX
             , r.y 
             , r.width 
             , r.height 
-            , 2. 
+            , 3. 
         ) ;
         cairo->fill(); 
 
@@ -151,7 +151,7 @@ namespace MPX
 
         Cairo::RefPtr<Cairo::LinearGradient> gradient2 = Cairo::LinearGradient::create(
               r.x + r.width / 2
-            , r.y + (r.height - (r.height/1.7))
+            , r.y
             , r.x + r.width / 2
             , r.y + r.height
         ) ;
@@ -160,17 +160,17 @@ namespace MPX
             , c.r
             , c.g
             , c.b
-            , alpha / 4.9 
+            , 0. 
         ) ;
         gradient2->add_color_stop_rgba(
-              0.5
+              0.7
             , c.r
             , c.g
             , c.b
-            , alpha / 3.8 
+            , alpha / 4.
         ) ;
         gradient2->add_color_stop_rgba(
-              1
+              1.
             , c.r
             , c.g
             , c.b
@@ -182,17 +182,45 @@ namespace MPX
         RoundedRectangle(
               cairo
             , r.x 
-            , r.y + (r.height - (r.height/1.7))
+            , r.y
             , r.width
-            , r.height / 1.7 
-            , 2.
-            , CairoCorners::CORNERS( 3 )
+            , r.height
+            , 3.
         ) ;
         cairo->fill() ;
 
+        gradient = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y  
+            , r.x + r.width / 2
+            , r.y + r.height
+        ) ;
+
+        gradient->add_color_stop_rgba(
+              1. 
+            , c3.get_red_p()
+            , c3.get_green_p()
+            , c3.get_blue_p()
+            , alpha / 2.
+        ) ;
+        gradient->add_color_stop_rgba(
+              .40
+            , c2.get_red_p()
+            , c2.get_green_p()
+            , c2.get_blue_p()
+            , alpha / 1.3
+        ) ;
+        gradient->add_color_stop_rgba(
+              0.
+            , c1.get_red_p()
+            , c1.get_green_p()
+            , c1.get_blue_p()
+            , alpha 
+        ) ;
+
         cairo->set_source( gradient ) ;
-        cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
-        cairo->set_line_width( 0.75 ) ; 
+        cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
+        cairo->set_line_width( 2.5 ) ; 
         RoundedRectangle(
               cairo
             , r.x 

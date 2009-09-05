@@ -955,7 +955,7 @@ namespace Artist
                                           , 0
                                           , m_model->size()
                                           , get_page_size()
-                                      ) + 1 ;
+                                      ) ;
 
                     std::size_t ypos = 0 ;
                     std::size_t xpos = 0 ;

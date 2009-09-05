@@ -90,7 +90,7 @@ namespace View
 {
 namespace Albums
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string, std::string> Row_t ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string, std::string, std::string> Row_t ;
 
         typedef IndexedList<Row_t>                                                      Model_t ;
         typedef boost::shared_ptr<Model_t>                                              Model_SP_t ;
