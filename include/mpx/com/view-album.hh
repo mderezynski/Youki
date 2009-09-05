@@ -807,9 +807,9 @@ namespace Albums
                             if( get<8>(data_row).empty() )
                                 year_label = get<7>(data_row) ; 
                             else
-                                year_label = (boost::format("%s • %s") % get<7>(data_row) % get<8>(data_row)).str() ;
+                                year_label = (boost::format("%s <span color='#404040'>•</span> %s") % get<7>(data_row) % get<8>(data_row)).str() ;
 
-                            layout[L1]->set_text( year_label ) ; 
+                            layout[L1]->set_markup( year_label ) ; 
                             layout[L1]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + 8 
@@ -1280,6 +1280,8 @@ namespace Albums
 
                     RowRowMapping_t::const_iterator row_iter = m_model->row_iter( row ) ;
 
+                    bool album_name_only = m_model->m_constraints_artist && (m_model->m_constraints_artist->size() == 1) ;
+
                     while( m_model->is_set() && cnt && m_Model_I.in( row )) 
                     {
                         xpos = 0 ;
@@ -1316,7 +1318,7 @@ namespace Albums
                                   , m_row_height
                                   , iter_is_selected
                                   , iter_is_selected ? c_text_sel : c_text
-                                  , bool(m_model->m_constraints_artist)
+                                  , album_name_only 
                             ) ;
 
                             xpos += (*i)->get_width() ; 

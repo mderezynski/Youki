@@ -222,7 +222,7 @@ namespace MPX
                     RoundedRectangle(
                           cairo
                         , x - 26
-                        , (HEIGHT-y) + 12
+                        , (HEIGHT-y) + 8
                         , w
                         , - h
                         , 1.

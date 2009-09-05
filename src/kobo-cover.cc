@@ -59,35 +59,148 @@ namespace MPX
         }
 
         const Gtk::Allocation& a = get_allocation() ;
-
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
+
+        GdkRectangle r ;
+
+        r.x = (a.get_width() - m_cover->get_width())/2. ;
+        r.y = (a.get_height() - m_cover->get_height())/2. ;
+        r.width = m_cover->get_width() ;
+        r.height = m_cover->get_height() ;
 
         Gdk::Cairo::set_source_pixbuf(    
               cairo
             , m_cover
-            , (a.get_width() - m_cover->get_width())/2.
-            , (a.get_height() - m_cover->get_height())/2.
+            , r.x 
+            , r.y 
         ) ;  
         RoundedRectangle(
               cairo
-            , (a.get_width() - m_cover->get_width())/2.
-            , (a.get_height() - m_cover->get_height())/2.
-            , m_cover->get_width()
-            , m_cover->get_height()
-            , 4.
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 2.
         ) ;
-        cairo->fill_preserve() ;
+        cairo->fill() ;
 
-        cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( m_CurrentColor.get_red_p(), m_CurrentColor.get_green_p(), m_CurrentColor.get_blue_p() ) ; 
 
-        cairo->set_source_rgba(
-              m_CurrentColor.get_red_p()
-            , m_CurrentColor.get_green_p()
-            , m_CurrentColor.get_blue_p()
-            , 1. 
+        Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y  
+            , r.x + r.width / 2
+            , r.y + r.height
         ) ;
 
-        cairo->set_line_width( 1.5 ) ;
+        double h, s, b ;
+    
+        double alpha = 0.25 ;
+        
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.90 ; 
+        Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.75 ; 
+        Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.45 ; 
+        Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
+
+        gradient->add_color_stop_rgba(
+              0. 
+            , c3.get_red_p()
+            , c3.get_green_p()
+            , c3.get_blue_p()
+            , alpha / 4.
+        ) ;
+        gradient->add_color_stop_rgba(
+              .40
+            , c2.get_red_p()
+            , c2.get_green_p()
+            , c2.get_blue_p()
+            , alpha / 3.
+        ) ;
+        gradient->add_color_stop_rgba(
+              1.
+            , c1.get_red_p()
+            , c1.get_green_p()
+            , c1.get_blue_p()
+            , alpha 
+        ) ;
+        cairo->set_source( gradient ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 2. 
+        ) ;
+        cairo->fill(); 
+
+        ThemeColor c ;
+
+        c.r = m_CurrentColor.get_red_p() ;
+        c.g = m_CurrentColor.get_green_p() ;
+        c.b = m_CurrentColor.get_blue_p() ;
+
+        Cairo::RefPtr<Cairo::LinearGradient> gradient2 = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y + (r.height - (r.height/1.7))
+            , r.x + r.width / 2
+            , r.y + r.height
+        ) ;
+        gradient2->add_color_stop_rgba(
+              0. 
+            , c.r
+            , c.g
+            , c.b
+            , alpha / 4.9 
+        ) ;
+        gradient2->add_color_stop_rgba(
+              0.5
+            , c.r
+            , c.g
+            , c.b
+            , alpha / 3.8 
+        ) ;
+        gradient2->add_color_stop_rgba(
+              1
+            , c.r
+            , c.g
+            , c.b
+            , alpha / 2.5 
+        ) ;
+
+        cairo->set_source( gradient2 ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y + (r.height - (r.height/1.7))
+            , r.width
+            , r.height / 1.7 
+            , 2.
+            , CairoCorners::CORNERS( 3 )
+        ) ;
+        cairo->fill() ;
+
+        cairo->set_source( gradient ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
+        cairo->set_line_width( 0.75 ) ; 
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 2.
+        ) ;
         cairo->stroke() ;
 
         return true ;

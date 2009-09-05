@@ -159,9 +159,18 @@ namespace MPX
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
         Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
+
         const Gtk::Allocation& a = get_allocation() ;
 
-        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
+        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
+        const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ; 
+
+        GdkRectangle r ;
+        r.x = 1 ;
+        r.y = 1 ;
+        r.width = a.get_width() - 2 ;
+        r.height = a.get_height() - 2 ;
+
         cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
         cairo->set_source_rgba(
               c_base.r
@@ -171,7 +180,6 @@ namespace MPX
         ) ;
         cairo->paint () ;
 
-        const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ; 
         cairo->set_operator( Cairo::OPERATOR_OVER ) ;
         cairo->set_source_rgba(
               c_info.r 
@@ -181,35 +189,142 @@ namespace MPX
         ) ;
         RoundedRectangle(
               cairo
-            , 1 
-            , 1 
-            , (a.get_width() - 2)
-            , double((a.get_height() - 2))
+            , r.x 
+            , r.y
+            , r.width 
+            , r.height 
             , 4. 
         ) ;
         cairo->fill () ;
 
-        m_current_time = m_timer.elapsed () ;
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( 0.4, 0.4, 0.4 ) ; 
+
+        Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y  
+            , r.x + r.width / 2
+            , r.y + r.height
+        ) ;
+
+        double h, s, b ;
+    
+        double alpha = 0.2 ;
+        
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.90 ; 
+        Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.75 ; 
+        Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.45 ; 
+        Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
+
+        gradient->add_color_stop_rgba(
+              0
+            , c1.get_red_p()
+            , c1.get_green_p()
+            , c1.get_blue_p()
+            , alpha 
+        ) ;
+        gradient->add_color_stop_rgba(
+              .40
+            , c2.get_red_p()
+            , c2.get_green_p()
+            , c2.get_blue_p()
+            , alpha / 2.5
+        ) ;
+        gradient->add_color_stop_rgba(
+              1. 
+            , c3.get_red_p()
+            , c3.get_green_p()
+            , c3.get_blue_p()
+            , alpha / 3.5
+        ) ;
+        cairo->set_source( gradient ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 4. 
+        ) ;
+        cairo->fill(); 
+
+        ThemeColor c ;
+
+        c.r = cgdk.get_red_p() ;
+        c.g = cgdk.get_green_p() ;
+        c.b = cgdk.get_blue_p() ;
+
+        gradient = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y  
+            , r.x + r.width / 2
+            , r.y + (r.height / 1.7)
+        ) ;
+        gradient->add_color_stop_rgba(
+              0
+            , c.r
+            , c.g
+            , c.b
+            , alpha / 2.4 
+        ) ;
+        gradient->add_color_stop_rgba(
+              0.5
+            , c.r
+            , c.g
+            , c.b
+            , alpha / 4.3 
+        ) ;
+        gradient->add_color_stop_rgba(
+              1 
+            , c.r
+            , c.g
+            , c.b
+            , alpha / 6.5 
+        ) ;
+        cairo->set_source( gradient ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y
+            , r.width
+            , r.height / 1.7 
+            , 4.
+            , CairoCorners::CORNERS( 3 )
+        ) ;
+        cairo->fill() ;
 
         {
+            m_current_time = m_timer.elapsed () ;
+
+            int text_size_pt = static_cast<int>( (text_size_px * 72) / Util::screen_get_y_resolution( Gdk::Screen::get_default() )) ;
+
             Pango::FontDescription font_desc = get_style()->get_font() ;
-            int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
-            font_desc.set_size (text_size_pt * PANGO_SCALE) ;
-            font_desc.set_weight (Pango::WEIGHT_BOLD) ;
+            font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
+            font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
 
-            std::string text  = get_text_at_time () ;
-            double      alpha = get_text_alpha_at_time () ;
+            std::string text  = get_text_at_time() ;
+            double      alpha = get_text_alpha_at_time() ;
 
-            Glib::RefPtr<Pango::Layout> layout = Glib::wrap (pango_cairo_create_layout (cairo->cobj ())) ;
-            layout->set_font_description (font_desc) ;
-            layout->set_text (text) ;
+            Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
+
+            layout->set_font_description( font_desc ) ;
+            layout->set_text( text ) ;
 
             int width, height;
-            layout->get_pixel_size (width, height) ;
+            layout->get_pixel_size( width, height ) ;
 
             cairo->move_to(
-                  ((a.get_width() - width) / 2)
-                , ((a.get_height() - height) / 2)
+                  (a.get_width() - width) / 2
+                , (a.get_height() - height) / 2
             ) ;
 
             const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ; 
@@ -220,9 +335,9 @@ namespace MPX
                 , c_text.b
                 , alpha 
             ) ; 
-            cairo->set_operator (Cairo::OPERATOR_OVER) ;
+            cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
-            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+            pango_cairo_show_layout( cairo->cobj(), layout->gobj() ) ;
         }
     }
 
