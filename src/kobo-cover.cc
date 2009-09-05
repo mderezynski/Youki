@@ -96,7 +96,7 @@ namespace MPX
 
         double h, s, b ;
     
-        double alpha = 0.35 ;
+        double alpha = 0.12 ;
         
         Util::color_to_hsb( cgdk, h, s, b ) ;
         b *= 0.90 ; 

@@ -1655,11 +1655,13 @@ namespace Albums
                     }
 
                     RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
-                
+              
+/*  
                     if( m_selection )
                     {
                         std::advance( i, get<2>(m_selection.get()) ) ;
                     }
+*/
 
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
