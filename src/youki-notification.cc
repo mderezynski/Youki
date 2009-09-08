@@ -534,7 +534,11 @@ namespace MPX
 
 	    m_tooltip_mode = tooltip ;
 
-	    window_set_opacity( get_window(), 1.0 ) ;
+        if( m_tooltip_mode )
+        {
+	        window_set_opacity( get_window(), 1.0 ) ;
+        }
+
 	    reposition () ;
 
 	    Window::show () ;
@@ -544,13 +548,23 @@ namespace MPX
 		Notification::disable(
         )
 	{
+		if( G_UNLIKELY(!is_realized( )) )
+        {
+            realize() ;
+        }
+
+        if( !is_mapped() )
+        {
+            return ;
+        }
+
         if( m_tooltip_mode )
 	    {
 	        m_tooltip_mode = false ;
         }
 
 	    hide() ;
-        window_set_opacity (get_window (), 1.0) ;
+        window_set_opacity( get_window(), 1.0 ) ;
 	}
 
 	void

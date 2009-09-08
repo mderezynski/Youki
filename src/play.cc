@@ -1389,6 +1389,8 @@ namespace MPX
                     create_bins()  ;
 
                     m_accurate_seek = mcs->key_get<bool>( "audio","accurate-seek" ) ;
+
+                    property_status_ = PLAYSTATUS_STOPPED ;
                 }
 
         ///////////////////////////////////////////////
