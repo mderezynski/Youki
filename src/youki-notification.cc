@@ -534,7 +534,7 @@ namespace MPX
 
 	    m_tooltip_mode = tooltip ;
 
-	    window_set_opacity( get_window(), 0. ) ;
+	    window_set_opacity( get_window(), 1.0 ) ;
 	    reposition () ;
 
 	    Window::show () ;
