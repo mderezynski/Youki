@@ -323,7 +323,7 @@ namespace MPX
             layout->get_pixel_size( width, height ) ;
 
             cairo->move_to(
-                  (a.get_width() - width) / 2 - 100
+                  (a.get_width() - width) / 2 - 50
                 , (a.get_height() - height) / 2
             ) ;
 

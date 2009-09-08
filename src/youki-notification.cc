@@ -549,8 +549,8 @@ namespace MPX
 	        m_tooltip_mode = false ;
         }
 
+	    hide() ;
         window_set_opacity (get_window (), 1.0) ;
-	    hide () ;
 	}
 
 	void

@@ -1262,7 +1262,8 @@ namespace MPX
         boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
         boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
 
-        boost::shared_ptr<std::vector<int> > constraint ; 
+        boost::shared_ptr<std::vector<int> > constraint_artist ; 
+        boost::shared_ptr<std::vector<int> > constraint_albums ; 
 
         if( id_artist ) 
         {
@@ -1272,11 +1273,14 @@ namespace MPX
             c.MatchType = AQE::MT_EQUAL ;
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
 
-            constraint = boost::shared_ptr<std::vector<int> >( new std::vector<int> ) ; 
+            constraint_artist = boost::shared_ptr<std::vector<int> >( new std::vector<int> ) ; 
+
             gint64 max_artist, max_albums ;
             private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
-            constraint->resize( max_artist ) ;
-            (*(constraint.get()))[id_artist.get()] = 1 ;
+
+            constraint_artist->resize( max_artist ) ;
+
+            (*(constraint_artist.get()))[id_artist.get()] = 1 ;
         }
 
         if( id_albums ) 
@@ -1288,7 +1292,8 @@ namespace MPX
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
-        private_->FilterModelAlbums->set_constraints_artist( constraint ) ;
+        private_->FilterModelAlbums->set_constraints_artist( constraint_artist ) ;
+        private_->FilterModelAlbums->set_constraints_albums( constraint_albums ) ;
         private_->FilterModelAlbums->regen_mapping() ;
 
         private_->FilterModelTracks->regen_mapping_iterative() ;
