@@ -134,6 +134,12 @@ namespace MPX
 
             bool
             fetch(
+                  Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
+                , int                                     /*size*/ = -1
+            );
+
+            bool
+            fetch(
               const std::string&                      /*mbid*/,
               Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/,
               CoverSize                               /*size*/
@@ -207,6 +213,8 @@ namespace MPX
             int                         m_rebuild;
             int                         m_rebuilt;
             MutexMap                    m_mutexes;
+
+            Glib::RefPtr<Gdk::Pixbuf>   m_default_cover ;
     };
 }
 

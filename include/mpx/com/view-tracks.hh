@@ -1960,6 +1960,9 @@ namespace Tracks
                     else
                     if( event->type == GDK_2BUTTON_PRESS )
                     {
+                        if( event->y < m_row_height )
+                            return false ;
+
                         Limiter<int64_t> row ( 
                               Limiter<int64_t>::ABS_ABS
                             , 0

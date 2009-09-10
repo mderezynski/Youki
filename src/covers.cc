@@ -167,6 +167,8 @@ namespace MPX
                     *this,
                     &Covers::source_pref_changed_callback
         ));
+
+        m_default_cover = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc.png" )) ;
     }
 
     void
@@ -377,6 +379,20 @@ namespace MPX
         }
 
         return false ;
+    }
+
+    bool
+    Covers::fetch(
+          RefPtr<Gdk::Pixbuf>&      cover
+        , int                       size
+    )
+    {
+        if( size == -1 )
+            cover = m_default_cover ;
+        else
+            cover = m_default_cover->scale_simple( size, size, Gdk::INTERP_BILINEAR ) ;
+
+        return true ;
     }
 
     bool

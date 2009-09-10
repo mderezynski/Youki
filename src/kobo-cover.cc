@@ -59,7 +59,7 @@ namespace MPX
         }
 
         const Gtk::Allocation& a = get_allocation() ;
-        cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
 
         GdkRectangle r ;
 
@@ -80,7 +80,7 @@ namespace MPX
             , r.y 
             , r.width 
             , r.height 
-            , 3.
+            , 4.
         ) ;
         cairo->fill() ;
 
@@ -139,15 +139,21 @@ namespace MPX
             , r.y 
             , r.width 
             , r.height 
-            , 3. 
+            , 4. 
         ) ;
         cairo->fill(); 
 
         ThemeColor c ;
 
+/*
         c.r = m_CurrentColor.get_red_p() ;
         c.g = m_CurrentColor.get_green_p() ;
         c.b = m_CurrentColor.get_blue_p() ;
+*/
+
+        c.r = 1. ;
+        c.g = 1. ;
+        c.b = 1. ;
 
         Cairo::RefPtr<Cairo::LinearGradient> gradient2 = Cairo::LinearGradient::create(
               r.x + r.width / 2
@@ -160,21 +166,21 @@ namespace MPX
             , c.r
             , c.g
             , c.b
-            , 0. 
+            , alpha / 4.2
         ) ;
         gradient2->add_color_stop_rgba(
               0.7
             , c.r
             , c.g
             , c.b
-            , alpha / 4.
+            , alpha / 3.1
         ) ;
         gradient2->add_color_stop_rgba(
               1.
             , c.r
             , c.g
             , c.b
-            , alpha / 2.5 
+            , alpha / 2.2 
         ) ;
 
         cairo->set_source( gradient2 ) ;
@@ -185,7 +191,7 @@ namespace MPX
             , r.y
             , r.width
             , r.height
-            , 3.
+            , 4.
         ) ;
         cairo->fill() ;
 
@@ -220,14 +226,14 @@ namespace MPX
 
         cairo->set_source( gradient ) ;
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
-        cairo->set_line_width( 2.5 ) ; 
+        cairo->set_line_width( 1.5 ) ; 
         RoundedRectangle(
               cairo
             , r.x 
             , r.y 
             , r.width 
             , r.height 
-            , 2.
+            , 4.
         ) ;
         cairo->stroke() ;
 

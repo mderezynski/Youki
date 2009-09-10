@@ -1175,19 +1175,16 @@ namespace MPX
 
                 Glib::RefPtr<Gdk::Pixbuf> cover ;
 
-                if( covers->fetch(
+                if( !covers->fetch(
                       mbid
                     , cover
                 ))
                 {
-                    m_control_status_icon->set_metadata( cover, t.get() ) ;
-                    m_cover->set( cover ) ; 
+                    covers->fetch( cover ) ; // we fetch the default cover
                 }
-                else
-                {
-                    m_control_status_icon->set_metadata( Glib::RefPtr<Gdk::Pixbuf>(0), t.get() ) ;
-                    m_cover->set( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
-                }
+
+                m_control_status_icon->set_metadata( cover, t.get() ) ;
+                m_cover->set( cover ) ;
         }
         else
         {
@@ -1438,6 +1435,7 @@ namespace MPX
 
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelArtist->regen_mapping() ;
+        private_->FilterModelTracks->regen_mapping() ;
 
         m_conn1.block() ;
         m_conn2.block() ;

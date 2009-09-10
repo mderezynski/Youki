@@ -1,10 +1,10 @@
 //  BMP
-//  Copyright (C) 2005-2007 BMP development.
+//  Copyright( C ) 2005-2007 BMP development.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
+// ( at your option ) any later version.
 //
 //  This program is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -57,9 +57,9 @@ namespace
     const int arrow_height = 18 ;
 
     inline double
-        cos_smooth (double x)
+        cos_smooth( double x )
     {
-        return (1.0 - std::cos (x * G_PI)) / 2.0 ;
+        return( 1.0 - std::cos (x * G_PI) ) / 2.0 ;
     }
 
     double
@@ -74,7 +74,7 @@ namespace
             {
                 if( time < popup_fade_in_time )
                 {
-                    return popup_full_alpha * cos_smooth (time / popup_fade_in_time) ;
+                    return popup_full_alpha * cos_smooth( time / popup_fade_in_time ) ;
                 }
                 else if( time < popup_fade_in_time + popup_hold_time )
                 {
@@ -83,7 +83,7 @@ namespace
                 else
                 {
                     time -= popup_fade_in_time + popup_hold_time ;
-                    return popup_full_alpha * cos_smooth (1.0 - time / popup_fade_out_time) ;
+                    return popup_full_alpha * cos_smooth( 1.0 - time / popup_fade_out_time ) ;
                 }
             }
         }
@@ -97,46 +97,21 @@ namespace
     }
 
     inline double
-        get_popup_end_time (bool fading = true)
+        get_popup_end_time( bool fading = true )
     {
         return fading ? popup_total_time_fade : popup_total_time_no_fade ;
     }
 
     inline double
-        get_popup_time_offset (bool fading = true)
+        get_popup_time_offset( bool fading = true )
     {
         return fading ? popup_fade_in_time : 0.0 ;
     }
 
     inline double
-        get_popup_disappear_start_time (bool fading = true)
+        get_popup_disappear_start_time( bool fading = true )
     {
-        return fading ? popup_fade_in_time + popup_hold_time : get_popup_end_time (fading) ;
-    }
-
-    void
-        window_set_opacity (Glib::RefPtr<Gdk::Window> const& window,
-        double                           d)
-    {
-        const unsigned int opaque= 0xffffffff ;
-        const char * opacity_prop = "_NET_WM_WINDOW_OPACITY" ;
-
-        unsigned int opacity = (unsigned int) (d * opaque) ;
-
-        ::Display * dpy = gdk_x11_display_get_xdisplay (gdk_display_get_default()) ;
-        ::Window    win = GDK_WINDOW_XID (window->gobj()) ;
-
-        if( opacity == opaque )
-        {
-            XDeleteProperty (dpy, win, XInternAtom (dpy, opacity_prop, False)) ;
-        }
-        else
-        {
-            XChangeProperty (dpy, win, XInternAtom (dpy, opacity_prop, False),
-                XA_CARDINAL, 32, PropModeReplace,
-                reinterpret_cast<unsigned char *> (&opacity), 1L) ;
-            XSync (dpy, False) ;
-        }
+        return fading ? popup_fade_in_time + popup_hold_time : get_popup_end_time( fading ) ;
     }
 }
 
@@ -145,29 +120,29 @@ namespace MPX
 	Notification::Notification(
         GtkWidget* widget
     )
-    : Window          (WINDOW_POPUP)
-    , m_widget        (widget)
-    , m_outline       (Gdk::Color ("#949494"))
-    , m_inlay         (Gdk::Color ("#ffffff"))
-    , m_image         (Glib::RefPtr<Gdk::Pixbuf>(0))
-    , m_time_offset   (0.)
-    , m_width         (popup_width)
-    , m_height        (popup_height)
-    , m_ax            (40)
-    , m_x             (0)
-    , m_y             (0)
-    , m_has_alpha     (Gdk::Screen::get_default()->is_composited())
-    , m_location      (ARROW_BOTTOM)
-    , m_position      (ARROW_POS_DEFAULT)
-    , m_tooltip_mode  (false)
+    : Window         ( WINDOW_POPUP )
+    , m_widget       ( widget )
+    , m_outline      ( Gdk::Color ("#949494") )
+    , m_inlay        ( Gdk::Color ("#ffffff") )
+    , m_image        ( Glib::RefPtr<Gdk::Pixbuf>(0) )
+    , m_time_offset  ( 0. )
+    , m_width        ( popup_width )
+    , m_height       ( popup_height )
+    , m_ax           ( 40 )
+    , m_x            ( 0 )
+    , m_y            ( 0 )
+    , m_has_alpha    ( Gdk::Screen::get_default()->is_composited() )
+    , m_location     ( ARROW_BOTTOM )
+    , m_position     ( ARROW_POS_DEFAULT )
+    , m_tooltip_mode ( false )
 	{
 		if( m_has_alpha )
         {
-            set_colormap (Gdk::Screen::get_default()->get_rgba_colormap()) ;
+            set_colormap( Gdk::Screen::get_default()->get_rgba_colormap() ) ;
         }
 
-		m_layout_1 = Pango::Layout::create (get_pango_context ()) ;
-		m_layout_2 = Pango::Layout::create (get_pango_context ()) ;
+		m_layout_1 = Pango::Layout::create( get_pango_context() ) ;
+		m_layout_2 = Pango::Layout::create( get_pango_context() ) ;
 
 		add_events( Gdk::ALL_EVENTS_MASK ) ;
 
@@ -200,10 +175,10 @@ namespace MPX
 	}
 
 	void
-		Notification::reposition ()
+		Notification::reposition()
 	{
 		int x, y, width, height ;
-		acquire_widget_info (x, y, width, height) ;
+		acquire_widget_info( x, y, width, height ) ;
 
 		int new_x = x + width/2 ;
 		int new_y = y - m_height ;
@@ -223,17 +198,17 @@ namespace MPX
 				m_y = y + height ;
 			}
 
-			int screen_width = Gdk::Screen::get_default ()->get_width () ;
+			int screen_width = Gdk::Screen::get_default()->get_width() ;
 
 			if( m_x + m_width > screen_width )
 			{
 				m_ax = m_width - 40 ;
-				m_x = (screen_width - m_width) - (screen_width - m_x - 40) ;
+				m_x =( screen_width - m_width) - (screen_width - m_x - 40 ) ;
 
 				if( m_x + m_width > screen_width )
 				{
 					m_position = ARROW_POS_RIGHT ;
-					m_x -= (m_width - m_ax) ;
+					m_x -=( m_width - m_ax ) ;
 					m_ax  = 0 ;
 				}
 			}
@@ -248,31 +223,31 @@ namespace MPX
 				}
 			}
 
-			move (m_x, m_y) ;
-			update_mask () ;
+			move( m_x, m_y ) ;
+			update_mask() ;
 		}
 	}
 
 	void
-		Notification::update_mask ()
+		Notification::update_mask()
 	{
 		if( !m_has_alpha && is_realized() )
 		{
-			Glib::RefPtr<Gdk::Bitmap> mask = Glib::RefPtr<Gdk::Bitmap>::cast_static (Gdk::Pixmap::create (RefPtr<Gdk::Drawable> (0), m_width, m_height, 1)) ;
+			Glib::RefPtr<Gdk::Bitmap> mask = Glib::RefPtr<Gdk::Bitmap>::cast_static( Gdk::Pixmap::create (RefPtr<Gdk::Drawable> (0), m_width, m_height, 1) ) ;
 
-			Cairo::RefPtr<Cairo::Context> cr = mask->create_cairo_context () ;
+			Cairo::RefPtr<Cairo::Context> cr = mask->create_cairo_context() ;
 
 			int width, height ;
-			width = get_allocation ().get_width () - 2 ;
-			height = get_allocation ().get_height () ;
+			width = get_allocation().get_width() - 2 ;
+			height = get_allocation().get_height() ;
 
-			draw_arrow_mask (cr, width, height) ;
+			draw_arrow_mask( cr, width, height ) ;
 
-			get_window ()->shape_combine_mask (mask, 0, 0) ;
+			get_window()->shape_combine_mask (mask, 0, 0 ) ;
 		}
 	}
 
-	Notification::~Notification ()
+	Notification::~Notification()
 	{
 		// empty
 	}
@@ -297,7 +272,7 @@ namespace MPX
             , int                             h
         )
 	{
-		cr->save () ;
+		cr->save() ;
 
 		if( m_location == ARROW_TOP )
 		{
@@ -310,40 +285,42 @@ namespace MPX
             matrix.x0 =  0 ;
             matrix.y0 =  h ;
 
-			cr->set_matrix (matrix) ;
+			cr->set_matrix( matrix ) ;
 		}
 
 		cr->move_to( 1, arrow_height ) ;
 
 		if( m_position == ARROW_POS_LEFT )
 		{
-			cr->rel_line_to (+w, 0) ;
-			cr->rel_line_to (0, +(h-(2*arrow_height))) ;
-			cr->rel_line_to (-(w-(arrow_width/2)), 0) ;
-			cr->rel_line_to (-(arrow_width/2), +arrow_height) ;
-			cr->rel_line_to (0, -(h-arrow_height)) ;
+			cr->rel_line_to( +w, 0 ) ;
+/*
+			cr->rel_line_to( 0, +(h-(2*arrow_height)) ) ;
+			cr->rel_line_to( -(w-(arrow_width/2)), 0 ) ;
+			cr->rel_line_to( -(arrow_width/2), +arrow_height ) ;
+			cr->rel_line_to( 0, -(h-arrow_height) ) ;
+*/
 		}
 		else
         if( m_position == ARROW_POS_RIGHT )
 		{
-			cr->rel_line_to (+w, 0) ;
-			cr->rel_line_to (0, +(h-arrow_height)) ;
-			cr->rel_line_to (-(arrow_width/2), -arrow_height) ;
-			cr->rel_line_to (-(w-(arrow_width/2)), 0) ;
-			cr->rel_line_to (0, -(h-(2*arrow_height))) ;
+			cr->rel_line_to( +w, 0 ) ;
+			cr->rel_line_to( 0, +(h-arrow_height) ) ;
+			cr->rel_line_to( -(arrow_width/2), -arrow_height ) ;
+			cr->rel_line_to( -(w-(arrow_width/2)), 0 ) ;
+			cr->rel_line_to( 0, -(h-(2*arrow_height)) ) ;
 		}
 		else
 		{
-			cr->rel_line_to (+w, 0) ;
-			cr->rel_line_to (0, +(h-(2*arrow_height))) ;
-			cr->rel_line_to (-((w-m_ax)-(arrow_width/2)), 0) ;
-			cr->rel_line_to (-(arrow_width/2), +arrow_height) ;
-			cr->rel_line_to (-(arrow_width/2), -arrow_height) ;
-			cr->rel_line_to (-(m_ax-(arrow_width/2)), 0) ;
-			cr->rel_line_to (0, -(h-(2*arrow_height))) ;
+			cr->rel_line_to( +w, 0 ) ;
+			cr->rel_line_to( 0, +(h-(2*arrow_height)) ) ;
+			cr->rel_line_to( -((w-m_ax)-(arrow_width/2)), 0 ) ;
+			cr->rel_line_to( -(arrow_width/2), +arrow_height ) ;
+			cr->rel_line_to( -(arrow_width/2), -arrow_height ) ;
+			cr->rel_line_to( -(m_ax-(arrow_width/2)), 0 ) ;
+			cr->rel_line_to( 0, -(h-(2*arrow_height)) ) ;
 		}
 
-		cr->restore () ;
+		cr->restore() ;
 	}
 
 	void
@@ -353,19 +330,16 @@ namespace MPX
             , int                             h
         )
 	{
-		cr->save () ;
+		cr->save() ;
+		cr->set_operator( Cairo::OPERATOR_CLEAR ) ;
+		cr->paint() ;
+		cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
+		cr->set_source_rgba( .0, .0, .0, 1.0 ) ;
 
-		cr->set_operator (Cairo::OPERATOR_CLEAR) ;
-		cr->paint () ;
+		draw_arrow( cr, w, h ) ;
 
-		cr->set_operator (Cairo::OPERATOR_SOURCE) ;
-		cr->set_source_rgba (.0, .0, .0, 1.0) ;
-
-		draw_arrow (cr, w, h) ;
-
-		cr->fill () ;
-
-		cr->restore () ;
+		cr->fill() ;
+		cr->restore() ;
 	}
 
 	void
@@ -375,7 +349,7 @@ namespace MPX
             , int                             h
         )
 	{
-		cr->save () ;
+		cr->save() ;
 
 		cr->set_line_width( 0.8 ) ;
 		cr->set_line_cap( Cairo::LINE_CAP_ROUND ) ;
@@ -383,12 +357,12 @@ namespace MPX
 		cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
 
 		Gdk::Cairo::set_source_color( cr, m_inlay ) ;
-		draw_arrow (cr, w, h) ;
-		cr->fill_preserve () ;
+		draw_arrow( cr, w, h ) ;
+		cr->fill_preserve() ;
 
 		Gdk::Cairo::set_source_color( cr, m_outline ) ;
 		cr->stroke() ;
-		cr->restore () ;
+		cr->restore() ;
 	}
 
 	void
@@ -403,7 +377,7 @@ namespace MPX
 	void
 		Notification::set_playstatus (PlayStatus status)
 	{
-		if( (status == PLAYSTATUS_STOPPED ) || (status == PLAYSTATUS_WAITING) )
+		if(( status == PLAYSTATUS_STOPPED ) || (status == PLAYSTATUS_WAITING)  )
 		{
 			m_kobo_position->set_position( 0, 0 ) ;
 		}
@@ -414,7 +388,7 @@ namespace MPX
             GdkEventExpose* event
         )
 	{
-		Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context () ;
+		Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context() ;
 
 		int w, h ;
 
@@ -424,13 +398,13 @@ namespace MPX
 		cr->set_operator( Cairo::OPERATOR_CLEAR ) ;
 		cr->paint() ;
 
-		draw_arrow_outline (cr, w, h) ;
+		draw_arrow_outline( cr, w, h ) ;
 
         int offset = 0 ;
 
 		if( m_image )
         {
-			get_window ()->draw_pixbuf(
+			get_window()->draw_pixbuf(
                   RefPtr<Gdk::GC>(0)
                 , m_image
                 , 0
@@ -473,12 +447,12 @@ namespace MPX
         int w2 = logical.get_width() ; 
         int h2 = logical.get_height() ;
 
-        int y2 = (h - (h1 + h2 + 2) - 16) / 2 ;
+        int y2 =( h - (h1 + h2 + 2) - 16 ) / 2 ;
     
-        int x_off = (m_image?82:0) ;
+        int x_off =( m_image?82:0 ) ;
 
         cr->move_to(
-              ((w - w2) / 2.) + x_off/2
+             ( (w - w2) / 2. ) + x_off/2
             , y2 
         ) ;
         pango_cairo_show_layout(
@@ -486,10 +460,10 @@ namespace MPX
             , m_layout_2->gobj()
         ) ;
 
-        int x1 = ((w - w1) / 2.) + x_off/2 ;
+        int x1 =( (w - w1) / 2. ) + x_off/2 ;
         int y1 = y2 + h2 + 2 ;
 
-        int w1_max = m_width - (m_image?102:8) ; 
+        int w1_max = m_width -( m_image?102:8 ) ; 
 
         if( w1 > w1_max ) 
         {
@@ -500,8 +474,8 @@ namespace MPX
                 , scale 
             ) ;
 
-            x1 = (m_image?94:8)*(1/scale) ;
-            y1 = (((h - ((h1*scale) + h2 + 2) - 16) / 2) + h2 + 2) * (1/scale) ;
+            x1 =( m_image?94:8)*(1/scale ) ;
+            y1 =( ((h - ((h1*scale) + h2 + 2) - 16) / 2) + h2 + 2) * (1/scale ) ;
         }
 
         cr->move_to(
@@ -522,7 +496,7 @@ namespace MPX
               bool tooltip
         )
 	{
-		if( G_UNLIKELY(!is_realized( )) )
+		if( G_UNLIKELY(!is_realized()) )
         {
             realize() ;
         }
@@ -536,19 +510,18 @@ namespace MPX
 
         if( m_tooltip_mode )
         {
-	        window_set_opacity( get_window(), 1.0 ) ;
+	        set_opacity( 1.0 ) ;
         }
 
-	    reposition () ;
-
-	    Window::show () ;
+	    reposition() ;
+	    Window::show() ;
     }
 
 	void
 		Notification::disable(
         )
 	{
-		if( G_UNLIKELY(!is_realized( )) )
+		if( G_UNLIKELY(!is_realized()) )
         {
             realize() ;
         }
@@ -564,15 +537,15 @@ namespace MPX
         }
 
 	    hide() ;
-        window_set_opacity( get_window(), 1.0 ) ;
+        set_opacity( 1.0 ) ;
 	}
 
 	void
-		Notification::on_realize ()
+		Notification::on_realize()
 	{
 		Window::on_realize() ;
 
-		window_set_opacity( get_window(), 0.0 ) ;
+		set_opacity( 0.0 ) ;
 		update_mask() ;
 
         const int text_size_px_1 = 26 ;
@@ -585,12 +558,12 @@ namespace MPX
 		PangoFontDescription * desc = pango_font_description_new() ;
 		pango_font_description_set_family( desc, family.c_str()) ;
 
-        text_size_pt = static_cast<int>((text_size_px_1 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+        text_size_pt = static_cast<int>((text_size_px_1 * 72) / Util::screen_get_y_resolution( Gdk::Screen::get_default()) ) ;
 		pango_font_description_set_absolute_size( desc, text_size_pt * PANGO_SCALE ) ;
 		pango_font_description_set_weight( desc, PANGO_WEIGHT_BOLD ) ; 
 		pango_layout_set_font_description( m_layout_1->gobj(), desc ) ;
 
-        text_size_pt = static_cast<int>((text_size_px_2 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+        text_size_pt = static_cast<int>((text_size_px_2 * 72) / Util::screen_get_y_resolution( Gdk::Screen::get_default()) ) ;
 		pango_font_description_set_absolute_size( desc, text_size_pt * PANGO_SCALE ) ;
 		pango_font_description_set_weight( desc, PANGO_WEIGHT_NORMAL ) ; 
 		pango_layout_set_font_description( m_layout_2->gobj(), desc ) ;
@@ -599,23 +572,23 @@ namespace MPX
 	}
 
 	void
-		Notification::on_show ()
+		Notification::on_show()
 	{
-		reposition () ;
+		reposition() ;
 
-		Window::on_show () ;
+		Window::on_show() ;
 	}
 
 	void
-		Notification::on_map ()
+		Notification::on_map()
 	{
-		Window::on_map () ;
+		Window::on_map() ;
 
 		if( !m_tooltip_mode )
 		{
-			m_timer.start () ;
+			m_timer.start() ;
 
-			m_update_connection = signal_timeout ().connect(
+			m_update_connection = signal_timeout().connect(
                   sigc::mem_fun(
                         *this
                       , &MPX::Notification::update_frame
@@ -626,9 +599,9 @@ namespace MPX
 	}
 
 	void
-		Notification::on_unmap ()
+		Notification::on_unmap()
 	{
-		Window::on_unmap () ;
+		Window::on_unmap() ;
 
 		if( m_update_connection ) 
 		{
@@ -647,14 +620,14 @@ namespace MPX
 	{
         if( image )
         {
-            gtk_widget_set_size_request (GTK_WIDGET(m_kobo_position->gobj()), m_width - 102, -1 );
-            gtk_fixed_move (GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 94, 82);
-            m_image = image->scale_simple (82, 82, Gdk::INTERP_HYPER);
+            gtk_widget_set_size_request( GTK_WIDGET(m_kobo_position->gobj()), m_width - 102, -1  );
+            gtk_fixed_move( GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 94, 82 );
+            m_image = image->scale_simple( 82, 82, Gdk::INTERP_HYPER );
         }
         else
         {
-            gtk_widget_set_size_request (GTK_WIDGET(m_kobo_position->gobj()), m_width - 16, -1 );
-            gtk_fixed_move (GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 8, 82);
+            gtk_widget_set_size_request( GTK_WIDGET(m_kobo_position->gobj()), m_width - 16, -1  );
+            gtk_fixed_move( GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 8, 82 );
             m_image = Glib::RefPtr<Gdk::Pixbuf>(0);
         }
 
@@ -671,8 +644,8 @@ namespace MPX
 		Notification::clear(
         )
 	{
-        gtk_widget_set_size_request (GTK_WIDGET(m_kobo_position->gobj()), m_width - 16, -1 );
-        gtk_fixed_move (GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 8, 82);
+        gtk_widget_set_size_request( GTK_WIDGET(m_kobo_position->gobj()), m_width - 16, -1  );
+        gtk_fixed_move( GTK_FIXED(m_fixed.gobj()), GTK_WIDGET(m_kobo_position->gobj()), 8, 82 );
         m_image = Glib::RefPtr<Gdk::Pixbuf>(0);
 
         m_layout_1->set_text( "" ) ;
@@ -697,12 +670,12 @@ namespace MPX
 	void
 		Notification::disappear()
 	{
-		double time = m_timer.elapsed () + m_time_offset ;
-		double disappear_start_time = get_popup_disappear_start_time (m_fade) ;
+		double time = m_timer.elapsed() + m_time_offset ;
+		double disappear_start_time = get_popup_disappear_start_time( m_fade ) ;
 
 		if( time < disappear_start_time )
 		{
-			m_timer.reset () ;
+			m_timer.reset() ;
 			m_time_offset = disappear_start_time ;
 		}
 	}
@@ -715,30 +688,29 @@ namespace MPX
 		    , int & height
         )
 	{
-		gdk_flush () ;
-		while (gtk_events_pending ())
-			gtk_main_iteration () ;
+		gdk_flush() ;
+		while( gtk_events_pending() )
+			gtk_main_iteration() ;
 
-		gdk_window_get_origin (m_widget->window, &x, &y) ;
+		gdk_window_get_origin( m_widget->window, &x, &y ) ;
 
-		gdk_flush () ;
-		while (gtk_events_pending())
-			gtk_main_iteration () ;
+		gdk_flush() ;
+		while( gtk_events_pending() )
+			gtk_main_iteration() ;
 
-		gdk_window_get_geometry (m_widget->window, NULL, NULL, &width, &height, NULL) ;
+		gdk_window_get_geometry( m_widget->window, NULL, NULL, &width, &height, NULL ) ;
 	}
 
 	bool
-		Notification::update_frame ()
+		Notification::update_frame()
 	{
 		double time ;
 
-		time = m_timer.elapsed () ; 
+		time = m_timer.elapsed() ; 
 
 		if( time < get_popup_end_time( m_fade ))
 		{
-			double alpha = get_popup_alpha_at_time( time, m_fade ) ;
-			window_set_opacity( get_window(), alpha ) ;
+			set_opacity( get_popup_alpha_at_time( time, m_fade )) ;
 			return true ;
 		}
 		else
