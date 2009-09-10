@@ -162,7 +162,6 @@ namespace Albums
                 boost::optional<gint64>         m_selected ;
                 boost::optional<std::size_t>    m_selected_row ;
 
-                Signal_0                        m_select ;
                 Signal_1                        m_changed ;
 
                 DataModel()
@@ -178,11 +177,11 @@ namespace Albums
                 }
 
                 virtual void
-                clear ()
+                clear()
                 {
                     m_realmodel->clear () ;
                     m_iter_map.clear() ;
-                    m_changed.emit( 0, true ) ;
+                    m_top_row = 0 ;
                 } 
 
                 virtual Signal_1&
@@ -190,13 +189,6 @@ namespace Albums
                 {
                     return m_changed ;
                 }
-
-                virtual Signal_0&
-                signal_select ()
-                {
-                    return m_select ;
-                }
-
 
                 virtual bool
                 is_set ()
@@ -226,7 +218,7 @@ namespace Albums
 
                 virtual void
                 set_selected(
-                    boost::optional<gint64> row
+                    const boost::optional<gint64>& row = boost::optional<gint64>()
                 )
                 {
                     m_selected = row ;
@@ -332,14 +324,15 @@ namespace Albums
             public:
 
                 DataModelFilter(
-                      DataModel_SP_t&   model
+                      DataModel_SP_t& model
                 )
-                : DataModel(model->m_realmodel)
+                : DataModel( model->m_realmodel )
                 {
                     regen_mapping() ;
                 }
 
-                virtual ~DataModelFilter()
+                virtual
+                ~DataModelFilter()
                 {
                 }
 
@@ -374,28 +367,31 @@ namespace Albums
                 }
 
                 virtual void
-                clear ()
+                clear()
                 {
-                    m_realmodel->clear () ;
+                    DataModel::clear() ;
                     m_mapping.clear() ;
-                    m_iter_map.clear() ;
-                    m_changed.emit( 0, true ) ;
+                    m_changed.emit( m_top_row, true ) ;
                 } 
 
                 virtual std::size_t 
-                size ()
+                size()
                 {
                     return m_mapping.size();
                 }
 
                 virtual Row_t&
-                row (std::size_t row)
+                row(
+                      std::size_t   row
+                )
                 {
                     return *(m_mapping[row]);
                 }
 
                 virtual RowRowMapping_t::const_iterator
-                row_iter (std::size_t row)
+                row_iter(
+                      std::size_t   row
+                )
                 {
                     RowRowMapping_t::const_iterator i = m_mapping.begin() ;
                     std::advance( i, row ) ;
@@ -403,7 +399,10 @@ namespace Albums
                 }
 
                 void
-                swap( std::size_t p1, std::size_t p2 )
+                swap(
+                      std::size_t   p1
+                    , std::size_t   p2
+                )
                 {
                     std::swap( m_mapping[p1], m_mapping[p2] ) ;
                     m_changed.emit( m_top_row, false ) ;
@@ -532,6 +531,11 @@ namespace Albums
 
                             new_mapping.push_back( i ) ;
                         }
+                    }
+
+                    if( m_selected_row )
+                    {
+                        m_top_row = m_selected_row.get() ;
                     }
                 
                     if( new_mapping != m_mapping )
@@ -1533,15 +1537,17 @@ namespace Albums
                 }
 
                 void
-                clear_selection()
+                clear_selection(
+                      bool quiet = true
+                )
                 {
                     if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0) )
                     {
-                        select_row( 0, true ) ;
+                        select_row( 0, quiet ) ;
                         return ;
                     }
 
-                    m_model->set_selected( boost::optional<gint64>() ) ;
+                    m_model->set_selected() ; 
                 }
     
                 void
@@ -1555,14 +1561,6 @@ namespace Albums
                             &Class::on_model_changed
                     ));
 
-                    m_model->signal_select().connect(
-                        sigc::mem_fun(
-                            *this,
-                            &Class::clear_selection
-                    ));
-
-                    clear_selection() ;
-                    queue_resize() ;
                     on_model_changed( 0, true ) ;
                 }
 
@@ -1655,14 +1653,8 @@ namespace Albums
                     }
 
                     RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
+                    ++i ;
               
-/*  
-                    if( m_selection )
-                    {
-                        std::advance( i, get<2>(m_selection.get()) ) ;
-                    }
-*/
-
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
                         Glib::ustring match = Glib::ustring(get<3>(**i)).casefold() ;
@@ -1676,7 +1668,8 @@ namespace Albums
                         }
                     }
 
-                    clear_selection() ;
+                    clear_selection( false ) ;
+                    scroll_to_row( 0 ) ;
                 }
 
                 void

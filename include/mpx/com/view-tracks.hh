@@ -200,26 +200,26 @@ namespace Tracks
                 Model_SP_t      m_realmodel;
                 Signal1         m_changed;
                 IdIterMap_t     m_iter_map;
-                std::size_t     m_position ;
+                std::size_t     m_top_row ;
 
                 DataModel()
-                : m_position( 0 )
+                : m_top_row( 0 )
                 {
                     m_realmodel = Model_SP_t(new Model_t); 
                 }
 
                 DataModel(Model_SP_t model)
-                : m_position( 0 )
+                : m_top_row( 0 )
                 {
                     m_realmodel = model; 
                 }
 
                 virtual void
-                clear ()
+                clear()
                 {
                     m_realmodel->clear () ;
                     m_iter_map.clear() ;
-                    m_changed.emit( 0, true ) ;
+                    m_top_row = 0 ;
                 } 
 
                 virtual Signal1&
@@ -251,7 +251,7 @@ namespace Tracks
                     gint64 row
                 )
                 {
-                    m_position = row ;
+                    m_top_row = row ;
                 }
 
                 virtual void
@@ -488,7 +488,7 @@ namespace Tracks
                 AQE::Constraints_t          m_constraints_ext ;
                 AQE::Constraints_t          m_constraints_aqe ;
                 boost::optional<gint64>     m_id_currently_playing ;
-                boost::optional<gint64>     m_id_currently_playing_in_mapping ;
+                boost::optional<gint64>     m_row_currently_playing_in_mapping ;
                 IdVector_sp                 m_constraints_albums ;
                 IdVector_sp                 m_constraints_artist ;
                 bool                        m_cache_enabled ;
@@ -531,18 +531,17 @@ namespace Tracks
                 virtual void
                 clear ()
                 {
-                    m_realmodel->clear () ;
+                    DataModel::clear () ;
                     m_mapping.clear() ;
                     m_mapping_unfiltered.clear() ;
-                    m_iter_map.clear() ;
                     clear_active_track() ;
-                    m_changed.emit( 0, true ) ;
+                    m_changed.emit( m_top_row, true ) ;
                 } 
 
                 void
                 clear_active_track()
                 {
-                    m_id_currently_playing_in_mapping.reset() ;
+                    m_row_currently_playing_in_mapping.reset() ;
                 }
 
                 void
@@ -567,7 +566,7 @@ namespace Tracks
                 set_currently_playing_track(gint64 id)
                 {
                     m_id_currently_playing = id ;
-                    m_id_currently_playing_in_mapping.reset() ;
+                    m_row_currently_playing_in_mapping.reset() ;
 
                     scan_for_currently_playing () ;
                 }
@@ -575,7 +574,7 @@ namespace Tracks
                 boost::optional<gint64>
                 get_local_active_track ()
                 {
-                    return m_id_currently_playing_in_mapping ;
+                    return m_row_currently_playing_in_mapping ;
                 }
 
                 void
@@ -627,10 +626,10 @@ namespace Tracks
                 {
                     std::swap( m_mapping[p1], m_mapping[p2] ) ;
 
-                    m_id_currently_playing_in_mapping.reset() ;
+                    m_row_currently_playing_in_mapping.reset() ;
                     scan_for_currently_playing() ;
 
-                    m_changed.emit( m_position, false ) ;
+                    m_changed.emit( m_top_row, false ) ;
                 }
 
                 void
@@ -641,10 +640,10 @@ namespace Tracks
                     std::advance( i, p ) ;
                     m_mapping.erase( i ) ;
 
-                    m_id_currently_playing_in_mapping.reset() ;
+                    m_row_currently_playing_in_mapping.reset() ;
                     scan_for_currently_playing() ;
 
-                    m_changed.emit( m_position, true ) ;
+                    m_changed.emit( m_top_row, true ) ;
                 }
 
                 virtual void
@@ -740,7 +739,7 @@ namespace Tracks
 
                 void
                 scan_for_currently_playing_find_top_row(
-                      boost::optional<gint64> id_top
+                      const boost::optional<gint64>& id_top
                 )
                 {
                     using boost::get;
@@ -759,7 +758,7 @@ namespace Tracks
 
                         if( !found_currently_playing && val == m_id_currently_playing.get() )
                         {
-                            m_id_currently_playing_in_mapping = std::distance( m_mapping.begin(), i ) ; 
+                            m_row_currently_playing_in_mapping = std::distance( m_mapping.begin(), i ) ; 
                             found_currently_playing = true ;
                         }
 
@@ -767,7 +766,7 @@ namespace Tracks
                         {
                             if( val == id_top.get() )
                             {
-                                m_position = std::distance( m_mapping.begin(), i ) ;
+                                m_top_row = std::distance( m_mapping.begin(), i ) ;
                                 found_top_row = true ;
                             }
                         }
@@ -787,7 +786,7 @@ namespace Tracks
 
                     if( !m_id_currently_playing )
                     {
-                        m_id_currently_playing_in_mapping.reset() ;
+                        m_row_currently_playing_in_mapping.reset() ;
                         return ;
                     }
 
@@ -797,12 +796,12 @@ namespace Tracks
                     {
                         if( get<3>(**i) == id_realval ) 
                         {
-                            m_id_currently_playing_in_mapping = std::distance( m_mapping.begin(), i ) ; 
+                            m_row_currently_playing_in_mapping = std::distance( m_mapping.begin(), i ) ; 
                             return ;
                         }
                     }
 
-                    m_id_currently_playing_in_mapping.reset() ;
+                    m_row_currently_playing_in_mapping.reset() ;
                 }
 
                 void
@@ -818,13 +817,13 @@ namespace Tracks
                         {
                             if( boost::get<3>(**i) == id_realval )
                             {
-                                m_position = std::distance( m_mapping.begin(), i ) ;
+                                m_top_row = std::distance( m_mapping.begin(), i ) ;
                                 return ;
                             }
                         } 
                     }
 
-                    m_position = 0 ;
+                    m_top_row = 0 ;
                 }
 
                 virtual void
@@ -900,13 +899,13 @@ namespace Tracks
                         id = m_id_currently_playing.get() ;
                     }
                     else
-                    if( m_position < m_mapping.size() )
+                    if( m_top_row < m_mapping.size() )
                     {
-                        id = get<3>(row( m_position )) ; 
+                        id = get<3>(row( m_top_row )) ; 
                     }
 
-                    m_id_currently_playing_in_mapping.reset() ;
-                    m_position = 0 ;
+                    m_row_currently_playing_in_mapping.reset() ;
+                    m_top_row = 0 ;
 
                     if( m_frags.empty() && (m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
@@ -1096,7 +1095,12 @@ namespace Tracks
 
                     scan_for_currently_playing_find_top_row( id ) ;
 
-                    m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
+                    if( m_row_currently_playing_in_mapping )
+                    {
+                        m_top_row = m_row_currently_playing_in_mapping.get() ;
+                    }
+
+                    m_changed.emit( m_top_row, new_mapping.size() != m_mapping.size() ) ; 
                 }
 
                 void
@@ -1117,13 +1121,13 @@ namespace Tracks
                         id = m_id_currently_playing.get() ;
                     }
                     else
-                    if( m_position < m_mapping.size() )
+                    if( m_top_row < m_mapping.size() )
                     {
-                        id = get<3>(row( m_position )) ; 
+                        id = get<3>(row( m_top_row )) ; 
                     }
 
-                    m_id_currently_playing_in_mapping.reset() ;
-                    m_position = 0 ;
+                    m_row_currently_playing_in_mapping.reset() ;
+                    m_top_row = 0 ;
 
                     if( m_frags.empty() && (m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
@@ -1327,7 +1331,7 @@ namespace Tracks
 
                     scan_for_currently_playing_find_top_row( id ) ;
 
-                    m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
+                    m_changed.emit( m_top_row, new_mapping.size() != m_mapping.size() ) ; 
                 }
         };
 
@@ -2617,6 +2621,8 @@ namespace Tracks
                             *this,
                             &Class::on_model_changed
                     ));
+
+                    on_model_changed( 0, true ) ;
                 }
 
                 void
@@ -2664,10 +2670,10 @@ namespace Tracks
                     queue_draw () ;
                 }
 
-                boost::optional<gint64>
-                get_local_active_track ()
+                const boost::optional<gint64>&
+                get_local_active_track()
                 {
-                    return m_model->m_id_currently_playing_in_mapping ;
+                    return m_model->m_row_currently_playing_in_mapping ;
                 }
 
                 void
@@ -2867,13 +2873,6 @@ namespace Tracks
 
                     DataModelFilter::RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
                
-/* 
-                    if( m_selection )
-                    {
-                        std::advance( i, get<1>(m_selection.get()) ) ;
-                    }
-*/
-
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
                         Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
@@ -2888,6 +2887,7 @@ namespace Tracks
                     }
 
                     clear_selection() ;
+                    scroll_to_row( 0 ) ;
                 }
 
                 void
