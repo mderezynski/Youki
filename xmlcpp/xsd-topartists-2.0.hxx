@@ -31,8 +31,8 @@
 // in the accompanying FLOSSE file.
 //
 
-#ifndef XSD_TOPALBUMS_2_0_HXX
-#define XSD_TOPALBUMS_2_0_HXX
+#ifndef XSD_TOPARTISTS_2_0_HXX
+#define XSD_TOPARTISTS_2_0_HXX
 
 // Begin prologue.
 //
@@ -201,11 +201,10 @@ namespace xml_schema
 
 // Forward declarations.
 //
-namespace lfm_tagtopalbums
+namespace lfm_tagtopartists
 {
   class lfm;
-  class topalbums;
-  class album;
+  class topartists;
   class artist;
   class image;
 }
@@ -221,27 +220,27 @@ namespace lfm_tagtopalbums
 
 #include <xsd/cxx/xml/dom/parsing-header.hxx>
 
-namespace lfm_tagtopalbums
+namespace lfm_tagtopartists
 {
   class lfm: public ::xml_schema::type
   {
     public:
-    // topalbums
+    // topartists
     // 
-    typedef ::lfm_tagtopalbums::topalbums topalbums_type;
-    typedef ::xsd::cxx::tree::traits< topalbums_type, char > topalbums_traits;
+    typedef ::lfm_tagtopartists::topartists topartists_type;
+    typedef ::xsd::cxx::tree::traits< topartists_type, char > topartists_traits;
 
-    const topalbums_type&
-    topalbums () const;
+    const topartists_type&
+    topartists () const;
 
-    topalbums_type&
-    topalbums ();
-
-    void
-    topalbums (const topalbums_type& x);
+    topartists_type&
+    topartists ();
 
     void
-    topalbums (::std::auto_ptr< topalbums_type > p);
+    topartists (const topartists_type& x);
+
+    void
+    topartists (::std::auto_ptr< topartists_type > p);
 
     // status
     // 
@@ -262,7 +261,7 @@ namespace lfm_tagtopalbums
 
     // Constructors.
     //
-    lfm (const topalbums_type&,
+    lfm (const topartists_type&,
          const status_type&);
 
     lfm (const ::xercesc::DOMElement& e,
@@ -285,29 +284,29 @@ namespace lfm_tagtopalbums
            ::xml_schema::flags);
 
     private:
-    ::xsd::cxx::tree::one< topalbums_type > topalbums_;
+    ::xsd::cxx::tree::one< topartists_type > topartists_;
     ::xsd::cxx::tree::one< status_type > status_;
   };
 
-  class topalbums: public ::xml_schema::type
+  class topartists: public ::xml_schema::type
   {
     public:
-    // album
+    // artist
     // 
-    typedef ::lfm_tagtopalbums::album album_type;
-    typedef ::xsd::cxx::tree::sequence< album_type > album_sequence;
-    typedef album_sequence::iterator album_iterator;
-    typedef album_sequence::const_iterator album_const_iterator;
-    typedef ::xsd::cxx::tree::traits< album_type, char > album_traits;
+    typedef ::lfm_tagtopartists::artist artist_type;
+    typedef ::xsd::cxx::tree::sequence< artist_type > artist_sequence;
+    typedef artist_sequence::iterator artist_iterator;
+    typedef artist_sequence::const_iterator artist_const_iterator;
+    typedef ::xsd::cxx::tree::traits< artist_type, char > artist_traits;
 
-    const album_sequence&
-    album () const;
+    const artist_sequence&
+    artist () const;
 
-    album_sequence&
-    album ();
+    artist_sequence&
+    artist ();
 
     void
-    album (const album_sequence& s);
+    artist (const artist_sequence& s);
 
     // tag
     // 
@@ -328,17 +327,17 @@ namespace lfm_tagtopalbums
 
     // Constructors.
     //
-    topalbums (const tag_type&);
+    topartists (const tag_type&);
 
-    topalbums (const ::xercesc::DOMElement& e,
-               ::xml_schema::flags f = 0,
-               ::xml_schema::type* c = 0);
+    topartists (const ::xercesc::DOMElement& e,
+                ::xml_schema::flags f = 0,
+                ::xml_schema::type* c = 0);
 
-    topalbums (const topalbums& x,
-               ::xml_schema::flags f = 0,
-               ::xml_schema::type* c = 0);
+    topartists (const topartists& x,
+                ::xml_schema::flags f = 0,
+                ::xml_schema::type* c = 0);
 
-    virtual topalbums*
+    virtual topartists*
     _clone (::xml_schema::flags f = 0,
             ::xml_schema::type* c = 0) const;
 
@@ -350,11 +349,11 @@ namespace lfm_tagtopalbums
            ::xml_schema::flags);
 
     private:
-    album_sequence album_;
+    artist_sequence artist_;
     ::xsd::cxx::tree::one< tag_type > tag_;
   };
 
-  class album: public ::xml_schema::type
+  class artist: public ::xml_schema::type
   {
     public:
     // name
@@ -422,26 +421,23 @@ namespace lfm_tagtopalbums
     void
     url (::std::auto_ptr< url_type > p);
 
-    // artist
+    // streamable
     // 
-    typedef ::lfm_tagtopalbums::artist artist_type;
-    typedef ::xsd::cxx::tree::traits< artist_type, char > artist_traits;
+    typedef ::xml_schema::integer streamable_type;
+    typedef ::xsd::cxx::tree::traits< streamable_type, char > streamable_traits;
 
-    const artist_type&
-    artist () const;
+    const streamable_type&
+    streamable () const;
 
-    artist_type&
-    artist ();
-
-    void
-    artist (const artist_type& x);
+    streamable_type&
+    streamable ();
 
     void
-    artist (::std::auto_ptr< artist_type > p);
+    streamable (const streamable_type& x);
 
     // image
     // 
-    typedef ::lfm_tagtopalbums::image image_type;
+    typedef ::lfm_tagtopartists::image image_type;
     typedef ::xsd::cxx::tree::sequence< image_type > image_sequence;
     typedef image_sequence::iterator image_iterator;
     typedef image_sequence::const_iterator image_const_iterator;
@@ -472,101 +468,12 @@ namespace lfm_tagtopalbums
 
     // Constructors.
     //
-    album (const name_type&,
-           const tagcount_type&,
-           const mbid_type&,
-           const url_type&,
-           const artist_type&,
-           const rank_type&);
-
-    album (const ::xercesc::DOMElement& e,
-           ::xml_schema::flags f = 0,
-           ::xml_schema::type* c = 0);
-
-    album (const album& x,
-           ::xml_schema::flags f = 0,
-           ::xml_schema::type* c = 0);
-
-    virtual album*
-    _clone (::xml_schema::flags f = 0,
-            ::xml_schema::type* c = 0) const;
-
-    // Implementation.
-    //
-    protected:
-    void
-    parse (::xsd::cxx::xml::dom::parser< char >&,
-           ::xml_schema::flags);
-
-    private:
-    ::xsd::cxx::tree::one< name_type > name_;
-    ::xsd::cxx::tree::one< tagcount_type > tagcount_;
-    ::xsd::cxx::tree::one< mbid_type > mbid_;
-    ::xsd::cxx::tree::one< url_type > url_;
-    ::xsd::cxx::tree::one< artist_type > artist_;
-    image_sequence image_;
-    ::xsd::cxx::tree::one< rank_type > rank_;
-  };
-
-  class artist: public ::xml_schema::type
-  {
-    public:
-    // name
-    // 
-    typedef ::xml_schema::string name_type;
-    typedef ::xsd::cxx::tree::traits< name_type, char > name_traits;
-
-    const name_type&
-    name () const;
-
-    name_type&
-    name ();
-
-    void
-    name (const name_type& x);
-
-    void
-    name (::std::auto_ptr< name_type > p);
-
-    // mbid
-    // 
-    typedef ::xml_schema::string mbid_type;
-    typedef ::xsd::cxx::tree::traits< mbid_type, char > mbid_traits;
-
-    const mbid_type&
-    mbid () const;
-
-    mbid_type&
-    mbid ();
-
-    void
-    mbid (const mbid_type& x);
-
-    void
-    mbid (::std::auto_ptr< mbid_type > p);
-
-    // url
-    // 
-    typedef ::xml_schema::uri url_type;
-    typedef ::xsd::cxx::tree::traits< url_type, char > url_traits;
-
-    const url_type&
-    url () const;
-
-    url_type&
-    url ();
-
-    void
-    url (const url_type& x);
-
-    void
-    url (::std::auto_ptr< url_type > p);
-
-    // Constructors.
-    //
     artist (const name_type&,
+            const tagcount_type&,
             const mbid_type&,
-            const url_type&);
+            const url_type&,
+            const streamable_type&,
+            const rank_type&);
 
     artist (const ::xercesc::DOMElement& e,
             ::xml_schema::flags f = 0,
@@ -589,8 +496,12 @@ namespace lfm_tagtopalbums
 
     private:
     ::xsd::cxx::tree::one< name_type > name_;
+    ::xsd::cxx::tree::one< tagcount_type > tagcount_;
     ::xsd::cxx::tree::one< mbid_type > mbid_;
     ::xsd::cxx::tree::one< url_type > url_;
+    ::xsd::cxx::tree::one< streamable_type > streamable_;
+    image_sequence image_;
+    ::xsd::cxx::tree::one< rank_type > rank_;
   };
 
   class image: public ::xml_schema::uri
@@ -648,23 +559,23 @@ namespace lfm_tagtopalbums
 #include <xercesc/dom/DOMInputSource.hpp>
 #include <xercesc/dom/DOMErrorHandler.hpp>
 
-namespace lfm_tagtopalbums
+namespace lfm_tagtopartists
 {
   // Parse a URI or a local file.
   //
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (const ::std::string& uri,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (const ::std::string& uri,
         ::xml_schema::error_handler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (const ::std::string& uri,
         ::xercesc::DOMErrorHandler& eh,
         ::xml_schema::flags f = 0,
@@ -673,37 +584,37 @@ namespace lfm_tagtopalbums
   // Parse std::istream.
   //
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (::std::istream& is,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (::std::istream& is,
         ::xml_schema::error_handler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (::std::istream& is,
         ::xercesc::DOMErrorHandler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& id,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& id,
         ::xml_schema::error_handler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& id,
         ::xercesc::DOMErrorHandler& eh,
@@ -713,18 +624,18 @@ namespace lfm_tagtopalbums
   // Parse xercesc::DOMInputSource.
   //
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& is,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& is,
         ::xml_schema::error_handler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& is,
         ::xercesc::DOMErrorHandler& eh,
         ::xml_schema::flags f = 0,
@@ -733,12 +644,12 @@ namespace lfm_tagtopalbums
   // Parse xercesc::DOMDocument.
   //
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (const ::xercesc::DOMDocument& d,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::lfm_tagtopalbums::lfm >
+  ::std::auto_ptr< ::lfm_tagtopartists::lfm >
   lfm_ (::xercesc::DOMDocument* d,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
@@ -751,4 +662,4 @@ namespace lfm_tagtopalbums
 //
 // End epilogue.
 
-#endif // XSD_TOPALBUMS_2_0_HXX
+#endif // XSD_TOPARTISTS_2_0_HXX

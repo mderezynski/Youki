@@ -9,7 +9,9 @@
 #include "mpx/algorithm/aque.hh"
 #include "mpx/mpx-uri.hh"
 #include "mpx/xml/xmltoc++.hh"
+
 #include "xmlcpp/xsd-topalbums-2.0.hxx"
+#include "xmlcpp/xsd-topartists-2.0.hxx"
 
 namespace
 {
@@ -31,18 +33,42 @@ namespace
             c.MatchType = type ;
             c.InverseMatch = inverse_match ;
 
+            if( attribute == "lfm-tag-topartists" )
+            {
+                StrS s ;
+                c.TargetAttr = ATTRIBUTE_MB_ALBUM_ARTIST_ID ;
+
+                try{
+                    URI u ( (boost::format( "http://ws.audioscrobbler.com/2.0/?method=tag.gettopartists&tag=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4" ) % value).str(), true ) ;
+
+                    MPX::XmlInstance<lfm_tagtopartists::lfm> * Xml = new MPX::XmlInstance<lfm_tagtopartists::lfm>( Glib::ustring( u ) );
+
+                    for( lfm_tagtopartists::topartists::artist_sequence::const_iterator i = Xml->xml().topartists().artist().begin(); i != Xml->xml().topartists().artist().end(); ++i )
+                    {
+                        s.insert( (*i).mbid() ) ;
+                    }
+
+                    delete Xml ;
+                }
+                catch( ... ) {
+                        g_message("Exception!");
+                }
+
+                c.TargetValue = s ;
+                constraints.push_back(c) ;
+            }
+            else
             if( attribute == "lfm-tag-topalbums" )
             {
                 StrS s ;
                 c.TargetAttr = ATTRIBUTE_MB_ALBUM_ID ;
-                c.MatchType = MT_IN ;
 
                 try{
                     URI u ( (boost::format( "http://ws.audioscrobbler.com/2.0/?method=tag.gettopalbums&tag=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4" ) % value).str(), true ) ;
 
-                    MPX::XmlInstance<lfm> * Xml = new MPX::XmlInstance<lfm>( Glib::ustring( u ) );
+                    MPX::XmlInstance<lfm_tagtopalbums::lfm> * Xml = new MPX::XmlInstance<lfm_tagtopalbums::lfm>( Glib::ustring( u ) );
 
-                    for( topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
+                    for( lfm_tagtopalbums::topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
                     {
                         s.insert( (*i).mbid() ) ;
                     }
@@ -507,7 +533,7 @@ namespace AQE
 
         switch( c.MatchType )
         {
-            case MT_IN:
+            case MT_EQUAL:
                 truthvalue = strset.count( track_target_val ) ; 
                 break  ;
        

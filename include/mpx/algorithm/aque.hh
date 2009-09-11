@@ -24,7 +24,6 @@ namespace AQE
         , MT_GREATER_THAN_OR_EQUAL
         , MT_LESSER_THAN_OR_EQUAL
         , MT_FUZZY_EQUAL
-        , MT_IN // only valid for StrS variants
     };
 
     struct Constraint_t

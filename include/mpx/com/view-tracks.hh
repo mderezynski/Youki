@@ -492,6 +492,7 @@ namespace Tracks
                 IdVector_sp                 m_constraints_albums ;
                 IdVector_sp                 m_constraints_artist ;
                 bool                        m_cache_enabled ;
+                Gtk::Widget*                m_widget ;
 
                 DataModelFilter( DataModel_SP_t& model )
 
@@ -733,7 +734,9 @@ namespace Tracks
                     else
                     {
                         m_current_filter = text ;
+                        Util::window_set_busy( * dynamic_cast<Gtk::Window*>(m_widget->get_toplevel()) ) ;
                         regen_mapping() ;
+                        Util::window_set_idle( * dynamic_cast<Gtk::Window*>(m_widget->get_toplevel()) ) ;
                     }
                 }
 
@@ -2607,6 +2610,7 @@ namespace Tracks
                         boost::optional<gint64> active_track = m_model->m_id_currently_playing ;
 
                         m_model = model;
+                        m_model->m_widget = this ;
 
                         m_model->m_id_currently_playing = active_track ;
                         m_model->scan_for_currently_playing() ;
@@ -2614,6 +2618,7 @@ namespace Tracks
                     else
                     {
                         m_model = model;
+                        m_model->m_widget = this ;
                     }
 
                     m_model->signal_changed().connect(

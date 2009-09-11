@@ -120,32 +120,43 @@ namespace MPX
     void
     window_set_busy( GtkWindow* window )
     {
-        GdkCursor *cursor = gdk_cursor_new_from_name( gdk_display_get_default(), "watch" ) ;
+        static GdkCursor* cursor = 0 ;
 
         if( !cursor )
         {
-            cursor = gdk_cursor_new_for_display( gdk_display_get_default(), GDK_WATCH ) ;
+            cursor = gdk_cursor_new_from_name( gdk_display_get_default(), "watch" ) ;
         }
 
         gdk_window_set_cursor( GTK_WIDGET (window)->window, cursor ) ;
+        while (gtk_events_pending()) gtk_main_iteration() ;
     }
 
     void
     window_set_idle( GtkWindow* window )
     {
         gdk_window_set_cursor( GTK_WIDGET (window)->window, NULL ) ;
+        while (gtk_events_pending()) gtk_main_iteration() ;
     }
 
     void
     window_set_busy( Gtk::Window & window )
     {
-        window.get_window()->set_cursor( Gdk::Cursor (Gdk::Display::get_default(), "watch") ) ;
+        static GdkCursor* cursor = 0 ;
+
+        if( !cursor )
+        {
+            cursor = gdk_cursor_new_from_name( gdk_display_get_default(), "watch" ) ;
+        }
+
+        gdk_window_set_cursor( GTK_WIDGET(window.gobj())->window, cursor ) ;
+        while (gtk_events_pending()) gtk_main_iteration() ;
     }
 
     void
     window_set_idle( Gtk::Window & window )
     {
         window.get_window()->set_cursor() ;
+        while (gtk_events_pending()) gtk_main_iteration() ;
     }
 
     void
