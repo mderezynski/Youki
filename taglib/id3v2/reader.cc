@@ -97,7 +97,7 @@ namespace MPX
 
 
         // MB UFID
-        FrameList const& map = tag->frameListMap()["UFID"];
+        const FrameList& map = tag->frameListMap()["UFID"];
         if( !map.isEmpty() )
         {
             for (FrameList::ConstIterator iter = map.begin(); iter != map.end(); ++iter)
@@ -116,9 +116,9 @@ namespace MPX
             }
         }
 
-        // TYER 
+        // TDRC 
         {
-            FrameList const& map = tag->frameListMap()["TYER"];
+            const FrameList& map = tag->frameListMap()["TDRC"];
             if( !map.isEmpty() )
             {
                 track[ATTRIBUTE_MB_RELEASE_DATE] = string( map.front()->toString().toCString( true ) );
@@ -127,7 +127,7 @@ namespace MPX
 
         // TPE2 (Album Artist) 
         {
-            FrameList const& map = tag->frameListMap()["TPE2"];
+            const FrameList& map = tag->frameListMap()["TPE2"];
             if( !map.isEmpty() )
             {
                 track[ATTRIBUTE_ALBUM_ARTIST] = string( map.front()->toString().toCString( true ) );
@@ -136,7 +136,7 @@ namespace MPX
 
         // TPUB (Label) 
         {
-            FrameList const& map = tag->frameListMap()["TPUB"];
+            const FrameList& map = tag->frameListMap()["TPUB"];
             if( !map.isEmpty() )
             {
                 track[ATTRIBUTE_LABEL] = string( map.front()->toString().toCString( true ) );
@@ -155,7 +155,7 @@ namespace MPX
 
             if( id3v2frame )
             {
-                FrameList const& map = tag->frameListMap()[id3v2frame];
+                const FrameList& map = tag->frameListMap()[id3v2frame];
 
                 if( !map.isEmpty() )
                 {

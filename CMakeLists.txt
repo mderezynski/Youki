@@ -268,10 +268,10 @@ SET(HAVE_XML yes)
 IF(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
   # NOTE: We cannot use -pedantic with g++ because long long (needed
   # for 64-bit integers on 32-bit platforms) is not defined in C++98
-  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -fno-strict-aliasing -fmessage-length=0 -Wall -D_FORTIFY_SOURCE=2")
+  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -ggdb3 -fno-strict-aliasing -fmessage-length=0 -Wall -D_FORTIFY_SOURCE=2")
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic")
 ELSE(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
-  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -Wall -D_FORTIFY_SOURCE=2")
+  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -ggdb3 -Wall -D_FORTIFY_SOURCE=2")
 ENDIF(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
 
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_COMMON_FLAGS}")

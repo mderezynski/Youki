@@ -167,7 +167,7 @@ namespace
                     VALUE_TYPE_INT      },
     } ;
 
-    const char delete_track_f[] = "DELETE FROM track WHERE id='%lld';" ;
+    const char delete_track_f[] = "DELETE FROM track WHERE id = '%lld';" ;
 
     enum Quality
     {
@@ -534,7 +534,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_all(
             else
             {
                 (*(t.get()))[ATTRIBUTE_MTIME] = mtime1 ;
-                insert_file_no_mtime_check( t, location, get<std::string>((*i)["insert_path"]), mtime2 && mtime1 != mtime2); 
+                insert_file_no_mtime_check( t, location, get<std::string>((*i)["insert_path"]), mtime2 && mtime1 != mtime2 ) ; 
             }
         }
         else
@@ -663,7 +663,7 @@ MPX::LibraryScannerThread_MLibMan::on_add(
 
         // Collect + Process Tracks
 
-        for(Util::FileList::iterator i2 = collection.begin(); i2 != collection.end(); ++i2)
+        for( Util::FileList::iterator i2 = collection.begin(); i2 != collection.end(); ++i2 )
         {
             if( check_abort_scan() )
                 return ;
@@ -676,7 +676,7 @@ MPX::LibraryScannerThread_MLibMan::on_add(
             gint64 mtime1 = Util::get_file_mtime( location ); 
             gint64 mtime2 = get_track_mtime( (*(t.get())) ) ;
 
-            // check if the file hasn't changed
+            // Check if the file hasn't changed
             if( check_mtimes && mtime2 )
             {
                     if( ( mtime1 <= last_scan_date)
@@ -689,8 +689,8 @@ MPX::LibraryScannerThread_MLibMan::on_add(
                     }
             }
 
-            (*(t.get()))[ATTRIBUTE_MTIME] = mtime1 ; // update the mtime in the track we're "building"
-            insert_file_no_mtime_check( t, *i2, insert_path_sql ) ;
+            (*(t.get()))[ATTRIBUTE_MTIME] = mtime1 ; // Update the mtime in the track we're "building"
+            insert_file_no_mtime_check( t, *i2, insert_path_sql, true ) ;
                         
             if( !(std::distance(collection.begin(), i2) % 50) )
             {
@@ -1149,34 +1149,51 @@ MPX::LibraryScannerThread_MLibMan::get_track_mtime(
 gint64
 MPX::LibraryScannerThread_MLibMan::get_track_id (Track& track) const
 {
-  RowV rows;
+    RowV v ;
+
 #ifdef HAVE_HAL
-  if( m_Flags & Library_MLibMan::F_USING_HAL )
-  {
-    static boost::format
-      select_f ("SELECT id FROM track WHERE %s='%lld' AND %s='%s';") ;
+    if( m_Flags & Library_MLibMan::F_USING_HAL )
+    {
+        static boost::format select_f ("SELECT id FROM track WHERE %s='%lld' AND %s='%s';") ;
 
-    m_SQL->get (rows, (select_f % attrs[ATTRIBUTE_MPX_DEVICE_ID].id
-                                % get<gint64>(track[ATTRIBUTE_MPX_DEVICE_ID].get())
-                                % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
-                                % mprintf ("%q", Util::normalize_path(get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get())).c_str())).str()) ;
-  }
-  else
+        if( !(track.has(ATTRIBUTE_MPX_DEVICE_ID) && track.has(ATTRIBUTE_VOLUME_RELATIVE_PATH)))
+        {
+            return 0 ;
+        }
+         
+        m_SQL->get(
+                v
+              , (select_f % attrs[ATTRIBUTE_MPX_DEVICE_ID].id
+                          % get<gint64>(track[ATTRIBUTE_MPX_DEVICE_ID].get())
+                          % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
+                          % mprintf ("%q", Util::normalize_path(get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get())).c_str())
+                ).str()
+        ) ;
+    }
+    else
 #endif
-  {
-    static boost::format
-      select_f ("SELECT id FROM track WHERE %s='%s';") ;
+    {
+        static boost::format select_f ("SELECT id FROM track WHERE %s='%s';") ;
 
-    m_SQL->get (rows, (select_f % attrs[ATTRIBUTE_LOCATION].id 
-                                % mprintf ("%q", get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str())).str()) ;
-  }
+        if( !(track.has(ATTRIBUTE_LOCATION)) )
+        {
+            return 0 ;
+        }
 
-  if( rows.size() && (rows[0].count("id") != 0) )
-  {
-    return boost::get<gint64>( rows[0].find("id")->second )  ;
-  }
+        m_SQL->get(
+                v
+              , (select_f % attrs[ATTRIBUTE_LOCATION].id 
+                          % mprintf ("%q", get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str())
+                ).str()
+        ) ;
+    }
 
-  return 0 ;
+    if( v.size() && ( v[0].count("id") != 0 ))
+    {
+        return boost::get<gint64>( v[0]["id"] ) ;
+    }
+
+    return 0 ;
 }
 
 void
@@ -1207,6 +1224,7 @@ MPX::LibraryScannerThread_MLibMan::insert_file_no_mtime_check(
 )
 {
     Track& t = *(track.get()) ;
+
     try{
         try{
 
@@ -1611,37 +1629,33 @@ MPX::LibraryScannerThread_MLibMan::insert(
 
   try{
 
-    if( p->Update )
+    gint64 id_old = get_track_id( track ) ;
+
+    if( p->Update && id_old )
     {
-        gint64 id_old = get_track_id( track ) ;
+        m_SQL->exec_sql(
+            mprintf(
+                  "DELETE FROM track WHERE id = '%lld'"
+                , id_old
+        )) ;
 
-        if( id_old )       
-        {
-            m_SQL->exec_sql(
-                mprintf(
-                      "DELETE FROM track WHERE id ='%lld"
-                    , id_old
-            )) ;
+        pthreaddata->EntityDeleted( id_old, ENTITY_TRACK ) ;
 
-            gint64 id_new = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
+        gint64 id_new = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
 
-            m_SQL->exec_sql(
-                mprintf(
-                      "UPDATE track SET id = '%lld' WHERE id ='%lld"
-                    , id_old
-                    , id_new
-            )) ;
-        }
-        else
-        {
-            throw ScanError(_("Track to be updated but no original present: '%s'")) ;
-        }
+        m_SQL->exec_sql(
+            mprintf(
+                  "UPDATE track SET id = '%lld' WHERE id = '%lld'"
+                , id_old
+                , id_new
+        )) ;
+
+        track[ATTRIBUTE_MPX_TRACK_ID] = id_old ; 
     }
     else
     {
         track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
     } 
-
   } catch( SqlConstraintError & cxe )
   {
     RowV rv ;
@@ -1663,6 +1677,8 @@ MPX::LibraryScannerThread_MLibMan::insert(
         const gint64&       bitrate_track   = get<gint64>(track[ATTRIBUTE_BITRATE].get()) ;
         const std::string&  type            = get<std::string>(rv[0]["type"]) ;
 
+        track[ATTRIBUTE_MPX_TRACK_ID] = id ; 
+
         if(
             (
               m_PrioritizeByFileType
@@ -1679,7 +1695,6 @@ MPX::LibraryScannerThread_MLibMan::insert(
             )
         )
         try{
-                track[ATTRIBUTE_MPX_TRACK_ID] = id ; 
                 m_SQL->exec_sql( create_update_sql( track, p->Album.first, p->Artist.first ) + ( boost::format( " WHERE id = '%lld'" ) % id ).str() ); 
                 signal_new_entities( p ) ;
                 pthreaddata->EntityUpdated( id, ENTITY_TRACK ) ;
@@ -1829,7 +1844,7 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum()
                       Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri) ;
                       if( !file->query_exists() )
                       {
-                              m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
+                              m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = '%lld'") % get<gint64>((*i)["id"])).str()); 
                               pthreaddata->EntityDeleted( get<gint64>((*i)["id"]) , ENTITY_TRACK ) ;
                       }
               } catch(Glib::Error) {
@@ -1883,7 +1898,7 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum_volume_list(
                               Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri) ;
                               if( !file->query_exists() )
                               {
-                                      m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
+                                      m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = '%lld'") % get<gint64>((*i)["id"])).str()); 
                                       pthreaddata->EntityDeleted( get<gint64>((*i)["id"]), ENTITY_TRACK ) ;
                               }
                       } catch(Glib::Error) {

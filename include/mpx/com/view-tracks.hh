@@ -190,7 +190,19 @@ namespace Tracks
                     , get<5>( b )
                 } ;
 
-                return (order_artist_a < order_artist_b) && (order_album_a < order_album_b) && (order_date_a < order_date_b) && (order_track[0] < order_track[1]) ;
+                if( order_artist_a < order_artist_b)
+                    return true ;
+
+                if( order_album_a < order_album_b )
+                    return true ;
+
+                if( order_date_a < order_date_b )
+                    return true ;
+
+                if( order_track[0] < order_track[1] )
+                    return true ;
+
+                return false ;
             }
         } ;
 
@@ -199,7 +211,6 @@ namespace Tracks
         {
                 Model_SP_t      m_realmodel;
                 Signal1         m_changed;
-                IdIterMap_t     m_iter_map;
                 std::size_t     m_top_row ;
 
                 DataModel()
@@ -218,7 +229,6 @@ namespace Tracks
                 clear()
                 {
                     m_realmodel->clear () ;
-                    m_iter_map.clear() ;
                     m_top_row = 0 ;
                 } 
 
@@ -312,19 +322,19 @@ namespace Tracks
 
                     Model_t::iterator i = m_realmodel->end() ;
                     std::advance( i, -1 ) ;
-
-                    m_iter_map.insert( std::make_pair( id, i )) ; 
                 }
 
                 void
                 erase_track(gint64 id)
                 {
-                    IdIterMap_t::iterator i = m_iter_map.find(id);
-
-                    if( i != m_iter_map.end() )
+                    for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                     {
-                        m_realmodel->erase( i->second );
-                        m_iter_map.erase( i );
+                        gint64 model_id = get<3>( *i ) ;
+                        if( model_id == id )
+                        {
+                            m_realmodel->erase( i ) ;
+                            return ;
+                        }
                     }
                 }
         };
@@ -695,7 +705,7 @@ namespace Tracks
                     ) ; 
 
                     Model_t::iterator i = m_realmodel->insert(
-                          std::lower_bound(
+                          std::upper_bound(
                               m_realmodel->begin()
                             , m_realmodel->end()
                             , row
@@ -703,8 +713,6 @@ namespace Tracks
                           )
                         , row
                     ) ;
-
-                    m_iter_map.insert( std::make_pair( id, i )) ; 
                 }
  
                 virtual void

@@ -929,6 +929,7 @@ namespace MPX
     )
     {
         private_->FilterModelArtist->erase_artist( id ) ; 
+        private_->FilterModelArtist->regen_mapping() ; 
 
         gint64 max_artist, max_albums ;
         private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
@@ -942,6 +943,7 @@ namespace MPX
     )
     {
         private_->FilterModelAlbums->erase_album( id ) ; 
+        private_->FilterModelAlbums->regen_mapping() ;
 
         gint64 max_artist, max_albums ;
         private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
@@ -955,6 +957,7 @@ namespace MPX
     )
     {
         private_->FilterModelTracks->erase_track( id ) ; 
+        private_->FilterModelTracks->regen_mapping() ; 
     }
 
     void
