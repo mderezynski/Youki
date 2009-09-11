@@ -50,7 +50,7 @@ namespace MPX
     , m_mode( SPECTRUM_MODE_VOCODER )
     {
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
-        set_size_request( -1, 52 ) ;
+        set_size_request( -1, 50 ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
         const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
@@ -222,7 +222,7 @@ namespace MPX
                     RoundedRectangle(
                           cairo
                         , x - 50
-                        , (HEIGHT-y) + 8
+                        , (HEIGHT-y) + 7 
                         , w
                         , - h
                         , 1.
@@ -247,7 +247,7 @@ namespace MPX
                     RoundedRectangle(
                           cairo
                         , x - 50
-                        , y + 8 
+                        , y + 7 
                         , w
                         , h
                         , 1.

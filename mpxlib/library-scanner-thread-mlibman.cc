@@ -616,27 +616,27 @@ MPX::LibraryScannerThread_MLibMan::on_add(
             try{
                 if (m_Flags & Library_MLibMan::F_USING_HAL)
                 { 
-                    const Volume& volume (m_HAL.get_volume_for_uri (*i)) ;
-                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length()))  ;
+                    const Volume&   volume          = m_HAL.get_volume_for_uri( *i ) ;
+                                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
                 }
                 else
 #endif // HAVE_HAL
 
                 {
-                    insert_path_sql = insert_path; 
+                                    insert_path_sql = insert_path ;
                 }
 
 #ifdef HAVE_HAL
             }
             catch(
-              IHAL::Exception&     cxe
+              IHAL::Exception&      cxe
             )
             {
                 g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
                 continue ;
             }
             catch(
-              Glib::ConvertError& cxe
+              Glib::ConvertError&   cxe
             )
             {
                 g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
@@ -676,25 +676,23 @@ MPX::LibraryScannerThread_MLibMan::on_add(
             gint64 mtime1 = Util::get_file_mtime( location ); 
             gint64 mtime2 = get_track_mtime( (*(t.get())) ) ;
 
+            // check if the file hasn't changed
             if( check_mtimes && mtime2 )
             {
-                    if( mtime1 <= last_scan_date)
-                    {
-                        ++m_ScanSummary.FilesUpToDate ;
-                        continue ;
-                    }
-                    else
-                    if( mtime1 == mtime2 )
+                    if( ( mtime1 <= last_scan_date)
+                                 ||
+                        ( mtime1 == mtime2 )
+                    )
                     {
                         ++m_ScanSummary.FilesUpToDate ;
                         continue ;
                     }
             }
 
-            (*(t.get()))[ATTRIBUTE_MTIME] = mtime1; 
+            (*(t.get()))[ATTRIBUTE_MTIME] = mtime1 ; // update the mtime in the track we're "building"
             insert_file_no_mtime_check( t, *i2, insert_path_sql ) ;
                         
-            if( (! (std::distance(collection.begin(), i2) % 50)) )
+            if( !(std::distance(collection.begin(), i2) % 50) )
             {
                 pthreaddata->Message.emit(
                     (boost::format(_("Collecting Tracks: %lld of %lld"))
@@ -743,9 +741,9 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
             try{
                 if (m_Flags & Library_MLibMan::F_USING_HAL)
                 { 
-                    const Volume& volume = m_HAL.get_volume_for_uri (*i)  ;
-                    gint64 device_id = m_HAL.get_id_for_volume( volume.volume_udi, volume.device_udi )  ;
-                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr(volume.mount_point.length()))  ;
+                    const Volume&   volume          = m_HAL.get_volume_for_uri (*i)  ;
+                    gint64          device_id       = m_HAL.get_id_for_volume( volume.volume_udi, volume.device_udi )  ;
+                                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr(volume.mount_point.length()))  ;
 
                     m_SQL->get(
                         v,
@@ -758,7 +756,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
                 else
 #endif
                 {
-                    insert_path_sql = insert_path; 
+                    insert_path_sql = insert_path ; 
 
                     m_SQL->get(
                         v,
@@ -785,11 +783,14 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
             for( RowV::iterator i = v.begin(); i != v.end(); ++i )
             {
                 Track_sp t = library->sqlToTrack( *i, false ); 
-                std::string location = get<std::string>(   (*(t.get()))[ATTRIBUTE_LOCATION].get() ) ; 
+                const std::string& location = get<std::string>((*(t.get()))[ATTRIBUTE_LOCATION].get() ) ; 
 
-                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(location) ;
-                if( !file->query_exists() )
+                // delete tracks which are gone from the FS
+                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri( location ) ;
+
+                if( !file->query_exists() ) // not there anymore ?
                 {
+                    // delete it
                     gint64 id = get<gint64>((*i)["id"]) ;
                     m_SQL->exec_sql(mprintf( delete_track_f, id)) ;
                     pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
@@ -811,7 +812,6 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
             g_warning("%s: %s", G_STRLOC, cxe.what().c_str()) ;
         }
 #endif // HAVE_HAL
-
     }
 }
 
@@ -1206,24 +1206,28 @@ MPX::LibraryScannerThread_MLibMan::insert_file_no_mtime_check(
     , bool               update
 )
 {
+    Track& t = *(track.get()) ;
     try{
         try{
-            Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri) ;
-            Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type") ;
-            (*(track.get()))[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type") ;
-        } catch(Gio::Error & cxe) {
+
+            // Get the MIME type
+            t[ATTRIBUTE_TYPE] = Gio::File::create_for_uri(uri)->query_info("standard::content-type")->get_attribute_string("standard::content-type") ;
+
+        } catch(Gio::Error & cxe)
+        {
             add_erroneous_track( uri, _("An error ocurred trying to determine the file type")) ;
             return ;
         }
 
-        if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, *(track.get()) ) )
+        if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, t )) // Failed to read metadata at all?
         {
+            // If so, the track is erroneous
             add_erroneous_track( uri, _("Could not acquire metadata (using taglib-gio)")) ;
-
-            quarantine_file( uri )  ;
+            quarantine_file( uri ) ;
         }
-        else try{
-            create_insertion_track( *(track.get()), uri, insert_path, update ) ;
+        else
+        try{
+            create_insertion_track( t, uri, insert_path, update ) ;
         }
         catch( ScanError & cxe )
         {
@@ -1336,13 +1340,17 @@ MPX::LibraryScannerThread_MLibMan::create_insertion_track(
 
     ThreadData * pthreaddata = m_ThreadData.get() ;
 
-    if( !(track.has(ATTRIBUTE_ALBUM) && track.has(ATTRIBUTE_ARTIST) && track.has(ATTRIBUTE_TITLE)) )
+    if( !(track.has(ATTRIBUTE_ALBUM) && track.has(ATTRIBUTE_ARTIST) && track.has(ATTRIBUTE_TITLE)) ) // Does this track lack mandatory metadata?
     {
+        // If yes, see if we already have it (i.e. obtain its ID, which must be non-0 if it already has one, i.e. get_track_id() will not create
+        // a track unlike (yesh, sucks) get_album_id() and get_album_artist_id()
+
         gint64 id = get_track_id( track ) ;
 
         if( id != 0 )
         {
-            m_SQL->exec_sql(mprintf( delete_track_f, id)) ;
+            // OK so it's in the db, delete it from there
+            m_SQL->exec_sql( mprintf( delete_track_f, id )) ;
             pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
         }
 
@@ -1581,8 +1589,9 @@ MPX::LibraryScannerThread_MLibMan::compare_types(
     }
 
     if( val_a < val_b )
-        return 1 ;
-    else if( val_a > val_b )
+        return  1 ;
+    else
+    if( val_a > val_b )
         return -1 ;
 
     return 0 ;
@@ -1604,46 +1613,29 @@ MPX::LibraryScannerThread_MLibMan::insert(
 
     if( p->Update )
     {
-        gint64 id_old = 0 ;
-        gint64 id_new = 0 ;
-        RowV   rv ;
+        gint64 id_old = get_track_id( track ) ;
 
-        if( mcs->key_get<bool>("library","use-hal"))
+        if( id_old )       
         {
-            m_SQL->get(
-                rv,
+            m_SQL->exec_sql(
                 mprintf(
-                      "SELECT id FROM track WHERE device_id = '%lld' AND hal_vrp = '%s'"
-                    , get<gint64>(track[ATTRIBUTE_MPX_DEVICE_ID].get())
-                    , get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str() 
-            )); 
+                      "DELETE FROM track WHERE id ='%lld"
+                    , id_old
+            )) ;
+
+            gint64 id_new = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
+
+            m_SQL->exec_sql(
+                mprintf(
+                      "UPDATE track SET id = '%lld' WHERE id ='%lld"
+                    , id_old
+                    , id_new
+            )) ;
         }
         else
         {
-            m_SQL->get(
-                rv,
-                mprintf(
-                      "SELECT id FROM track WHERE location = '%s'"
-                    , get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str() 
-            )); 
+            throw ScanError(_("Track to be updated but no original present: '%s'")) ;
         }
-
-        id_old = get<gint64>(rv[0]["id"]) ;
-
-        m_SQL->exec_sql(
-            mprintf(
-                  "DELETE FROM track WHERE id ='%lld"
-                , id_old
-        )) ;
-
-        id_new = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
-
-        m_SQL->exec_sql(
-            mprintf(
-                  "UPDATE track SET id = '%lld' WHERE id ='%lld"
-                , id_old
-                , id_new
-        )) ;
     }
     else
     {
@@ -1653,9 +1645,10 @@ MPX::LibraryScannerThread_MLibMan::insert(
   } catch( SqlConstraintError & cxe )
   {
     RowV rv ;
+
     m_SQL->get(
-        rv,
-        mprintf(
+          rv
+        , mprintf(
               "SELECT id, type, bitrate, location FROM track WHERE album_j = '%lld' AND artist_j = '%lld' AND track = '%lld' AND title = '%q'"
             , p->Album.first
             , p->Artist.first
@@ -1663,15 +1656,31 @@ MPX::LibraryScannerThread_MLibMan::insert(
             , p->Title.c_str()
     )); 
 
-    gint64 id = rv.empty() ? 0 : get<gint64>(rv[0]["id"]) ;
-    if( id != 0 ) 
+    if( rv.size() == 1 ) 
     {
-        int types_compare = compare_types( p->Type, get<std::string>(rv[0]["type"])) ;
+        const gint64&       id              = get<gint64>(rv[0]["id"]) ;
+        const gint64&       bitrate_datarow = get<gint64>(rv[0]["bitrate"]) ;
+        const gint64&       bitrate_track   = get<gint64>(track[ATTRIBUTE_BITRATE].get()) ;
+        const std::string&  type            = get<std::string>(rv[0]["type"]) ;
 
-        if( (m_PrioritizeByFileType && types_compare > 0) || (m_PrioritizeByBitrate && (get<gint64>(track[ATTRIBUTE_BITRATE].get())) > (get<gint64>(rv[0]["bitrate"]))))
+        if(
+            (
+              m_PrioritizeByFileType
+                    &&
+              compare_types( p->Type, type )
+            )
+
+                    ||
+
+            (
+              m_PrioritizeByBitrate
+                    &&
+              bitrate_track > bitrate_datarow
+            )
+        )
         try{
-                track[ATTRIBUTE_MPX_TRACK_ID] = id; 
-                m_SQL->exec_sql( create_update_sql( track, p->Album.first, p->Artist.first ) + (boost::format(" WHERE id = '%lld'") % id).str()  ); 
+                track[ATTRIBUTE_MPX_TRACK_ID] = id ; 
+                m_SQL->exec_sql( create_update_sql( track, p->Album.first, p->Artist.first ) + ( boost::format( " WHERE id = '%lld'" ) % id ).str() ); 
                 signal_new_entities( p ) ;
                 pthreaddata->EntityUpdated( id, ENTITY_TRACK ) ;
 
@@ -1687,7 +1696,7 @@ MPX::LibraryScannerThread_MLibMan::insert(
     }
     else
     {
-        throw ScanError(_("Got track ID 0 for internal track! Highly supicious! Please report!")) ;
+        throw ScanError(_("Got no track or more than one track for given ID! Please report!")) ;
     }
   }
   catch( SqlExceptionC & cxe )

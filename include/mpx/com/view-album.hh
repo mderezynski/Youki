@@ -1358,7 +1358,7 @@ namespace Albums
                         ) ; 
 
                         cairo->line_to(
-                              a.get_width()
+                              a.get_width() - 2
                             , ypos - 1 
                         ) ;
 

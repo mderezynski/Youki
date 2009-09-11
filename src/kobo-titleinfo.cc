@@ -112,7 +112,7 @@ namespace MPX
         m_timer.stop ();
         m_timer.reset ();
 
-        set_size_request( -1, 24 ) ;
+        set_size_request( -1, 32 ) ;
     }
 
     void
@@ -167,9 +167,9 @@ namespace MPX
 
         GdkRectangle r ;
         r.x = 1 ;
-        r.y = 1 ;
+        r.y = 3 ;
         r.width = a.get_width() - 2 ;
-        r.height = a.get_height() - 2 ;
+        r.height = a.get_height() - 2 - 4 ;
 
         cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
         cairo->set_source_rgba(
@@ -324,7 +324,7 @@ namespace MPX
 
             cairo->move_to(
                   (a.get_width() - width) / 2 - 50
-                , (a.get_height() - height) / 2
+                , (a.get_height() - height) / 2 
             ) ;
 
             const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ; 

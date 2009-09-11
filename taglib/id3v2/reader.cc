@@ -109,19 +109,19 @@ namespace MPX
                     ByteVector vec (ufid->identifier());
                     vec.append ('\0');
 
-                    track[ATTRIBUTE_MB_TRACK_ID] = string (vec.data());
+                    track[ATTRIBUTE_MB_TRACK_ID] = string( vec.data());
 
                     break;
                 }
             }
         }
 
-        // TDRC 
+        // TYER 
         {
-            FrameList const& map = tag->frameListMap()["TDRC"];
+            FrameList const& map = tag->frameListMap()["TYER"];
             if( !map.isEmpty() )
             {
-                track[ATTRIBUTE_MB_RELEASE_DATE] = string (map.front()->toString().toCString( true ) );
+                track[ATTRIBUTE_MB_RELEASE_DATE] = string( map.front()->toString().toCString( true ) );
             }
         }
 
@@ -130,7 +130,7 @@ namespace MPX
             FrameList const& map = tag->frameListMap()["TPE2"];
             if( !map.isEmpty() )
             {
-                track[ATTRIBUTE_ALBUM_ARTIST] = string (map.front()->toString().toCString( true ) );
+                track[ATTRIBUTE_ALBUM_ARTIST] = string( map.front()->toString().toCString( true ) );
             }
         }
 
@@ -139,7 +139,7 @@ namespace MPX
             FrameList const& map = tag->frameListMap()["TPUB"];
             if( !map.isEmpty() )
             {
-                track[ATTRIBUTE_LABEL] = string (map.front()->toString().toCString( true ) );
+                track[ATTRIBUTE_LABEL] = string( map.front()->toString().toCString( true ) );
             }
         }
 
@@ -159,7 +159,7 @@ namespace MPX
 
                 if( !map.isEmpty() )
                 {
-                    track[ATTRIBUTE_ARTIST_SORTNAME] = string (map.front()->toString().toCString( true ) );
+                    track[ATTRIBUTE_ARTIST_SORTNAME] = string( map.front()->toString().toCString( true ) );
                 }
             }
         }
