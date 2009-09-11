@@ -154,15 +154,20 @@ namespace AQE
         , StrV&                     non_attr_strings
     )
     {
-        Glib::ustring tmp ;
+        enum KeyValEnum
+        {
+              KEY
+            , VAL
+        } ;
 
-        Glib::ustring attribute ;
-        Glib::ustring value ;
+        Glib::ustring line ;
+        Glib::ustring kv[2] ;
 
         MatchType_t type ;
 
         bool inverse = false ;
         bool done_reading_pair  = false ;
+        bool have_op = false ;
         
         enum ReadType_t
         {
@@ -181,41 +186,46 @@ namespace AQE
             {
                 type = MT_LESSER_THAN ;
                 rt = READ_VAL ;
+                have_op = true ;
             }
             else
             if( *i == '>' )
             {
                 type = MT_GREATER_THAN ;
                 rt = READ_VAL ;
+                have_op = true ;
             }
             else
             if( *i == '=' )
             {
                 type = MT_EQUAL ;
                 rt = READ_VAL ;
+                have_op = true ;
             }
             else
             if( *i == '~' )
             {
                 type = MT_FUZZY_EQUAL ;
                 rt = READ_VAL ;
+                have_op = true ;
             }
             else
             if( *i == '%' )
             {
                 type = MT_EQUAL_BEGIN ;
                 rt = READ_VAL ;
+                have_op = true ;
             }
             else
             if( *i == '!' )
             {
-                if( rt == READ_ATTR && !attribute.empty() )
+                if( rt == READ_ATTR && !kv[KEY].empty() )
                 {
                     inverse = true ;
                 }
                 else
                 {
-                    tmp += *i ;
+                    line += *i ;
                 }
             }
             else
@@ -226,41 +236,47 @@ namespace AQE
                     // we interpret this as the start of the attribute and use MT_EQUAL
 
                     type = MT_FUZZY_EQUAL ;
-                    attribute = tmp ;
+                    kv[KEY] = line ;
                     rt = READ_VAL ;
                 }
 
-                tmp.clear() ;
+                line.clear() ;
                 ++i ;
 
                 while( i != text_utf8.end() && *i != '"' )
                 {
-                    tmp += *i ; 
+                    line += *i ; 
                     ++i ;
                 }
 
-                value = tmp ;
-                tmp.clear() ;
-
-                done_reading_pair = i != text_utf8.end() ;
+                if( i == text_utf8.end() )
+                {
+                    return ;
+                }
+                else
+                {
+                    kv[VAL] = line ;
+                    line.clear() ;
+                    done_reading_pair = true ; 
+                }
             }
             else
             if( *i == ' ' ) 
             {
                 if( rt == READ_ATTR )
                 {
-                    if( !tmp.empty() )
+                    if( !line.empty() )
                     {
-                        attribute = tmp ;
-                        tmp.clear() ;
+                        kv[KEY] = line ;
+                        line.clear() ;
                     }
                 }
                 else
                 {
-                    if( !tmp.empty() )
+                    if( !line.empty() )
                     {
-                        value = tmp ;
-                        tmp.clear() ;
+                        kv[VAL] = line ;
+                        line.clear() ;
 
                         done_reading_pair = true ;
                     }
@@ -268,13 +284,13 @@ namespace AQE
             }
             else
             {
-                if( tmp.empty() && !attribute.empty() && rt == READ_ATTR )
+                if( line.empty() && !kv[KEY].empty() && rt == READ_ATTR )
                 {
-                    non_attr_strings.push_back( attribute ) ;
-                    attribute.clear() ;
+                    non_attr_strings.push_back( kv[KEY] ) ;
+                    kv[KEY].clear() ;
                 }
 
-                tmp += *i ;
+                line += *i ;
             }
 
             if( i != text_utf8.end() )
@@ -282,26 +298,26 @@ namespace AQE
                 ++i ;
             }
 
-            if( i == text_utf8.end() && !done_reading_pair )
+            if( i == text_utf8.end() && !done_reading_pair && !have_op )
             {
                 if( rt == READ_ATTR )
                 {
-                    if( !tmp.empty() )
+                    if( !line.empty() )
                     {
-                        non_attr_strings.push_back( tmp ) ;
-                        tmp.clear() ;
+                        non_attr_strings.push_back( line ) ;
+                        line.clear() ;
                     }
                     else
-                    if( !attribute.empty() )
+                    if( !kv[KEY].empty() )
                     {
-                        non_attr_strings.push_back( attribute ) ;
-                        attribute.clear() ;
+                        non_attr_strings.push_back( kv[KEY] ) ;
+                        kv[KEY].clear() ;
                     }
                 }
                 else
                 {
-                    value = tmp ;
-                    tmp.clear() ;
+                    kv[VAL] = line ;
+                    line.clear() ;
 
                     done_reading_pair = true ;
                 }
@@ -309,22 +325,29 @@ namespace AQE
     
             if( done_reading_pair )
             {
-                if( !attribute.empty() && !value.empty() )
+                if( !kv[KEY].empty() && !kv[VAL].empty() )
                 {
                     add_constraint(
                           constraints
-                        , attribute
-                        , value
+                        , kv[KEY]
+                        , kv[VAL]
                         , type
                         , inverse
                     ) ;
 
-                    type = MT_UNDEFINED ;
-                    attribute.clear() ;
-                    value.clear() ;
-                    tmp.clear() ;
+                    kv[KEY].clear() ;
+                    kv[VAL].clear() ;
+
+                    line.clear() ;
+
                     done_reading_pair = false ;
+
                     inverse = false ;
+
+                    have_op = false ;
+
+                    type = MT_UNDEFINED ;
+
                     rt = READ_ATTR ;
                 }
             }
