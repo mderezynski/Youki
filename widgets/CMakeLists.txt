@@ -31,7 +31,6 @@ SET(mpx_widgets_SOURCES
   youki-status-icon.h
   youki-tray-icon.c
   youki-tray-icon.h
-  youki-clutter-widget.cc
   youki-toggle-button.cc
   youki-tristate-button.cc
   cairo-extensions.cc

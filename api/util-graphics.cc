@@ -128,14 +128,14 @@ namespace MPX
         }
 
         gdk_window_set_cursor( GTK_WIDGET (window)->window, cursor ) ;
-        while (gtk_events_pending()) gtk_main_iteration() ;
+        gdk_flush() ;
     }
 
     void
     window_set_idle( GtkWindow* window )
     {
         gdk_window_set_cursor( GTK_WIDGET (window)->window, NULL ) ;
-        while (gtk_events_pending()) gtk_main_iteration() ;
+        gdk_flush() ;
     }
 
     void
@@ -149,14 +149,14 @@ namespace MPX
         }
 
         gdk_window_set_cursor( GTK_WIDGET(window.gobj())->window, cursor ) ;
-        while (gtk_events_pending()) gtk_main_iteration() ;
+        gdk_flush() ;
     }
 
     void
     window_set_idle( Gtk::Window & window )
     {
         window.get_window()->set_cursor() ;
-        while (gtk_events_pending()) gtk_main_iteration() ;
+        gdk_flush() ;
     }
 
     void
