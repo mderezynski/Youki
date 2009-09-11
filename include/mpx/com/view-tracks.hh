@@ -2744,7 +2744,7 @@ namespace Tracks
                       std::size_t row
                 )
                 {
-                    if( m_visible_height && m_row_height )
+                    if( m_visible_height && m_row_height && m_prop_vadj.get_value() && m_model )
                     {
                         Limiter<std::size_t> d ( 
                               Limiter<std::size_t>::ABS_ABS

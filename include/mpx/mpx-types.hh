@@ -28,12 +28,13 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <boost/optional.hpp>
-#include <boost/variant.hpp>
-#include <boost/shared_ptr.hpp>
 #include <map>
 #include <string>
 #include <vector>
+#include <set>
+#include <boost/optional.hpp>
+#include <boost/variant.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace MPX
 {
@@ -123,96 +124,105 @@ namespace MPX
     {
         private:
 
-            void* mdata;
-            size_t mdata_size;
+            void*  m_data ;
+            size_t m_data_size ;
 
         public:
 
-            Blob (void const* d, size_t s)
+            Blob( // ctor
+                  void const*   d
+                , size_t        s
+            )
             {
-                mdata = g_memdup(d, s); 
-                mdata_size = s;
+                m_data = g_memdup( d, s ) ; 
+                m_data_size = s ;
             };
 
-            Blob (Blob const& other)
+            Blob( // copy ctor
+                  const Blob&   other
+            )
             {
-                mdata = g_memdup(other.mdata, other.mdata_size);
-                mdata_size = other.mdata_size;
+                m_data = g_memdup( other.m_data, other.m_data_size ) ;
+                m_data_size = other.m_data_size ;
             }
 
-            ~Blob ()
+            virtual
+            ~Blob () // dtor
             {
-                g_free(mdata);
+                g_free( m_data ) ;
             }
 
             void* const&
-            data () const
+            data() const
             {
-                return mdata;
+                return m_data ;
             }
 
             size_t
-            size () const
+            size() const
             {
-                return mdata_size;
+                return m_data_size ;
             }
 
-            bool operator==(Blob const& other) const
+            bool operator==(
+                  const Blob&   other
+            ) const
             {
-                return mdata == other.mdata;
+                return m_data == other.m_data ;
             }
     };
 
-    typedef boost::variant<gint64, gdouble, std::string, Blob> Variant;
-    typedef boost::optional<Variant> OVariant;
+    typedef std::set<std::string> StrS ;
+    typedef boost::variant<gint64, gdouble, std::string, Blob, StrS> Variant ;
+    typedef boost::optional<Variant> OVariant ;
 
     class Track
     {
-          typedef std::vector<OVariant> DataT;
+          typedef std::vector<OVariant> Data_t ;
           
-          DataT data;
+          Data_t data ;
     
         public:
 
-          const OVariant& operator[](DataT::size_type index) const
+          const OVariant& operator[](Data_t::size_type index) const
           {
               return data[index];
           }
 
-          OVariant& operator[](DataT::size_type index)
+          OVariant& operator[](Data_t::size_type index)
           {
               return data[index];
           }
 
-          Track () { data = DataT (DataT::size_type(N_ATTRIBUTES_INT)); }
+          Track () { data = Data_t (Data_t::size_type(N_ATTRIBUTES_INT)); }
 
           bool
-          has(DataT::size_type index) const
+          has(Data_t::size_type index) const
           {
             return bool(data[index]);
           }
     };
 
     typedef boost::shared_ptr<Track> Track_sp;
-
     typedef std::vector< gint64 > IdV;
 
     namespace SQL
     {
         enum ValueType
         {
-            VALUE_TYPE_INT,
-            VALUE_TYPE_REAL,
-            VALUE_TYPE_STRING  
+              VALUE_TYPE_INT
+            , VALUE_TYPE_REAL
+            , VALUE_TYPE_STRING  
+            , VALUE_TYPE_BLOB
         }; 
 
-        // NOTE: Regrettably, this must be a std::map. ALthough more
+        // NOTE: Regrettably, this must be a std::map. Although more
         // efficient, std::tr1::unordered_map cannot be exported to
         // Python yet
-        typedef std::map< std::string, Variant >                 Row;
+        typedef std::map< std::string, Variant >                 Row ;
+        typedef std::vector< Row >                               RowV ;
+        typedef std::vector< std::string >                       ColumnV ;
 
-        typedef std::vector< Row >                               RowV;
-        typedef std::vector< std::string >                       ColumnV;
     } // namespace SQL
 } //namespace MPX 
 

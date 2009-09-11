@@ -1,12 +1,15 @@
+#include <vector>
+#include <glibmm.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/lexical_cast.hpp>
-#include "mpx/mpx-sql.hh"
+#include <boost/format.hpp>
 #include "mpx/mpx-types.hh"
-#include <vector>
-#include <glib.h>
 #include "mpx/util-string.hh"
 #include "mpx/algorithm/aque.hh"
+#include "mpx/mpx-uri.hh"
+#include "mpx/xml/xmltoc++.hh"
+#include "xmlcpp/xsd-topalbums-2.0.hxx"
 
 namespace
 {
@@ -28,6 +31,32 @@ namespace
             c.MatchType = type ;
             c.InverseMatch = inverse_match ;
 
+            if( attribute == "lfm-tag-topalbums" )
+            {
+                StrS s ;
+                c.TargetAttr = ATTRIBUTE_MB_ALBUM_ID ;
+                c.MatchType = MT_IN ;
+
+                try{
+                    URI u ( (boost::format( "http://ws.audioscrobbler.com/2.0/?method=tag.gettopalbums&tag=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4" ) % value).str(), true ) ;
+
+                    MPX::XmlInstance<lfm> * Xml = new MPX::XmlInstance<lfm>( Glib::ustring( u ) );
+
+                    for( topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
+                    {
+                        s.insert( (*i).mbid() ) ;
+                    }
+
+                    delete Xml ;
+                }
+                catch( ... ) {
+                        g_message("Exception!");
+                }
+
+                c.TargetValue = s ;
+                constraints.push_back(c) ;
+            }
+            else
             if( attribute == "musicip-puid" )
             {
                 c.TargetAttr = ATTRIBUTE_MUSICIP_PUID ;
@@ -133,6 +162,7 @@ namespace
                 c.TargetAttr = ATTRIBUTE_ALBUM ;
                 constraints.push_back(c) ;
             }
+            else
             if( attribute == "title" )
             {
                 c.TargetValue = value ; 
@@ -168,6 +198,7 @@ namespace AQE
         bool inverse = false ;
         bool done_reading_pair  = false ;
         bool have_op = false ;
+        bool have_quot = false ;
         
         enum ReadType_t
         {
@@ -231,6 +262,8 @@ namespace AQE
             else
             if( *i == '"' )
             {
+                have_quot = true ;
+
                 if( rt == READ_ATTR )
                 {
                     // we interpret this as the start of the attribute and use MT_EQUAL
@@ -298,7 +331,7 @@ namespace AQE
                 ++i ;
             }
 
-            if( i == text_utf8.end() && !done_reading_pair && !have_op )
+            if( i == text_utf8.end() && !done_reading_pair && (!have_op || !have_quot) )
             {
                 if( rt == READ_ATTR )
                 {
@@ -341,13 +374,11 @@ namespace AQE
                     line.clear() ;
 
                     done_reading_pair = false ;
-
                     inverse = false ;
-
                     have_op = false ;
+                    have_quot = false ;
 
                     type = MT_UNDEFINED ;
-
                     rt = READ_ATTR ;
                 }
             }
@@ -460,28 +491,66 @@ namespace AQE
         return (c.InverseMatch) ? !truthvalue : truthvalue ;
     }
 
+    template <>
+    bool
+    determine_match<StrS>(
+          const Constraint_t&   c
+        , const MPX::Track&     track
+    )
+    {
+        g_return_val_if_fail(track.has(c.TargetAttr), false) ;
+
+        bool truthvalue = false ;
+
+        const StrS&         strset              = boost::get<StrS>(c.TargetValue.get()) ;
+        const std::string&  track_target_val    = boost::get<std::string>(track[c.TargetAttr].get()) ;
+
+        switch( c.MatchType )
+        {
+            case MT_IN:
+                truthvalue = strset.count( track_target_val ) ; 
+                break  ;
+       
+            case MT_UNDEFINED:
+            default:
+                break  ;
+        }
+
+        return (c.InverseMatch) ? !truthvalue : truthvalue ;
+    }
 
     bool
     match_track( const Constraints_t& c, const MPX::Track& track)
     {
         for( Constraints_t::const_iterator i = c.begin(); i != c.end(); ++i )
         {
-            Constraint_t const& c = *i ;
+            const Constraint_t& c = *i ;
 
-            if( !track.has(c.TargetAttr) )
+            if( !track.has( c.TargetAttr ))
             {
                 return false ;
             }
         
-            bool truthvalue; 
+            bool truthvalue = false ; 
 
-            if( c.TargetAttr >= ATTRIBUTE_TRACK )
-                truthvalue = determine_match<gint64>(c, track) ;
+            if( c.TargetValue.get().which() == 4 )
+            {
+                truthvalue = determine_match<StrS>(c, track) ;
+            }
             else
-                truthvalue = determine_match<std::string>(c, track) ;
+            if( c.TargetAttr >= ATTRIBUTE_TRACK )
+            {
+                truthvalue = determine_match<gint64>( c, track ) ;
+            }
+            else
+            {
+                truthvalue = determine_match<std::string>( c, track ) ;
+            }
 
             if( !truthvalue )
+            {
                 return false ;
+            }
         }
 
         return true ;

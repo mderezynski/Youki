@@ -67,6 +67,9 @@
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 
+#include "xmlcpp/xsd-topalbums-2.0.hxx"
+#include "mpx/xml/xmltoc++.hh"
+
 #undef PACKAGE
 #define PACKAGE "youki"
 
@@ -359,6 +362,7 @@ main (int argc, char ** argv)
         services->get<YoukiController>("mpx-service-controller")->StartupComplete() ;
 
         splash->set_message(_("Startup complete!"),10/10.);
+
 
         delete splash;
         gtk->run() ;

@@ -24,6 +24,7 @@ namespace AQE
         , MT_GREATER_THAN_OR_EQUAL
         , MT_LESSER_THAN_OR_EQUAL
         , MT_FUZZY_EQUAL
+        , MT_IN // only valid for StrS variants
     };
 
     struct Constraint_t
@@ -89,6 +90,13 @@ namespace AQE
     template <>
     bool
     determine_match<std::string>(
+          const Constraint_t&   /*IN: constraints*/
+        , const MPX::Track&     /*IN: track*/
+    ) ;
+
+    template <>
+    bool
+    determine_match<StrS>(
           const Constraint_t&   /*IN: constraints*/
         , const MPX::Track&     /*IN: track*/
     ) ;
