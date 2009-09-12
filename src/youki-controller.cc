@@ -28,54 +28,58 @@
 
 namespace
 {
-    std::string mpris_attribute_id_str[] =
+    std::string
+    mpris_attribute_id_str[] =
     {
-            "location",
-            "title",
-            "genre",
-            "comment",
-            "puid fingerprint",
-            "mpx tag hash",
-            "mb track id",
-            "artist",
-            "artist sort name",
-            "mb artist id",
-            "album",
-            "mb album id",
-            "mb release date",
-            "mb release country",
-            "mb release type",
-            "asin",
-            "album artist",
-            "album artist sort name",
-            "mb album artist id",
-            "mime type",
-            "mpx hal volume udi",
-            "mpx hal device udi",
-            "mpx hal volume relative path",
-            "mpx insert path",
-            "mpx location name",
+           "location"
+         , "title"
+         , "genre"
+         , "comment"
+         , "label"
+         , "puid fingerprint"
+         , "mpx tag hash"
+         , "mb track id"
+         , "artist"
+         , "artist sort name"
+         , "mb artist id"
+         , "album"
+         , "mb album id"
+         , "mb release date"
+         , "mb release country"
+         , "mb release type"
+         , "asin"
+         , "album artist"
+         , "album artist sort name"
+         , "mb album artist id"
+         , "mime type"
+         , "mpx hal volume udi"
+         , "mpx hal device udi"
+         , "mpx hal volume relative path"
+         , "mpx insert path"
+         , "mpx location name"
     };
 
-    std::string mpris_attribute_id_int[] =
+    std::string
+    mpris_attribute_id_int[] =
     {
-            "tracknumber",
-            "time",
-            "rating",
-            "year",
-            "mtime",
-            "audio-bitrate",
-            "audio-samplerate",
-            "mpx play count",
-            "mpx play date",
-            "mpx insert date",
-            "mpx is mb album artist",
-            "mpx active",
-            "mpx quality",
-            "mpx track id",
-            "mpx album id",
-            "mpx artist id",
-            "mpx album artist id",
+            "tracknumber"
+          , "time"
+          , "rating"
+          , "year"
+          , "mtime"
+          , "audio-bitrate"
+          , "audio-samplerate"
+          , "mpx play count"
+          , "mpx play date"
+          , "mpx insert date"
+          , "mpx is mb album artist"
+          , "mpx active"
+          , "mpx quality"
+          , "mpx device id"
+          , "mpx track id"
+          , "mpx album id"
+          , "mpx artist id"
+          , "mpx album artist id"
     };
 
     std::string
@@ -1688,7 +1692,7 @@ namespace MPX
             }
         }
 
-        for( int n = ATTRIBUTE_TRACK; n < ATTRIBUTE_MPX_ALBUM_ARTIST_ID; ++n )
+        for( int n = ATTRIBUTE_TRACK; n < N_ATTRIBUTES_INT; ++n )
         {
             if( t.get()[n].is_initialized() )
             {
