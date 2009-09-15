@@ -15,6 +15,8 @@ SET(mpx_parsers_SOURCES
   xsd-artist-similar-2.0.hxx
   xsd-artist-info-2.0.cxx
   xsd-artist-info-2.0.hxx
+  xsd-artist-toptracks-2.0.cxx
+  xsd-artist-toptracks-2.0.hxx
   xsd-topalbums-2.0.cxx
   xsd-topalbums-2.0.hxx
   xsd-topartists-2.0.cxx

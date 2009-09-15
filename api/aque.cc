@@ -13,6 +13,7 @@
 #include "xmlcpp/xsd-topalbums-2.0.hxx"
 #include "xmlcpp/xsd-topartists-2.0.hxx"
 #include "xmlcpp/xsd-artist-similar-2.0.hxx"
+#include "xmlcpp/xsd-artist-toptracks-2.0.hxx"
 
 namespace
 {
@@ -34,6 +35,31 @@ namespace
             c.MatchType = type ;
             c.InverseMatch = inverse_match ;
 
+            if( attribute == "lfm-artist-toptracks" )
+            {
+                StrS s ;
+                c.TargetAttr = ATTRIBUTE_MB_TRACK_ID ;
+
+                try{
+                    URI u ( (boost::format( "http://ws.audioscrobbler.com/2.0/?method=artist.gettoptracks&artist=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4" ) % value).str(), true ) ;
+
+                    MPX::XmlInstance<lfm_artisttoptracks::lfm> * Xml = new MPX::XmlInstance<lfm_artisttoptracks::lfm>( Glib::ustring( u ) );
+
+                    for( lfm_artisttoptracks::toptracks::track_sequence::const_iterator i = Xml->xml().toptracks().track().begin(); i != Xml->xml().toptracks().track().end(); ++i )
+                    {
+                        s.insert( (*i).mbid() ) ;
+                    }
+
+                    delete Xml ;
+                }
+                catch( ... ) {
+                        g_message("Exception!");
+                }
+
+                c.TargetValue = s ;
+                constraints.push_back(c) ;
+            }
+            else
             if( attribute == "lfm-artist-similar" )
             {
                 StrS s ;
