@@ -201,7 +201,7 @@ namespace xml_schema
 
 // Forward declarations.
 //
-namespace LastFM_SimilarArtists
+namespace lfm_similarartists
 {
   class lfm;
   class similarartists;
@@ -220,14 +220,14 @@ namespace LastFM_SimilarArtists
 
 #include <xsd/cxx/xml/dom/parsing-header.hxx>
 
-namespace LastFM_SimilarArtists
+namespace lfm_similarartists
 {
   class lfm: public ::xml_schema::type
   {
     public:
     // similarartists
     // 
-    typedef ::LastFM_SimilarArtists::similarartists similarartists_type;
+    typedef ::lfm_similarartists::similarartists similarartists_type;
     typedef ::xsd::cxx::tree::traits< similarartists_type, char > similarartists_traits;
 
     const similarartists_type&
@@ -293,7 +293,7 @@ namespace LastFM_SimilarArtists
     public:
     // artist
     // 
-    typedef ::LastFM_SimilarArtists::artist artist_type;
+    typedef ::lfm_similarartists::artist artist_type;
     typedef ::xsd::cxx::tree::sequence< artist_type > artist_sequence;
     typedef artist_sequence::iterator artist_iterator;
     typedef artist_sequence::const_iterator artist_const_iterator;
@@ -423,7 +423,7 @@ namespace LastFM_SimilarArtists
 
     // image
     // 
-    typedef ::LastFM_SimilarArtists::image image_type;
+    typedef ::lfm_similarartists::image image_type;
     typedef ::xsd::cxx::tree::sequence< image_type > image_sequence;
     typedef image_sequence::iterator image_iterator;
     typedef image_sequence::const_iterator image_const_iterator;
@@ -543,23 +543,23 @@ namespace LastFM_SimilarArtists
 #include <xercesc/dom/DOMInputSource.hpp>
 #include <xercesc/dom/DOMErrorHandler.hpp>
 
-namespace LastFM_SimilarArtists
+namespace lfm_similarartists
 {
   // Parse a URI or a local file.
   //
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::std::string& uri,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::std::string& uri,
         ::xml_schema::error_handler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::std::string& uri,
         ::xercesc::DOMErrorHandler& eh,
         ::xml_schema::flags f = 0,
@@ -568,37 +568,37 @@ namespace LastFM_SimilarArtists
   // Parse std::istream.
   //
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         ::xml_schema::error_handler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         ::xercesc::DOMErrorHandler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& id,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& id,
         ::xml_schema::error_handler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& id,
         ::xercesc::DOMErrorHandler& eh,
@@ -608,18 +608,18 @@ namespace LastFM_SimilarArtists
   // Parse xercesc::DOMInputSource.
   //
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& is,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& is,
         ::xml_schema::error_handler& eh,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& is,
         ::xercesc::DOMErrorHandler& eh,
         ::xml_schema::flags f = 0,
@@ -628,12 +628,12 @@ namespace LastFM_SimilarArtists
   // Parse xercesc::DOMDocument.
   //
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::xercesc::DOMDocument& d,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::xercesc::DOMDocument* d,
         ::xml_schema::flags f = 0,
         const ::xml_schema::properties& p = ::xml_schema::properties ());

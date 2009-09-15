@@ -40,7 +40,7 @@
 
 #include "xsd-artist-similar-2.0.hxx"
 
-namespace LastFM_SimilarArtists
+namespace lfm_similarartists
 {
   // lfm
   // 
@@ -300,7 +300,7 @@ namespace LastFM_SimilarArtists
 
 #include <xsd/cxx/xml/dom/parsing-source.hxx>
 
-namespace LastFM_SimilarArtists
+namespace lfm_similarartists
 {
   // lfm
   //
@@ -753,9 +753,9 @@ namespace LastFM_SimilarArtists
 #include <xsd/cxx/xml/sax/std-input-source.hxx>
 #include <xsd/cxx/tree/error-handler.hxx>
 
-namespace LastFM_SimilarArtists
+namespace lfm_similarartists
 {
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::std::string& u,
         ::xml_schema::flags f,
         const ::xml_schema::properties& p)
@@ -771,8 +771,8 @@ namespace LastFM_SimilarArtists
 
     h.throw_if_failed< ::xsd::cxx::tree::parsing< char > > ();
 
-    ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-      ::LastFM_SimilarArtists::lfm_ (
+    ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+      ::lfm_similarartists::lfm_ (
         d.get (), f | ::xml_schema::flags::own_dom, p));
 
     if (f & ::xml_schema::flags::keep_dom)
@@ -781,7 +781,7 @@ namespace LastFM_SimilarArtists
     return r;
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::std::string& u,
         ::xml_schema::error_handler& h,
         ::xml_schema::flags f,
@@ -797,8 +797,8 @@ namespace LastFM_SimilarArtists
     if (!d)
       throw ::xsd::cxx::tree::parsing< char > ();
 
-    ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-      ::LastFM_SimilarArtists::lfm_ (
+    ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+      ::lfm_similarartists::lfm_ (
         d.get (), f | ::xml_schema::flags::own_dom, p));
 
     if (f & ::xml_schema::flags::keep_dom)
@@ -807,7 +807,7 @@ namespace LastFM_SimilarArtists
     return r;
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::std::string& u,
         ::xercesc::DOMErrorHandler& h,
         ::xml_schema::flags f,
@@ -819,8 +819,8 @@ namespace LastFM_SimilarArtists
     if (!d)
       throw ::xsd::cxx::tree::parsing< char > ();
 
-    ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-      ::LastFM_SimilarArtists::lfm_ (
+    ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+      ::lfm_similarartists::lfm_ (
         d.get (), f | ::xml_schema::flags::own_dom, p));
 
     if (f & ::xml_schema::flags::keep_dom)
@@ -829,7 +829,7 @@ namespace LastFM_SimilarArtists
     return r;
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         ::xml_schema::flags f,
         const ::xml_schema::properties& p)
@@ -840,10 +840,10 @@ namespace LastFM_SimilarArtists
 
     ::xsd::cxx::xml::sax::std_input_source isrc (is);
     ::xercesc::Wrapper4InputSource wrap (&isrc, false);
-    return ::LastFM_SimilarArtists::lfm_ (wrap, f, p);
+    return ::lfm_similarartists::lfm_ (wrap, f, p);
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         ::xml_schema::error_handler& h,
         ::xml_schema::flags f,
@@ -855,10 +855,10 @@ namespace LastFM_SimilarArtists
 
     ::xsd::cxx::xml::sax::std_input_source isrc (is);
     ::xercesc::Wrapper4InputSource wrap (&isrc, false);
-    return ::LastFM_SimilarArtists::lfm_ (wrap, h, f, p);
+    return ::lfm_similarartists::lfm_ (wrap, h, f, p);
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         ::xercesc::DOMErrorHandler& h,
         ::xml_schema::flags f,
@@ -866,10 +866,10 @@ namespace LastFM_SimilarArtists
   {
     ::xsd::cxx::xml::sax::std_input_source isrc (is);
     ::xercesc::Wrapper4InputSource wrap (&isrc, false);
-    return ::LastFM_SimilarArtists::lfm_ (wrap, h, f, p);
+    return ::lfm_similarartists::lfm_ (wrap, h, f, p);
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& sid,
         ::xml_schema::flags f,
@@ -881,10 +881,10 @@ namespace LastFM_SimilarArtists
 
     ::xsd::cxx::xml::sax::std_input_source isrc (is, sid);
     ::xercesc::Wrapper4InputSource wrap (&isrc, false);
-    return ::LastFM_SimilarArtists::lfm_ (wrap, f, p);
+    return ::lfm_similarartists::lfm_ (wrap, f, p);
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& sid,
         ::xml_schema::error_handler& h,
@@ -897,10 +897,10 @@ namespace LastFM_SimilarArtists
 
     ::xsd::cxx::xml::sax::std_input_source isrc (is, sid);
     ::xercesc::Wrapper4InputSource wrap (&isrc, false);
-    return ::LastFM_SimilarArtists::lfm_ (wrap, h, f, p);
+    return ::lfm_similarartists::lfm_ (wrap, h, f, p);
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::std::istream& is,
         const ::std::string& sid,
         ::xercesc::DOMErrorHandler& h,
@@ -909,10 +909,10 @@ namespace LastFM_SimilarArtists
   {
     ::xsd::cxx::xml::sax::std_input_source isrc (is, sid);
     ::xercesc::Wrapper4InputSource wrap (&isrc, false);
-    return ::LastFM_SimilarArtists::lfm_ (wrap, h, f, p);
+    return ::lfm_similarartists::lfm_ (wrap, h, f, p);
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& i,
         ::xml_schema::flags f,
         const ::xml_schema::properties& p)
@@ -924,8 +924,8 @@ namespace LastFM_SimilarArtists
 
     h.throw_if_failed< ::xsd::cxx::tree::parsing< char > > ();
 
-    ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-      ::LastFM_SimilarArtists::lfm_ (
+    ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+      ::lfm_similarartists::lfm_ (
         d.get (), f | ::xml_schema::flags::own_dom, p));
 
     if (f & ::xml_schema::flags::keep_dom)
@@ -934,7 +934,7 @@ namespace LastFM_SimilarArtists
     return r;
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& i,
         ::xml_schema::error_handler& h,
         ::xml_schema::flags f,
@@ -946,8 +946,8 @@ namespace LastFM_SimilarArtists
     if (!d)
       throw ::xsd::cxx::tree::parsing< char > ();
 
-    ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-      ::LastFM_SimilarArtists::lfm_ (
+    ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+      ::lfm_similarartists::lfm_ (
         d.get (), f | ::xml_schema::flags::own_dom, p));
 
     if (f & ::xml_schema::flags::keep_dom)
@@ -956,7 +956,7 @@ namespace LastFM_SimilarArtists
     return r;
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::xercesc::DOMInputSource& i,
         ::xercesc::DOMErrorHandler& h,
         ::xml_schema::flags f,
@@ -968,8 +968,8 @@ namespace LastFM_SimilarArtists
     if (!d)
       throw ::xsd::cxx::tree::parsing< char > ();
 
-    ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-      ::LastFM_SimilarArtists::lfm_ (
+    ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+      ::lfm_similarartists::lfm_ (
         d.get (), f | ::xml_schema::flags::own_dom, p));
 
     if (f & ::xml_schema::flags::keep_dom)
@@ -978,7 +978,7 @@ namespace LastFM_SimilarArtists
     return r;
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (const ::xercesc::DOMDocument& d,
         ::xml_schema::flags f,
         const ::xml_schema::properties& p)
@@ -988,8 +988,8 @@ namespace LastFM_SimilarArtists
       ::xsd::cxx::xml::dom::auto_ptr< ::xercesc::DOMDocument > c (
         static_cast< ::xercesc::DOMDocument* > (d.cloneNode (true)));
 
-      ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-        ::LastFM_SimilarArtists::lfm_ (
+      ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+        ::lfm_similarartists::lfm_ (
           c.get (), f | ::xml_schema::flags::own_dom, p));
 
       c.release ();
@@ -1003,8 +1003,8 @@ namespace LastFM_SimilarArtists
     if (n.name () == "lfm" &&
         n.namespace_ () == "")
     {
-      ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-        ::xsd::cxx::tree::traits< ::LastFM_SimilarArtists::lfm, char >::create (
+      ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+        ::xsd::cxx::tree::traits< ::lfm_similarartists::lfm, char >::create (
           e, f, 0));
       return r;
     }
@@ -1016,7 +1016,7 @@ namespace LastFM_SimilarArtists
       "");
   }
 
-  ::std::auto_ptr< ::LastFM_SimilarArtists::lfm >
+  ::std::auto_ptr< ::lfm_similarartists::lfm >
   lfm_ (::xercesc::DOMDocument* d,
         ::xml_schema::flags f,
         const ::xml_schema::properties&)
@@ -1037,8 +1037,8 @@ namespace LastFM_SimilarArtists
     if (n.name () == "lfm" &&
         n.namespace_ () == "")
     {
-      ::std::auto_ptr< ::LastFM_SimilarArtists::lfm > r (
-        ::xsd::cxx::tree::traits< ::LastFM_SimilarArtists::lfm, char >::create (
+      ::std::auto_ptr< ::lfm_similarartists::lfm > r (
+        ::xsd::cxx::tree::traits< ::lfm_similarartists::lfm, char >::create (
           e, f, 0));
       c.release ();
       return r;
