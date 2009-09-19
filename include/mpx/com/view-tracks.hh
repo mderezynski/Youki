@@ -1458,7 +1458,7 @@ namespace Tracks
                           color.r
                         , color.g
                         , color.b
-                        , color.a   
+                        , color.a 
                     ) ; 
 
                     Glib::RefPtr<Pango::Layout> layout = widget.create_pango_layout(""); 
@@ -1497,17 +1497,18 @@ namespace Tracks
                     , int                               ypos
                     , int                               rowheight
                     , const ThemeColor&                 color
+                    , double                            alpha
                 )
                 {
-                    using boost::get;
+                    using boost::get ;
 
-                    cairo->set_operator(Cairo::OPERATOR_OVER);
+                    cairo->set_operator(Cairo::OPERATOR_OVER) ;
 
                     cairo->set_source_rgba(
                           color.r
                         , color.g
                         , color.b
-                        , color.a   
+                        , color.a * alpha 
                     ) ; 
 
                     cairo->rectangle(
@@ -1516,13 +1517,16 @@ namespace Tracks
                         , m_width
                         , rowheight
                     ) ;
+
                     cairo->clip();
+
                     cairo->move_to(
                           xpos + 6
                         , ypos + 2
                     ) ;
 
-                    std::string str;
+                    std::string str ;
+
                     switch( m_column )
                     {
                         case 0:
@@ -2257,24 +2261,58 @@ namespace Tracks
 
                             ypos    = m_row_start ;
 
+                            bool currently_playing = bool( m_id_currently_playing ) ;
+
                             while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
                             {
                                 xpos = 32 ;
 
-                                for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
-                                {
-                                    (*i)->render(
-                                          cairo
-                                        , *this
-                                        , m_model->row(row)
-                                        , row
-                                        , xpos
-                                        , ypos
-                                        , m_row_height
-                                        , (row_select && (row == row_select.get())) ? c_text_sel : c_text
-                                    ) ;
+                                const Row_t& r_data = m_model->row( row ) ;
 
-                                    xpos += (*i)->get_width() ; 
+                                if( currently_playing ) 
+                                {
+                                    double alpha = 0.50 ;
+
+                                    if( compare_id_to_optional( r_data, m_id_currently_playing )) 
+                                    {
+                                        alpha = 1.0 ;
+                                    }
+
+                                    for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
+                                    {
+                                        (*i)->render(
+                                              cairo
+                                            , *this
+                                            , r_data 
+                                            , row
+                                            , xpos
+                                            , ypos
+                                            , m_row_height
+                                            , (row_select && (row == row_select.get())) ? c_text_sel : c_text
+                                            , alpha 
+                                        ) ;
+
+                                        xpos += (*i)->get_width() ; 
+                                    }
+                                }
+                                else
+                                {
+                                    for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
+                                    {
+                                        (*i)->render(
+                                              cairo
+                                            , *this
+                                            , r_data 
+                                            , row
+                                            , xpos
+                                            , ypos
+                                            , m_row_height
+                                            , (row_select && (row == row_select.get())) ? c_text_sel : c_text
+                                            , 1.0
+                                        ) ;
+
+                                        xpos += (*i)->get_width() ; 
+                                    }
                                 }
 
                                 ypos += m_row_height ;

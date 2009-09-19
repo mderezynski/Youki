@@ -48,6 +48,10 @@ namespace MPX
             API_prev(
             ) = 0 ;
 
+            virtual void
+            API_stop(
+            ) = 0 ;
+
             virtual void        
             add_info_widget(
                   Gtk::Widget*

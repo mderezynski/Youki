@@ -1286,6 +1286,11 @@ namespace Albums
 
                     bool album_name_only = m_model->m_constraints_artist && (m_model->m_constraints_artist->size() == 1) ;
 
+                    std::valarray<double> dashes ( 3 ) ;
+                    dashes[0] = 0. ;
+                    dashes[1] = 1. ;
+                    dashes[2] = 0. ;
+
                     while( m_model->is_set() && cnt && m_Model_I.in( row )) 
                     {
                         xpos = 0 ;
@@ -1330,40 +1335,38 @@ namespace Albums
 
                         ypos += m_row_height;
 
-                        std::valarray<double> dashes ( 3 ) ;
-                        dashes[0] = 0. ;
-                        dashes[1] = 1. ;
-                        dashes[2] = 0. ;
+                        if( m_Model_I.in( row+1 ))
+                        {
+                            cairo->save(); 
+                            cairo->set_line_width(
+                                  .5
+                            ) ;
 
-                        cairo->save(); 
-                        cairo->set_line_width(
-                              .5
-                        ) ;
+                            cairo->set_dash(
+                                  dashes
+                                , 0
+                            ) ;
 
-                        cairo->set_dash(
-                              dashes
-                            , 0
-                        ) ;
+                            cairo->set_source_rgba(
+                                  c_treelines.r 
+                                , c_treelines.g
+                                , c_treelines.b
+                                , c_treelines.a 
+                            ) ;
 
-                        cairo->set_source_rgba(
-                              c_treelines.r 
-                            , c_treelines.g
-                            , c_treelines.b
-                            , c_treelines.a 
-                        ) ;
+                            cairo->move_to(
+                                  0
+                                , ypos - 1 
+                            ) ; 
 
-                        cairo->move_to(
-                              0
-                            , ypos - 1 
-                        ) ; 
+                            cairo->line_to(
+                                  a.get_width() - 2
+                                , ypos - 1 
+                            ) ;
 
-                        cairo->line_to(
-                              a.get_width() - 2
-                            , ypos - 1 
-                        ) ;
-
-                        cairo->stroke() ;
-                        cairo->restore(); 
+                            cairo->stroke() ;
+                            cairo->restore(); 
+                        }
 
                         row ++ ;
                         cnt -- ;

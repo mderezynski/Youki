@@ -114,7 +114,7 @@ namespace MPX
 
         // MM-Keys
 
-        const int N_MM_KEYS = 3 ;
+        const int N_MM_KEYS = 4 ;
         const int N_MM_KEY_SYSTEMS = 3 ;
 
         for( int n = 1; n <= N_MM_KEYS; ++n)
@@ -140,6 +140,7 @@ namespace MPX
                 ));
 
             Gtk::Button * button = dynamic_cast<Gtk::Button*>(m_Xml->get_widget ((boost::format ("mm-clear-%d") % n).str()));
+
             button->signal_clicked().connect(
                 sigc::bind(
                 sigc::mem_fun(
@@ -153,6 +154,7 @@ namespace MPX
         m_mm_key_controls.resize( N_MM_KEYS );
 
         int active = mcs->key_get<int>("hotkeys","system") ;
+
         for( int n = 1; n <= N_MM_KEY_SYSTEMS; ++n )
         {
             Gtk::RadioButton * button = dynamic_cast<Gtk::RadioButton*>(m_Xml->get_widget ((boost::format ("mm-rb-%d") % n).str(), button));
@@ -195,7 +197,7 @@ namespace MPX
     {
         mcs->key_set<int>("hotkeys","system", m_mm_option);
 
-        for(int n = 1; n <= 3; ++n)
+        for( unsigned int n = 1; n <= 4; ++n )
         {
             KeyControls & c = m_mm_key_controls[n-1];
             mcs->key_set<int>("hotkeys", (boost::format ("key-%d") % n).str(), c.key);
@@ -211,7 +213,7 @@ namespace MPX
     void
         MMKeys::mm_load ()
     {
-        for(int n = 1; n <= 3; ++n)
+        for( unsigned int n = 1; n <= 4; ++n )
         {
             KeyControls c;
             c.key = mcs->key_get<int>("hotkeys", (boost::format ("key-%d") % n).str());
@@ -231,11 +233,15 @@ namespace MPX
     }
 
     void
-        MMKeys::set_keytext (gint entry_id, gint key, gint mask)
+        MMKeys::set_keytext(
+              gint  entry_id
+            , gint  key
+            , gint  mask
+        )
     {
         on_mm_edit_begin() ;
 
-        std::string text;
+        std::string text ;
 
         if( key == 0 && mask == 0 )
         {
@@ -546,7 +552,8 @@ namespace MPX
 
         XKeyEvent * key = (XKeyEvent *) xevent;
 
-        guint keycodes[] = { 0, 0, 0 };
+        guint keycodes[] = { 0, 0, 0, 0 };
+
         int sys = mcs->key_get<int>("hotkeys","system");
 
         if( sys == 0 )
@@ -554,12 +561,14 @@ namespace MPX
             keycodes[0] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPlay);
             keycodes[1] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPrev);
             keycodes[2] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioNext);
+            keycodes[3] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioStop);
         }
         else
         {
             keycodes[0] = mcs->key_get<int>("hotkeys","key-1");
             keycodes[1] = mcs->key_get<int>("hotkeys","key-2");
             keycodes[2] = mcs->key_get<int>("hotkeys","key-3");
+            keycodes[3] = mcs->key_get<int>("hotkeys","key-4");
         }
 
         if( keycodes[0] == key->keycode )
@@ -579,6 +588,12 @@ namespace MPX
             ctrl->API_next() ;
             return GDK_FILTER_REMOVE ;
         }
+        else    
+        if( keycodes[3] == key->keycode )
+        {
+            ctrl->API_stop() ;
+            return GDK_FILTER_REMOVE ;
+        }
 
         return GDK_FILTER_CONTINUE ;
     }
@@ -586,16 +601,18 @@ namespace MPX
     /*static*/ void
         MMKeys::mmkeys_grab (bool grab)
     {
-        gint keycodes[] = { 0, 0, 0 };
+        gint keycodes[] = { 0, 0, 0, 0 };
         keycodes[0] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPlay);
         keycodes[1] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPrev);
         keycodes[2] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioNext);
+        keycodes[3] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioStop);
 
         GdkDisplay  * display ;
         GdkScreen   * screen ;
         GdkWindow   * root ;
 
         display = gdk_display_get_default ();
+
         int sys = mcs->key_get<int>("hotkeys","system");
 
         for (int i = 0; i < gdk_display_get_n_screens (display); i++)
@@ -811,24 +828,29 @@ namespace MPX
             , gpointer     data
         )
     {
-        if( strcmp (application, "MPX"))
-            return;
+        if( strcmp( application, "MPX" ))
+            return ;
 
         boost::shared_ptr<IYoukiController> ctrl = services->get<IYoukiController>("mpx-service-controller") ; 
 
-        if( strcmp (key, "Play") == 0 )
+        if( strcmp( key, "Play" ) == 0 )
         {
             ctrl->API_pause_toggle() ;
         }
         else
-        if( strcmp (key, "Previous") == 0 )
+        if( strcmp( key, "Previous" ) == 0 )
         {
             ctrl->API_prev() ;
         }
         else
-        if( strcmp (key, "Next") == 0 )
+        if( strcmp( key, "Next" ) == 0 )
         {
             ctrl->API_next() ;
+        }
+        else
+        if( strcmp( key, "Stop" ) == 0 )
+        {
+            ctrl->API_stop() ;
         }
     }
 

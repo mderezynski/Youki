@@ -32,14 +32,7 @@ SET(mpx_widgets_SOURCES
   youki-tray-icon.c
   youki-tray-icon.h
   youki-toggle-button.cc
-  youki-tristate-button.cc
   cairo-extensions.cc
-  cell-renderer-album-data.cc
-  cell-renderer-cairo-surface.cc
-  cell-renderer-count.cc
-  cell-renderer-expander.c
-  cell-renderer-source.cc
-  cell-renderer-vbox.cc
   dialog-simple-entry.cc
   rounded-layout.cc
   rounded-alignment.cc

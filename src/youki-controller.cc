@@ -1823,6 +1823,13 @@ namespace MPX
         }
     }
 
+    void
+    YoukiController::API_stop(
+    )
+    {
+        m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+    }
+
     bool
     YoukiController::on_alignment_expose(
           GdkEventExpose* event

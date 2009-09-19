@@ -158,19 +158,23 @@ namespace MPX
             get_metadata_previous(
             ) ;
 
-            void
+            virtual void
             API_pause_toggle(
             ) ;
 
-            void
+            virtual void
             API_next(
             ) ;
 
-            void
+            virtual void
             API_prev(
             ) ;
 
-            void        
+            virtual void
+            API_stop(
+            ) ;
+
+            virtual void        
             add_info_widget(
                   Gtk::Widget*          w
                 , const std::string&    name
@@ -183,7 +187,7 @@ namespace MPX
                 w->show_all() ;
             }
 
-            void
+            virtual void
             remove_info_widget(
                   Gtk::Widget*          w
             )
