@@ -13,7 +13,6 @@ namespace MPX
 
             Glib::RefPtr<Gdk::Pixbuf>       m_cover ;
             IYoukiThemeEngine             * m_Theme ;
-            Gdk::Color                      m_CurrentColor ;
 
         public:
 

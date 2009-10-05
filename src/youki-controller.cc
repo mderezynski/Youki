@@ -298,6 +298,7 @@ namespace MPX
         m_HBox_Info->set_spacing( 2 ) ; 
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
+/*
         m_Entry->set_icon_from_pixbuf(
               Gtk::IconTheme::get_default()->load_icon( "mpx-stock-entry-clear", 16 ) 
             , Gtk::ENTRY_ICON_PRIMARY
@@ -308,6 +309,7 @@ namespace MPX
                       *this
                     , &YoukiController::on_entry_clear_clicked
         )))) ;
+*/
 
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
@@ -342,7 +344,7 @@ namespace MPX
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
         m_cover = Gtk::manage( new KoboCover ) ;
-        m_cover->set_size_request( 97, 97 ) ;
+        m_cover->set_size_request( 98, 98 ) ;
 
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(

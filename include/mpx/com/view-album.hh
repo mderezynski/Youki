@@ -914,7 +914,10 @@ namespace Albums
                 get_upper_row ()
                 {
                     if( m_prop_vadj.get_value() && m_row_height )
-                        return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
+                    {
+                        std::size_t upper = m_prop_vadj.get_value()->get_value() / m_row_height ;
+                        return upper ;
+                    }
                     else
                         return 0 ;
                 }
@@ -1013,20 +1016,36 @@ namespace Albums
                             {
                                 int origin = get<2>(m_selection.get()) ;
 
-                                if( get_row_is_visible( origin ) && origin > 0 ) 
+                                if( origin > 0 )
                                 {
-                                    row = ((origin+step)<0) ? 0 : origin+step ; 
-
-                                    select_row( row ) ;
-
-                                    if( row < get_upper_row() ) 
+                                    if( get_row_is_visible( origin ) ) 
                                     {
-                                        scroll_to_row( (get_upper_row() + step) ) ; 
+                                        row = std::max<int>( origin+step, 0 ) ;
+
+                                        select_row( row ) ;
+
+                                        double adj_value = m_prop_vadj.get_value()->get_value() ;
+
+                                        if( (row * m_row_height) < m_prop_vadj.get_value()->get_value() )
+                                        {
+                                            if( event->keyval == GDK_Page_Up )
+                                            {
+                                                m_prop_vadj.get_value()->set_value( std::max<double>( adj_value + (step*m_row_height), 0 )) ; 
+                                            }
+                                            else
+                                            {
+                                                scroll_to_row( row ) ; 
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        goto mark_first_row_up ;
                                     }
                                 }
                                 else
                                 {
-                                    goto mark_first_row_up;
+                                    scroll_to_row( 0 ) ;
                                 }
                             }
 
@@ -1054,20 +1073,46 @@ namespace Albums
                             {
                                 int origin = get<2>(m_selection.get()) ;
 
-                                if( get_row_is_visible( origin ) ) 
+                                if( get_row_is_visible( origin )) 
                                 {
-                                    row = ((origin+step)>(m_model->size()-1)) ? m_model->size()-1 : origin+step ; 
+                                    row = std::min<int>( origin+step, m_model->size() - 1 ) ;
 
                                     select_row( row ) ;
 
-                                    if( row > ( get_upper_row() + (m_visible_height/m_row_height) ) )
+                                    std::size_t position     = (get_upper_row()+step) * m_row_height ; 
+                                    std::size_t position_x   = (((m_visible_height/m_row_height)+1)*m_row_height) - m_visible_height ;
+                                    
+                                    double adj_value = m_prop_vadj.get_value()->get_value() ;
+
+                                    std::size_t val1 = ((row-get_upper_row())*m_row_height+m_row_height) ;
+                                    std::size_t val2 = m_visible_height ;
+
+                                    if( val1 > val2 )
                                     {
-                                        scroll_to_row( (get_upper_row() + step) ) ; 
+                                        if( event->keyval == GDK_Page_Down )
+                                        {
+                                            std::size_t new_val = adj_value + (step*m_row_height) ;
+
+                                            if( new_val > (m_prop_vadj.get_value()->get_upper()-m_visible_height))
+                                            {
+                                                scroll_to_row( row ) ;
+                                            }
+                                            else
+                                            {
+                                                m_prop_vadj.get_value()->set_value( adj_value + (step*m_row_height)) ; 
+                                            }
+                                        }
+                                        else
+                                        {
+                                            std::size_t row_in_view  = ((-position_x) + ((row-get_upper_row())*m_row_height)) / m_row_height ;
+                                            std::size_t visible_rows = m_visible_height / m_row_height ;
+                                            m_prop_vadj.get_value()->set_value( position + position_x - (visible_rows-row_in_view)*m_row_height ) ; 
+                                        }
                                     }
                                 }
                                 else
                                 {
-                                    goto mark_first_row_down;
+                                    goto mark_first_row_down ;
                                 }
                             }
 
@@ -1482,11 +1527,11 @@ namespace Albums
                             Limiter<std::size_t> d ( 
                                   Limiter<std::size_t>::ABS_ABS
                                 , 0
-                                , m_model->m_mapping.size() - (m_visible_height/m_row_height) 
-                                , row 
+                                , (m_model->size() * m_row_height) - m_visible_height
+                                , (row*m_row_height)
                             ) ;
 
-                            m_prop_vadj.get_value()->set_value( d  * m_row_height ) ; 
+                            m_prop_vadj.get_value()->set_value( d ) ; 
                         }
                     }
                 }
@@ -1728,7 +1773,7 @@ namespace Albums
                         , m_search_active( false )
 
                 {
-                    m_disc = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc.png" ))) ;
+                    m_disc = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc.png" ))->scale_simple(64, 64, Gdk::INTERP_BILINEAR)) ;
 
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
                     const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;

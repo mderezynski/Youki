@@ -154,12 +154,14 @@ namespace MPX
             layout->set_text(
                 (boost::format("%d") % m_volume).str()
             ) ;
-            int width, height;
-            layout->get_pixel_size (width, height) ;
+
+            Pango::Rectangle rl, ri ;
+
+            layout->get_extents( rl, ri ) ;
 
             cairo->move_to(
-                  fmax( 2, 2 + double((a.get_width() - pad*2)) * double(percent) - width - (pad+4) ) 
-                , (get_height() - height)/2.
+                  fmax( 2, 2 + double((a.get_width() - pad*2)) * double(percent) - (rl.get_width()/PANGO_SCALE) - (pad+4) ) 
+                , (get_height() - (rl.get_height()/PANGO_SCALE))/2.
             ) ;
 
             cairo->set_source_rgba(
@@ -281,9 +283,8 @@ namespace MPX
     void
     KoboVolume::vol_down()
     {
-        m_volume = ((m_volume+4)/5)*5 - 5 ; 
-        m_volume = std::max( m_volume, 0 ) ;
-        m_volume = std::min( m_volume, 100 ) ;
+        m_volume -= 5 ; 
+        m_volume = std::max( std::min( m_volume, 100), 0 ) ;
         m_SIGNAL_set_volume.emit( m_volume ) ;
         queue_draw () ;
     }
@@ -291,9 +292,8 @@ namespace MPX
     void
     KoboVolume::vol_up()
     {
-        m_volume = (m_volume/5)*5 + 5 ; 
-        m_volume = std::max( m_volume, 0 ) ;
-        m_volume = std::min( m_volume, 100 ) ;
+        m_volume += 5 ; 
+        m_volume = std::max( std::min( m_volume, 100), 0 ) ;
         m_SIGNAL_set_volume.emit( m_volume ) ;
         queue_draw () ;
     }

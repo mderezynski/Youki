@@ -297,12 +297,15 @@ namespace MPX
                 (boost::format("<b>%02d</b>:<b>%02d</b>") % ( position / 60 ) % ( position % 60 )).str()
             ) ;
 
+            Pango::Rectangle rl, ri ;
             GdkRectangle r ;
 
-            layout->get_pixel_size( r.width, r.height ) ;
+            layout->get_extents( rl, ri ) ; 
 
+            r.width = rl.get_width() / PANGO_SCALE ;
+            r.height = rl.get_height() / PANGO_SCALE ;
             r.x = fmax( 3, 3 + double(a.get_width()) * double(percent) - r.width - 7 ) ; 
-            r.y = 2 ;
+            r.y = (a.get_height() - r.height) / 2 ; 
 
             cairo->move_to(
                   r.x                  
@@ -327,10 +330,12 @@ namespace MPX
                         (boost::format("<b>%02d</b>:<b>%02d</b>") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
                     ) ;
 
-                    layout->get_pixel_size( r.width, r.height ) ;
+                    layout->get_extents( rl, ri ) ; 
 
-                    r.x = 3 + double(a.get_width()) - r.width - 7 ;
-                    r.y = 2 ;
+                    r.width = rl.get_width() / PANGO_SCALE ;
+                    r.height = rl.get_height() / PANGO_SCALE ;
+                    r.x = 3 + double(a.get_width()) - rl.get_width() - 7 ;
+                    r.y = (a.get_height() - rl.get_height()) / 2 ; 
 
                     cairo->move_to(
                           r.x 

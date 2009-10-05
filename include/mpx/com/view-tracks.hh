@@ -2156,7 +2156,7 @@ namespace Tracks
                     std::size_t row = get_upper_row() ;
 
                     int col     = 0 ;
-                    int cnt     = get_page_size() ; 
+                    int cnt     = get_page_size() + 1 ; 
 
                     int xpos    = 0 ;
                     int ypos    = m_row_start ;
@@ -2257,7 +2257,7 @@ namespace Tracks
                             row     = get_upper_row() ;
 
                             col     = 0 ;
-                            cnt     = get_page_size() ; 
+                            cnt     = get_page_size() + 1 ; 
 
                             ypos    = m_row_start ;
 
@@ -2377,7 +2377,7 @@ namespace Tracks
                     const int icon_lateral = 16 ;
 
                     ypos    = m_row_start ;
-                    cnt     = get_page_size() ; 
+                    cnt     = get_page_size() + 1 ; 
                     row     = get_upper_row() ;
 
                     while( m_model->is_set() && cnt && m_Model_I.in( row ) )
@@ -2622,7 +2622,7 @@ namespace Tracks
                 get_lower_row(
                 )
                 {
-                    return m_prop_vadj.get_value()->get_value() + get_page_size() ;
+                    return (m_prop_vadj.get_value()->get_value() + get_page_size()) / m_row_height ;
                 }
 
                 inline bool
