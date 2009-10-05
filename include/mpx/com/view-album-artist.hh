@@ -840,6 +840,7 @@ namespace Artist
 
                     if( event->type == GDK_BUTTON_PRESS )
                     {
+                        cancel_search() ;
                         grab_focus() ;
 
                         std::size_t row = get_upper_row() + ( event->y / m_row_height ) ;

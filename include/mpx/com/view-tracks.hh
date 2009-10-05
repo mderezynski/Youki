@@ -1918,6 +1918,7 @@ namespace Tracks
 
                     if( event->type == GDK_BUTTON_PRESS )
                     {
+                        cancel_search() ;
                         grab_focus() ;
 
                         int x = event->x ;

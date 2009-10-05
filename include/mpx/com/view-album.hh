@@ -1193,6 +1193,7 @@ namespace Albums
 
                     if( event->type == GDK_BUTTON_PRESS )
                     {
+                        cancel_search() ;
                         grab_focus() ;
 
                         int row = double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ; 
