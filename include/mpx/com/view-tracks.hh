@@ -49,7 +49,7 @@ namespace Tracks
         {
             std::string name ;
 
-            if( r.count("album_artist") ) 
+            if( r.count( "album_artist" )) 
             {
                 Glib::ustring in_utf8 = boost::get<std::string>(r.find("album_artist")->second) ; 
                 gunichar c = in_utf8[0] ;
@@ -1800,6 +1800,8 @@ namespace Tracks
                                 select_row( row ) ;
                             }
 
+                            m_hover_track.reset() ;
+
                             return true;
                         }
 
@@ -1837,11 +1839,13 @@ namespace Tracks
 
                                 if( row >= get_lower_row() ) 
                                 {
-                                    m_prop_vadj.get_value()->set_value( std::min<std::size_t>(get_upper_row()+step, row )) ; 
+                                    m_prop_vadj.get_value()->set_value( std::min<std::size_t>(get_upper_row()+step, row )) ;
                                 }
 
                                 select_row( row ) ;
                             }
+
+                            m_hover_track.reset() ;
 
                             return true;
                         }
@@ -2623,7 +2627,7 @@ namespace Tracks
                 get_lower_row(
                 )
                 {
-                    return (m_prop_vadj.get_value()->get_value() + get_page_size()) / m_row_height ;
+                    return m_prop_vadj.get_value()->get_value() + get_page_size() ;
                 }
 
                 inline bool
@@ -2812,6 +2816,8 @@ namespace Tracks
                             m_prop_vadj.get_value()->set_value( m_model->m_mapping.size() - get_page_size() ) ; 
                         else
                             m_prop_vadj.get_value()->set_value( d ) ; 
+
+                        m_hover_track.reset() ;
                     }
                 }
 

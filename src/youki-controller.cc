@@ -1484,8 +1484,8 @@ namespace MPX
     {
         m_ListViewAlbums->clear_selection() ;
         m_ListViewArtist->clear_selection() ;
-        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
         private_->FilterModelTracks->set_filter( m_Entry->get_text() ) ;
 
         private_->FilterModelArtist->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;

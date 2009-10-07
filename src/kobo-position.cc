@@ -334,8 +334,8 @@ namespace MPX
 
                     r.width = rl.get_width() / PANGO_SCALE ;
                     r.height = rl.get_height() / PANGO_SCALE ;
-                    r.x = 3 + double(a.get_width()) - rl.get_width() - 7 ;
-                    r.y = (a.get_height() - rl.get_height()) / 2 ; 
+                    r.x = 3 + double(a.get_width()) - r.width - 7 ;
+                    r.y = (a.get_height() - r.height) / 2 ; 
 
                     cairo->move_to(
                           r.x 
