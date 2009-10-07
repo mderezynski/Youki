@@ -51,18 +51,6 @@ namespace AQE
         ;
     }
 
-    bool operator <  (const Constraint_t& a, const Constraint_t& b )
-    {
-        return  (a.TargetAttr < b.TargetAttr) 
-                    &&
-                (a.TargetValue < b.TargetValue)
-                    &&
-                (a.MatchType < b.MatchType)
-                    &&
-                (a.InverseMatch < b.InverseMatch)
-        ;
-    }
-
     typedef std::vector<Constraint_t> Constraints_t;
 
     bool operator == (const Constraints_t& a, const Constraints_t& b)
