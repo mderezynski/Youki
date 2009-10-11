@@ -1302,7 +1302,7 @@ namespace Artist
                     {
                         Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
 
-                        if( Util::match_keys( match, text )) 
+                        if( match.length() && match.substr( 0, text.length()) == text.substr( 0, text.length()) )
                         {
                             std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
                             scroll_to_row( d ) ;
@@ -1336,7 +1336,7 @@ namespace Artist
                     {
                         Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
 
-                        if( Util::match_keys( match, text )) 
+                        if( match.length() && match.substr( 0, text.length()) == text.substr( 0, text.length()) )
                         {
                             std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
                             scroll_to_row( d ) ;
@@ -1365,7 +1365,7 @@ namespace Artist
                     {
                         Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
 
-                        if( Util::match_keys( match, text )) 
+                        if( match.length() && match.substr( 0, text.length()) == text.substr( 0, text.length()) )
                         {
                             std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
                             scroll_to_row( d ) ; 
