@@ -2082,12 +2082,14 @@ namespace Tracks
                 configure_vadj(
                       std::size_t   upper
                     , std::size_t   page_size
+                    , std::size_t   step_increment
                 )
                 {
                     if( m_prop_vadj.get_value() )
                     {
                         m_prop_vadj.get_value()->set_upper( upper ) ; 
                         m_prop_vadj.get_value()->set_page_size( page_size ) ; 
+                        m_prop_vadj.get_value()->set_step_increment( step_increment ) ; 
                     }
                 }
 
@@ -2100,7 +2102,11 @@ namespace Tracks
 
                     m_visible_height = event->height - m_row_start ;
 
-                    configure_vadj( m_model->size(), get_page_size() ) ;
+                    configure_vadj(
+                          m_model->size()
+                        , get_page_size()
+                        , 1
+                    ) ;
 
                     int width = event->width - 32 ;
 
@@ -2512,6 +2518,7 @@ namespace Tracks
                         configure_vadj(
                               m_model->size()
                             , get_page_size()
+                            , 1
                         ) ;
                     }
 

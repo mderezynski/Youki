@@ -1095,9 +1095,8 @@ namespace Albums
                                     }
                                     else
                                     {
-                                        std::size_t position  = adj_value / m_row_height ;
-                                        std::size_t offset    = adj_value - (position * m_row_height) ;
-                                        std::size_t excess    = (((m_visible_height/m_row_height)+1)*m_row_height) - m_visible_height ;
+                                        std::size_t offset = adj_value - ((std::size_t(adj_value)/m_row_height) * m_row_height) ;
+                                        std::size_t excess = (((m_visible_height/m_row_height)+1)*m_row_height) - m_visible_height ;
 
                                         if( offset == 0 )
                                         {
