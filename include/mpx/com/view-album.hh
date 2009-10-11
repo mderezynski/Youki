@@ -869,8 +869,8 @@ namespace Albums
 
             private:
 
-                int                                 m_row_height ;
-                int                                 m_visible_height ;
+                std::size_t                         m_row_height ;
+                std::size_t                         m_visible_height ;
 
                 Column_SP_t_vector_t                m_columns ;
 
@@ -1076,37 +1076,48 @@ namespace Albums
                                 if( get_row_is_visible( origin )) 
                                 {
                                     row = std::min<int>( origin+step, m_model->size() - 1 ) ;
-
                                     select_row( row ) ;
 
-                                    std::size_t position     = (get_upper_row()+step) * m_row_height ; 
-                                    std::size_t position_x   = (((m_visible_height/m_row_height)+1)*m_row_height) - m_visible_height ;
-                                    
                                     double adj_value = m_prop_vadj.get_value()->get_value() ;
 
-                                    std::size_t val1 = ((row-get_upper_row())*m_row_height+m_row_height) ;
-                                    std::size_t val2 = m_visible_height ;
-
-                                    if( val1 > val2 )
+                                    if( event->keyval == GDK_Page_Down )
                                     {
-                                        if( event->keyval == GDK_Page_Down )
-                                        {
-                                            std::size_t new_val = adj_value + (step*m_row_height) ;
+                                        std::size_t new_val = adj_value + (step*m_row_height) ;
 
-                                            if( new_val > (m_prop_vadj.get_value()->get_upper()-m_visible_height))
+                                        if( new_val > (m_prop_vadj.get_value()->get_upper()-m_visible_height))
+                                        {
+                                            scroll_to_row( row ) ;
+                                        }
+                                        else
+                                        {
+                                            m_prop_vadj.get_value()->set_value( adj_value + (step*m_row_height)) ; 
+                                        }
+                                    }
+                                    else
+                                    {
+                                        std::size_t position  = adj_value / m_row_height ;
+                                        std::size_t offset    = adj_value - (position * m_row_height) ;
+                                        std::size_t excess    = (((m_visible_height/m_row_height)+1)*m_row_height) - m_visible_height ;
+
+                                        if( offset == 0 )
+                                        {
+                                            if( (row-get_upper_row()+1)*m_row_height > m_visible_height )
                                             {
-                                                scroll_to_row( row ) ;
-                                            }
-                                            else
-                                            {
-                                                m_prop_vadj.get_value()->set_value( adj_value + (step*m_row_height)) ; 
+                                                m_prop_vadj.get_value()->set_value( 
+                                                      adj_value + excess
+                                                ) ;
                                             }
                                         }
                                         else
                                         {
-                                            std::size_t row_in_view  = ((-position_x) + ((row-get_upper_row())*m_row_height)) / m_row_height ;
-                                            std::size_t visible_rows = m_visible_height / m_row_height ;
-                                            m_prop_vadj.get_value()->set_value( position + position_x - (visible_rows-row_in_view)*m_row_height ) ; 
+                                            std::size_t endpos = ((64-offset) + ((row-get_upper_row())*m_row_height)) ;
+
+                                            if( endpos > m_visible_height )
+                                            {
+                                                m_prop_vadj.get_value()->set_value( 
+                                                      (adj_value + (m_row_height-offset) + excess)
+                                                ) ;
+                                            }
                                         }
                                     }
                                 }
