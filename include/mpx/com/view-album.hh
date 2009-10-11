@@ -968,6 +968,10 @@ namespace Albums
                                 cancel_search() ;
                                 return true ;
         
+                            case GDK_Tab:
+                                cancel_search() ;
+                                return false ;
+
                             default: ;
                         }
 

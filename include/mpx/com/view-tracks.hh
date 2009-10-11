@@ -1702,6 +1702,10 @@ namespace Tracks
                                 cancel_search() ;
                                 return true ;
 
+                            case GDK_Tab:
+                                cancel_search() ;
+                                return false ;
+
                             case GDK_Return:
                             case GDK_KP_Enter:
                             case GDK_ISO_Enter:

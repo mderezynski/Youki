@@ -607,6 +607,12 @@ namespace MPX
 
         m_ListViewArtist->signal_find_accepted().connect(
             sigc::mem_fun(
+                  *m_ListViewAlbums
+                , &Gtk::Widget::grab_focus
+        )) ;
+
+        m_ListViewAlbums->signal_find_accepted().connect(
+            sigc::mem_fun(
                   *m_ListViewTracks
                 , &Gtk::Widget::grab_focus
         )) ;
