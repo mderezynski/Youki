@@ -1055,6 +1055,22 @@ namespace Albums
 
                             return true;
 
+                        case GDK_Home:
+                        {
+                            select_row( 0 ) ;
+                            scroll_to_row( 0 ) ;
+
+                            return true ;
+                        }
+
+                        case GDK_End:
+                        {
+                            select_row( m_model->size() - 1 ) ;
+                            scroll_to_row( m_model->size() -1 ) ; 
+
+                            return true ;
+                        }
+
                         case GDK_Down:
                         case GDK_KP_Down:
                         case GDK_Page_Down:
