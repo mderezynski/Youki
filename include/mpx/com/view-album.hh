@@ -1226,18 +1226,47 @@ namespace Albums
                         cancel_search() ;
                         grab_focus() ;
 
-                        int row = double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ; 
-                        int off = m_row_height - (m_prop_vadj.get_value()->get_value() - (row*m_row_height)) ;
+                        std::size_t row  = double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ; 
+                        std::size_t off  = m_row_height - (m_prop_vadj.get_value()->get_value() - (row*m_row_height)) ;
 
-                        if( event->y > off )
+                        if( event->y > off || off == 0 )
                         {
-                            int row2 = row + (event->y + (off ? (m_row_height-off) : 0)) / m_row_height ; 
+                            std::size_t row2 = row + (event->y + (off ? (m_row_height-off) : 0)) / m_row_height ; 
+
                             if( m_Model_I.in( row2 )) 
                             {
                                 if( row2 >= (row + m_visible_height/m_row_height))
                                 {
                                 }
                                 select_row( row2 ) ;
+                            }
+
+                            double adj_value = m_prop_vadj.get_value()->get_value() ;
+
+                            {
+                                std::size_t offset = adj_value - ((std::size_t(adj_value)/m_row_height) * m_row_height) ;
+                                std::size_t excess = (((m_visible_height/m_row_height)+1)*m_row_height) - m_visible_height ;
+
+                                if( offset == 0 )
+                                {
+                                    if( (row2-get_upper_row()+1)*m_row_height > m_visible_height )
+                                    {
+                                        m_prop_vadj.get_value()->set_value( 
+                                              adj_value + excess
+                                        ) ;
+                                    }
+                                }
+                                else
+                                {
+                                    std::size_t endpos = ((64-offset) + ((row2-get_upper_row()+1)*m_row_height)) ;
+
+                                    if( endpos > m_visible_height )
+                                    {
+                                        m_prop_vadj.get_value()->set_value( 
+                                              (adj_value + (m_row_height-offset) + excess) - m_row_height
+                                        ) ;
+                                    }
+                                }
                             }
                         }
                         else
@@ -1250,8 +1279,7 @@ namespace Albums
                         }
                     }
 
-                
-                    return true;
+                    return true ;
                 }
 
                 bool
@@ -1623,7 +1651,6 @@ namespace Albums
                     if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0) )
                     {
                         select_row( 0, quiet ) ;
-                        return ;
                     }
 
                     m_model->set_selected() ; 
