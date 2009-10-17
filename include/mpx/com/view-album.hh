@@ -90,7 +90,7 @@ namespace View
 {
 namespace Albums
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string, std::string, std::string> Row_t ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string, std::string, std::size_t> Row_t ;
 
         typedef IndexedList<Row_t>                                                      Model_t ;
         typedef boost::shared_ptr<Model_t>                                              Model_SP_t ;
@@ -242,9 +242,10 @@ namespace Albums
                     , const std::string&                    type
                     , const std::string&                    year
                     , const std::string&                    label
+                    , std::size_t                           track_count
                 )
                 {
-                    Row_t row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year, label ) ; 
+                    Row_t row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year, label, track_count ) ; 
                     m_realmodel->push_back( row ) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -263,6 +264,7 @@ namespace Albums
                     , const std::string&                    type
                     , const std::string&                    year
                     , const std::string&                    label
+                    , std::size_t                           track_count
                 )
                 {
                     static OrderFunc order ;
@@ -277,6 +279,7 @@ namespace Albums
                         , get_rt( type )
                         , year
                         , label
+                        , track_count
                     ) ; 
 
                     Model_t::iterator i = m_realmodel->insert(
@@ -419,6 +422,7 @@ namespace Albums
                     , const std::string&                    type
                     , const std::string&                    year
                     , const std::string&                    label
+                    , std::size_t                           track_count
                 )
                 {
                     DataModel::append_album(
@@ -431,6 +435,7 @@ namespace Albums
                         , type
                         , year
                         , label
+                        , track_count
                     ) ;
                 }
                 
@@ -453,6 +458,7 @@ namespace Albums
                     , const std::string&                    type
                     , const std::string&                    year
                     , const std::string&                    label
+                    , std::size_t                           track_count
                 )
                 {
                     DataModel::insert_album(
@@ -465,6 +471,7 @@ namespace Albums
                         , type
                         , year
                         , label
+                        , track_count
                     ) ;
                 }
 
@@ -509,9 +516,9 @@ namespace Albums
                     for( ; i != m_realmodel->end(); ++i )
                     {
                         int truth = 
-                                    (!constraints_albums || (*constraints_albums)[get<1>(*i)] == 1 )
+                                    (!constraints_albums || (*constraints_albums)[get<1>(*i)])
                                                                     &&
-                                    (!constraints_artist || (*constraints_artist)[get<2>(*i)] == 1 )
+                                    (!constraints_artist || (*constraints_artist)[get<2>(*i)])
                         ; 
 
                         if( truth )
@@ -606,13 +613,14 @@ namespace Albums
                     , Cairo::RefPtr<Cairo::ImageSurface>&   s_fallback
                     , const Row_t&                          data_row
                     , Gtk::Widget&                          widget
-                    , int                                   row
-                    , int                                   xpos
-                    , int                                   ypos
-                    , int                                   row_height
+                    , std::size_t                           row
+                    , std::size_t                           xpos
+                    , std::size_t                           ypos
+                    , std::size_t                           row_height
                     , bool                                  selected
                     , const ThemeColor&                     color
                     , bool                                  album_name_only
+                    , std::size_t                           track_count
                 )
                 {
                     using boost::get;
@@ -728,6 +736,64 @@ namespace Albums
 
                                 cairo->set_line_width( .75 ) ;
                                 cairo->stroke() ;
+                            }
+
+                            if( track_count > 0 ) 
+                            {
+                                std::size_t total_track_count = get<9>(data_row) ;
+
+                                cairo->save() ;
+
+                                RoundedRectangle(
+                                      cairo
+                                    , r.x + 4
+                                    , ypos + 2 + 4
+                                    , 56
+                                    , 16 
+                                    , 4.
+                                ) ;
+
+
+                                cairo->set_source_rgba(
+                                      0. 
+                                    , 0.
+                                    , 0.
+                                    , 0.65
+                                ) ; 
+
+                                cairo->fill() ;
+
+                                const int text_size_px = 10 ;
+                                const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+
+                                int width, height;
+
+                                Pango::FontDescription font_desc =  widget.get_style()->get_font() ;
+                                font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
+                                font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
+
+                                Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
+                                layout->set_font_description( font_desc ) ;
+                                layout->set_ellipsize( Pango::ELLIPSIZE_NONE ) ;
+                                layout->set_width( 64 * PANGO_SCALE ) ;
+                                layout->set_text((boost::format ("%u %s %u") % track_count % _("of") % total_track_count).str()) ;
+                                layout->get_pixel_size (width, height) ;
+                                cairo->move_to(
+                                      r.x + ((64 - width)/2)
+                                    , ypos+2+4+((16 - height)/2)
+                                ) ;
+
+                                pango_cairo_layout_path( cairo->cobj (), layout->gobj () ) ;
+
+                                cairo->set_source_rgba(
+                                      1. 
+                                    , 1. 
+                                    , 1. 
+                                    , 1. 
+                                ) ;
+                                cairo->fill() ;
+
+                                cairo->restore() ;
                             }
                     }
                 
@@ -1420,18 +1486,27 @@ namespace Albums
 
                         for( Column_SP_t_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i )
                         {
+                            std::size_t count = 0 ;
+
+                            if( m_model->m_constraints_albums )
+                            { 
+                                gint64 id = get<1>(**row_iter) ;
+                                count = (*m_model->m_constraints_albums)[id] ;
+                            }
+
                             (*i)->render(
-                                    cairo
-                                  , m_disc
-                                  , **row_iter 
-                                  , *this
-                                  , row
-                                  , xpos
-                                  , ypos + 4
-                                  , m_row_height
-                                  , iter_is_selected
-                                  , iter_is_selected ? c_text_sel : c_text
-                                  , album_name_only 
+                                  cairo
+                                , m_disc
+                                , **row_iter 
+                                , *this
+                                , row
+                                , xpos
+                                , ypos + 4
+                                , m_row_height
+                                , iter_is_selected
+                                , iter_is_selected ? c_text_sel : c_text
+                                , album_name_only 
+                                , count 
                             ) ;
 
                             xpos += (*i)->get_width() ; 
@@ -1606,13 +1681,16 @@ namespace Albums
                         const gint64& id = get<1>(*m_model->m_mapping[row]) ;
 
                         m_selection = boost::make_tuple( m_model->m_mapping[row], id, row ) ;
+
                         m_model->set_selected( id ) ;
+                        m_model->m_selected_row = row ;
 
                         if( !quiet )
                         {
                             m_SIGNAL_selection_changed.emit() ;
-                            queue_draw();
                         }
+
+                        queue_draw();
                     }
                 }
 
@@ -1633,11 +1711,11 @@ namespace Albums
                 {
                     if( m_selection )
                     {
-                            const gint64& sel_id = boost::get<1>(m_selection.get()) ;
-                            if( sel_id != -1 )
-                            {
-                                return boost::optional<gint64>( sel_id ) ;
-                            }
+                        const gint64& sel_id = boost::get<1>(m_selection.get()) ;
+                        if( sel_id != -1 )
+                        {
+                            return boost::optional<gint64>( sel_id ) ;
+                        }
                     }
 
                     return boost::optional<gint64>() ;
@@ -1648,12 +1726,16 @@ namespace Albums
                       bool quiet = true
                 )
                 {
-                    if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0) )
+                    if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0))
                     {
                         select_row( 0, quiet ) ;
+                        return ;
                     }
 
-                    m_model->set_selected() ; 
+                    m_model->m_selected.reset() ; 
+                    m_model->m_selected_row.reset() ;
+            
+                    queue_draw() ;
                 }
     
                 void

@@ -965,8 +965,8 @@ namespace Tracks
                             {
                                 new_mapping_unfiltered.push_back( i ) ;
 
-                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = 1 ;
-                                constraints_artist[get<6>(row)] = 1 ;
+                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] + 1 ;
+                                constraints_artist[get<6>(*i)] = constraints_artist[get<6>(*i)] + 1 ;
                             }
 
                             if( !m_constraints_ext.empty() )
@@ -1087,8 +1087,8 @@ namespace Tracks
                             {
                                 new_mapping_unfiltered.push_back( *i ) ;
 
-                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = 1 ; 
-                                constraints_artist[get<6>(**i)] = 1 ;
+                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] + 1 ;
+                                constraints_artist[get<6>(**i)] = constraints_artist[get<6>(**i)] + 1 ;
                             }
 
                             if( !m_constraints_ext.empty() )
@@ -1187,8 +1187,8 @@ namespace Tracks
                             {
                                 new_mapping_unfiltered.push_back( *i ) ;
 
-                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = 1 ; 
-                                constraints_artist[get<6>(row)] = 1 ;
+                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] + 1 ;
+                                constraints_artist[get<6>(**i)] = constraints_artist[get<6>(**i)] + 1 ;
                             }
 
                             if( !m_constraints_ext.empty() )
@@ -1323,9 +1323,9 @@ namespace Tracks
                             {
                                 new_mapping_unfiltered.push_back( *i ) ;
 
-                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = 1 ;
-                                constraints_artist[get<6>(**i)] = 1 ;
-                            }
+                                constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] = constraints_albums[get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())] + 1 ;
+                                constraints_artist[get<6>(**i)] = constraints_artist[get<6>(**i)] + 1 ;
+                           }
 
                             if( !m_constraints_ext.empty() )
                                 t1 = AQE::match_track( m_constraints_ext, track ) ;

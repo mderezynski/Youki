@@ -526,6 +526,7 @@ namespace MPX
                     , ""
                     , ""
                     , ""
+                    , 0
                 ) ;
 
                 boost::shared_ptr<Covers> c = services->get<Covers>("mpx-service-covers") ;
@@ -552,10 +553,14 @@ namespace MPX
                     {
                         cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
                     }
-     
+
+                    SQL::RowV v2 ;
+                    gint64 id = get<gint64>(r["id"]) ;   
+                    m_library->getSQL( v2, (boost::format("SELECT count(*) AS cnt FROM track_view WHERE album_j = %lld") % id).str() ) ;
+
                     private_->FilterModelAlbums->append_album(
                           cover_is
-                        , get<gint64>(r["id"])
+                        , id 
                         , get<gint64>(r["album_artist_id"])
                         , get<std::string>(r["album"])
                         , RowGetArtistName( r ) 
@@ -563,6 +568,7 @@ namespace MPX
                         , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
                         , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
                         , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
+                        , get<gint64>(v2[0]["cnt"])
                     ) ;
                 }
 
@@ -917,9 +923,12 @@ namespace MPX
             m_covers->cache( rq, true ) ;
         }
 
+        SQL::RowV v2 ;
+        m_library->getSQL( v2, (boost::format("SELECT count(*) AS cnt FROM track_view WHERE album_j = %lld") % id).str() ) ;
+
         private_->FilterModelAlbums->insert_album(
               cover_is
-            , get<gint64>(r["id"])
+            , id 
             , get<gint64>(r["album_artist_id"])
             , get<std::string>(r["album"])
             , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
@@ -927,6 +936,7 @@ namespace MPX
             , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
             , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
             , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
+            , get<gint64>(v2[0]["cnt"])
         ) ;
 
         gint64 max_artist, max_albums ;
