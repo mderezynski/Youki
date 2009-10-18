@@ -516,9 +516,9 @@ namespace Albums
                     for( ; i != m_realmodel->end(); ++i )
                     {
                         int truth = 
-                                    (!constraints_albums || (*constraints_albums)[get<1>(*i)])
+                                    (!constraints_albums || ((*constraints_albums)[get<1>(*i)] > 0))
                                                                     &&
-                                    (!constraints_artist || (*constraints_artist)[get<2>(*i)])
+                                    (!constraints_artist || ((*constraints_artist)[get<2>(*i)] > 0))
                         ; 
 
                         if( truth )
