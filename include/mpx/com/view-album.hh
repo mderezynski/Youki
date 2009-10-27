@@ -940,6 +940,17 @@ namespace Albums
 
                 std::size_t                         m_row_height ;
                 std::size_t                         m_visible_height ;
+                std::size_t                         m_dest_position ;
+
+                enum ScrollDirection
+                {
+                      SCROLL_DIRECTION_UP
+                    , SCROLL_DIRECTION_DOWN
+                } ;
+
+                sigc::connection                    m_scroll_sigc_connection ;
+                 
+                ScrollDirection                     m_scroll_direction ; 
 
                 Column_SP_t_vector_t                m_columns ;
 
@@ -962,6 +973,56 @@ namespace Albums
                 bool                                m_search_active ;
 
                 Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
+
+                bool
+                scroll_timeout_func()
+                {
+                    int adj_value = m_prop_vadj.get_value()->get_value() ;
+    
+                    if( m_scroll_direction == SCROLL_DIRECTION_UP )
+                    {
+                        adj_value -= 4 ;
+                        adj_value = std::max<int>( adj_value, m_dest_position ) ;
+                    }
+                    else
+                    {
+                        adj_value += 4 ;
+                        adj_value = std::min<int>( adj_value, m_dest_position ) ;
+                    }
+
+                    m_prop_vadj.get_value()->set_value( adj_value ) ;
+
+                    bool done = ( adj_value == m_dest_position ) ;
+
+                    if( done )
+                    {
+                        m_scroll_sigc_connection.disconnect() ;
+                        return false ;
+                    }
+
+                    return true ;
+                }
+
+                void
+                init_scroll(
+                      std::size_t       dest_pos
+                    , ScrollDirection   scroll_direction
+                )
+                {
+                    if( m_scroll_sigc_connection )
+                    {
+                        m_scroll_sigc_connection.disconnect() ;
+                    }
+
+                    m_dest_position = dest_pos ;
+                    m_scroll_direction = scroll_direction ;
+
+                    m_scroll_sigc_connection = Glib::signal_timeout().connect(
+                          sigc::mem_fun(
+                              *this
+                            , &Class::scroll_timeout_func
+                    ), 10 ) ;
+                }
 
                 void
                 initialize_metrics ()
@@ -1320,9 +1381,12 @@ namespace Albums
                                 {
                                     if( (row2-get_upper_row()+1)*m_row_height > m_visible_height )
                                     {
+/*
                                         m_prop_vadj.get_value()->set_value( 
                                               adj_value + excess
                                         ) ;
+*/
+                                        init_scroll( adj_value + excess, SCROLL_DIRECTION_DOWN ) ;
                                     }
                                 }
                                 else
@@ -1331,8 +1395,14 @@ namespace Albums
 
                                     if( endpos > m_visible_height )
                                     {
+/*
                                         m_prop_vadj.get_value()->set_value( 
                                               (adj_value + (m_row_height-offset) + excess) - m_row_height
+                                        ) ;
+*/
+                                        init_scroll(
+                                              (adj_value + (m_row_height-offset) + excess) - m_row_height
+                                            , SCROLL_DIRECTION_DOWN
                                         ) ;
                                     }
                                 }
@@ -1342,8 +1412,11 @@ namespace Albums
                         {
                             if( m_Model_I.in( row )) 
                             {
-                                scroll_to_row( row ) ; 
                                 select_row( row ) ;
+                                init_scroll(
+                                      row * m_row_height
+                                    , SCROLL_DIRECTION_UP
+                                ) ;
                             }
                         }
                     }
