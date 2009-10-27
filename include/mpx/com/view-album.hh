@@ -1327,7 +1327,7 @@ namespace Albums
                                 }
                                 else
                                 {
-                                    std::size_t endpos = ((64-offset) + ((row2-get_upper_row()+1)*m_row_height)) ;
+                                    std::size_t endpos = (row2-get_upper_row()+1)*m_row_height ;
 
                                     if( endpos > m_visible_height )
                                     {
