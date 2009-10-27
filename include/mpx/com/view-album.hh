@@ -38,8 +38,6 @@ typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 
 namespace
 {
-    const double rounding_albums = 4. ; 
-
     enum ReleaseType
     {
         RT_NONE             =   0,
@@ -90,6 +88,8 @@ namespace View
 {
 namespace Albums
 {
+        const double rounding = 4. ; 
+
         typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string, std::string, std::size_t> Row_t ;
 
         typedef IndexedList<Row_t>                                                      Model_t ;
@@ -615,7 +615,7 @@ namespace Albums
                     , Gtk::Widget&                          widget
                     , std::size_t                           row
                     , std::size_t                           xpos
-                    , std::size_t                           ypos
+                    , int                                   ypos
                     , std::size_t                           row_height
                     , bool                                  selected
                     , const ThemeColor&                     color
@@ -648,7 +648,7 @@ namespace Albums
                                 , ypos + 2 
                                 , 64 
                                 , 64 
-                                , 4.
+                                , rounding
                             ) ;
 
                             cairo->fill() ;
@@ -731,7 +731,7 @@ namespace Albums
                                     , ypos + 2 
                                     , 64 
                                     , 64 
-                                    , 4.
+                                    , rounding
                                 ) ;
 
                                 cairo->set_line_width( .75 ) ;
@@ -752,7 +752,7 @@ namespace Albums
                                         , ypos + 2 + 4
                                         , 56
                                         , 16 
-                                        , 4.
+                                        , rounding
                                     ) ;
 
 
@@ -1502,17 +1502,14 @@ namespace Albums
                     const ThemeColor& c_text_sel    = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
                     const ThemeColor& c_treelines   = theme->get_color( THEME_COLOR_TREELINES ) ;
 
-                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
-
-                    std::size_t row     = m_prop_vadj.get_value()->get_value() / m_row_height ;
+                    std::size_t row     = get_upper_row() ; 
                     int offset          = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
                     int ypos            = 0 ;
                     std::size_t xpos    = 0 ;
-                    std::size_t cnt     = m_visible_height / m_row_height + 2 ;
+                    std::size_t count   = m_visible_height / m_row_height + 2 ;
             
                     if( offset ) 
                     {
-//                        ypos = -(m_row_height-offset) ;
                         ypos -= offset ;
                     }
 
@@ -1526,10 +1523,6 @@ namespace Albums
 
                     const std::size_t inner_pad = 1 ;
 
-                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
-
-                    RowRowMapping_t::const_iterator row_iter = m_model->row_iter( row ) ;
-
                     bool album_name_only = m_model->m_constraints_artist && (m_model->m_constraints_artist->size() == 1) ;
 
                     std::valarray<double> dashes ( 3 ) ;
@@ -1537,7 +1530,9 @@ namespace Albums
                     dashes[1] = 1. ;
                     dashes[2] = 0. ;
 
-                    while( m_model->is_set() && cnt && m_Model_I.in( row )) 
+                    RowRowMapping_t::const_iterator row_iter = m_model->row_iter( row ) ;
+
+                    while( m_model->is_set() && count && m_Model_I.in( row )) 
                     {
                         xpos = 0 ;
 
@@ -1593,6 +1588,9 @@ namespace Albums
                         if( m_Model_I.in( row+1 ))
                         {
                             cairo->save(); 
+
+                            cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+
                             cairo->set_line_width(
                                   .5
                             ) ;
@@ -1624,7 +1622,7 @@ namespace Albums
                         }
 
                         row ++ ;
-                        cnt -- ;
+                        count -- ;
                         row_iter ++ ;
                     }
 
