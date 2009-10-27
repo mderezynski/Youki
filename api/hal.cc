@@ -408,6 +408,7 @@ namespace MPX
             }
 
             Hal::StrV list = m_context->find_device_by_capability( "volume" );
+
             for( Hal::StrV::const_iterator n = list.begin( ); n != list.end(); ++n)
             {
                 volume_insert( *n );
@@ -433,6 +434,7 @@ namespace MPX
         for(Volumes::const_iterator i = m_volumes.begin(); i != m_volumes.end(); ++i)
         {
             const VolumeKey& key = i->first;
+
             if(m_volumes_mounted.count(key) && m_volumes_mounted.find(key)->second)
             {
                 volumes.push_back(i->second.second);
@@ -451,6 +453,7 @@ namespace MPX
             try
         {
             Hal::DiscProperties props = volume->get_disc_properties();
+
             if( props & Hal::DISC_HAS_AUDIO )
             {
                 signal_cdda_inserted_.emit( volume->get_udi(), volume->get_device_file() );
@@ -542,11 +545,12 @@ namespace MPX
         }
 
     void
-        HAL::volume_process( const std::string &udi )
+        HAL::volume_process( const std::string& udi )
     {
         try
         {
             Hal::RefPtr<Hal::Volume> volume = Hal::Volume::create_from_udi( m_context, udi );
+
             if( volume->is_disc() )
             {
                 cdrom_policy( volume );
@@ -670,9 +674,11 @@ namespace MPX
     }
 
     void
-        HAL::device_condition  (const std::string& udi,
-        const std::string& cond_name,
-        const std::string& cond_details)
+        HAL::device_condition(
+              const std::string& udi
+            , const std::string& cond_name
+            , const std::string& cond_details
+        )
     {
         if( cond_name == "EjectPressed" )
         {

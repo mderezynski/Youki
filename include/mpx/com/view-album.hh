@@ -741,59 +741,62 @@ namespace Albums
                             if( track_count > 0 ) 
                             {
                                 std::size_t total_track_count = get<9>(data_row) ;
+    
+                                if( track_count != total_track_count )
+                                {
+                                    cairo->save() ;
 
-                                cairo->save() ;
-
-                                RoundedRectangle(
-                                      cairo
-                                    , r.x + 4
-                                    , ypos + 2 + 4
-                                    , 56
-                                    , 16 
-                                    , 4.
-                                ) ;
+                                    RoundedRectangle(
+                                          cairo
+                                        , r.x + 4
+                                        , ypos + 2 + 4
+                                        , 56
+                                        , 16 
+                                        , 4.
+                                    ) ;
 
 
-                                cairo->set_source_rgba(
-                                      0. 
-                                    , 0.
-                                    , 0.
-                                    , 0.65
-                                ) ; 
+                                    cairo->set_source_rgba(
+                                          0. 
+                                        , 0.
+                                        , 0.
+                                        , 0.65
+                                    ) ; 
 
-                                cairo->fill() ;
+                                    cairo->fill() ;
 
-                                const int text_size_px = 10 ;
-                                const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+                                    const int text_size_px = 10 ;
+                                    const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
 
-                                int width, height;
+                                    int width, height;
 
-                                Pango::FontDescription font_desc =  widget.get_style()->get_font() ;
-                                font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
-                                font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
+                                    Pango::FontDescription font_desc =  widget.get_style()->get_font() ;
+                                    font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
+                                    font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
 
-                                Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
-                                layout->set_font_description( font_desc ) ;
-                                layout->set_ellipsize( Pango::ELLIPSIZE_NONE ) ;
-                                layout->set_width( 64 * PANGO_SCALE ) ;
-                                layout->set_text((boost::format ("%u %s %u") % track_count % _("of") % total_track_count).str()) ;
-                                layout->get_pixel_size (width, height) ;
-                                cairo->move_to(
-                                      r.x + ((64 - width)/2)
-                                    , ypos+2+4+((16 - height)/2)
-                                ) ;
+                                    Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
+                                    layout->set_font_description( font_desc ) ;
+                                    layout->set_ellipsize( Pango::ELLIPSIZE_NONE ) ;
+                                    layout->set_width( 64 * PANGO_SCALE ) ;
+                                    layout->set_text((boost::format ("%u %s %u") % track_count % _("of") % total_track_count).str()) ;
+                                    layout->get_pixel_size (width, height) ;
+                                    cairo->move_to(
+                                          r.x + ((64 - width)/2)
+                                        , ypos+2+4+((16 - height)/2)
+                                    ) ;
 
-                                pango_cairo_layout_path( cairo->cobj (), layout->gobj () ) ;
+                                    pango_cairo_layout_path( cairo->cobj (), layout->gobj () ) ;
 
-                                cairo->set_source_rgba(
-                                      1. 
-                                    , 1. 
-                                    , 1. 
-                                    , 1. 
-                                ) ;
-                                cairo->fill() ;
+                                    cairo->set_source_rgba(
+                                          1. 
+                                        , 1. 
+                                        , 1. 
+                                        , 1. 
+                                    ) ;
+                                    cairo->fill() ;
 
-                                cairo->restore() ;
+                                    cairo->restore() ;
+                                }
                             }
                     }
                 
@@ -1726,12 +1729,6 @@ namespace Albums
                       bool quiet = true
                 )
                 {
-                    if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0))
-                    {
-                        select_row( 0, quiet ) ;
-                        return ;
-                    }
-
                     m_model->m_selected.reset() ; 
                     m_model->m_selected_row.reset() ;
             
