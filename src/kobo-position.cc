@@ -90,7 +90,7 @@ namespace MPX
     void
     KoboPosition::on_size_request( Gtk::Requisition * req )
     {
-        req->height = 16 ;  
+        req->height = 17 ;  
     }
 
     void
@@ -130,7 +130,7 @@ namespace MPX
               a.get_width() / 2 
             , 1 
             , a.get_width() / 2 
-            , 14
+            , 15
         ) ;
 
         volume_bar_back_gradient->add_color_stop_rgba(
@@ -189,7 +189,7 @@ namespace MPX
             , 1 
             , 1 
             , a.get_width() - 2
-            , 14
+            , 15
             , 2.
         ) ;
         cairo->fill () ;
@@ -212,7 +212,7 @@ namespace MPX
             r.x         = 1 ; 
             r.y         = 1 ; 
             r.width     = ((a.get_width() - 2) * percent) /*+ posadd*/ ;
-            r.height    = 14 ; 
+            r.height    = 15 ; 
 
             cairo->save () ;
 

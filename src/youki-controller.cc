@@ -344,7 +344,7 @@ namespace MPX
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
         m_cover = Gtk::manage( new KoboCover ) ;
-        m_cover->set_size_request( 98, 98 ) ;
+        m_cover->set_size_request( 100, 100 ) ;
 
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(

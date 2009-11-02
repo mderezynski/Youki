@@ -30,6 +30,8 @@
 #include <gtkmm/drawingarea.h>
 #include <sigc++/connection.h>
 #include "mpx/algorithm/modulo.hh"
+#include "mpx/i-youki-theme-engine.hh"
+#include <boost/shared_ptr.hpp>
 
 namespace MPX
 {
@@ -65,6 +67,8 @@ namespace MPX
         Glib::Timer                 m_timer;
         Modulo<double>              m_tmod ;
         double                      m_current_time ;
+
+        boost::shared_ptr<IYoukiThemeEngine>  m_theme ;
 
         void
         draw_frame ();

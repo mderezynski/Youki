@@ -58,7 +58,7 @@ namespace MPX
     KoboVolume::on_size_request( Gtk::Requisition * req )
     {
         req->width  = 100 + 2*pad ;
-        req->height = 16 ;
+        req->height = 17 ;
     }
 
     void
@@ -101,9 +101,9 @@ namespace MPX
             GdkRectangle r ;
 
             r.x         = pad ; 
-            r.y         = (a.get_height() - 14) / 2 ; 
+            r.y         = (a.get_height() - 15) / 2 ; 
             r.width     = fmax( 0, (a.get_width()-2*pad) * double(percent)) ;
-            r.height    = 14 ; 
+            r.height    = 15 ; 
 
             cairo->save () ;
 

@@ -874,15 +874,15 @@ namespace Albums
                             pango_cairo_show_layout( cairo->cobj(), layout[L2]->gobj() ) ;
 
                             //// YEAR + LABEL
-
-                            std::string year_label ; 
-
                             if( get<8>(data_row).empty() )
-                                year_label = get<7>(data_row) ; 
+                            {
+                                layout[L1]->set_text( get<7>(data_row) ) ; 
+                            }
                             else
-                                year_label = (boost::format("%s <span color='#404040'>•</span> %s") % get<7>(data_row) % get<8>(data_row)).str() ;
-
-                            layout[L1]->set_markup( year_label ) ; 
+                            {
+                                layout[L1]->set_markup( (boost::format("%s <span color='#404040'>•</span> %s") % Glib::Markup::escape_text(get<7>(data_row)).c_str() % Glib::Markup::escape_text(get<8>(data_row)).c_str()).str() ) ;
+                            }
+                                
                             layout[L1]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + 8 
@@ -1376,35 +1376,11 @@ namespace Albums
                             {
                                 std::size_t offset = adj_value - ((std::size_t(adj_value)/m_row_height) * m_row_height) ;
                                 std::size_t excess = (((m_visible_height/m_row_height)+1)*m_row_height) - m_visible_height ;
+                                std::size_t endpos = (row2-get_upper_row()+1)*m_row_height ;
 
-                                if( offset == 0 )
+                                if( endpos > (m_visible_height - offset))  
                                 {
-                                    if( (row2-get_upper_row()+1)*m_row_height > m_visible_height )
-                                    {
-/*
-                                        m_prop_vadj.get_value()->set_value( 
-                                              adj_value + excess
-                                        ) ;
-*/
-                                        init_scroll( adj_value + excess, SCROLL_DIRECTION_DOWN ) ;
-                                    }
-                                }
-                                else
-                                {
-                                    std::size_t endpos = (row2-get_upper_row()+1)*m_row_height ;
-
-                                    if( endpos > m_visible_height )
-                                    {
-/*
-                                        m_prop_vadj.get_value()->set_value( 
-                                              (adj_value + (m_row_height-offset) + excess) - m_row_height
-                                        ) ;
-*/
-                                        init_scroll(
-                                              (adj_value + (m_row_height-offset) + excess) - m_row_height
-                                            , SCROLL_DIRECTION_DOWN
-                                        ) ;
-                                    }
+                                    init_scroll( adj_value + excess + (offset ? (m_row_height-offset):0) - (offset>0)*m_row_height, SCROLL_DIRECTION_DOWN ) ;
                                 }
                             }
                         }

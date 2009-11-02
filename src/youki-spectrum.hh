@@ -8,6 +8,7 @@
 #include <sigc++/sigc++.h>
 
 #include "mpx/i-youki-play.hh"
+#include "mpx/i-youki-theme-engine.hh"
 #include "mpx/mpx-types.hh"
 
 namespace MPX
@@ -24,7 +25,8 @@ namespace MPX
 
             PlayStatus                m_play_status ;
 
-            boost::shared_ptr<IPlay>  m_play ;
+            boost::shared_ptr<IPlay>              m_play ;
+            boost::shared_ptr<IYoukiThemeEngine>  m_theme ;
 
             enum Mode
             {

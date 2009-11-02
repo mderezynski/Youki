@@ -2194,6 +2194,15 @@ namespace Tracks
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
 
+                    cairo->rectangle(
+                          0
+                        , 0
+                        , a.get_width()
+                        , a.get_height()
+                    ) ;
+    
+                    cairo->clip() ;
+
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     std::size_t row = get_upper_row() ;

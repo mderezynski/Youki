@@ -467,6 +467,8 @@ namespace Artist
                 {
                     using boost::get;
 
+                    cairo->save() ;
+
                     cairo->set_operator(Cairo::OPERATOR_OVER);
 
                     cairo->set_source_rgba(
@@ -526,6 +528,8 @@ namespace Artist
                     ) ;
 
                     cairo->reset_clip();
+
+                    cairo->restore();
                 }
         };
 

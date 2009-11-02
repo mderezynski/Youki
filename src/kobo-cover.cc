@@ -24,7 +24,7 @@ namespace MPX
     {
         if( cover )
         {
-            m_cover = cover->scale_simple( 88, 88 , Gdk::INTERP_BILINEAR ) ;
+            m_cover = cover->scale_simple( 100, 100 , Gdk::INTERP_BILINEAR ) ;
         }
         else
         {
@@ -50,8 +50,15 @@ namespace MPX
 
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
         
+        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
+
+        cairo->set_source_rgba(
+              c_base.r
+            , c_base.g
+            , c_base.b
+            , c_base.a
+        ) ;
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
-        cairo->set_source_rgba( 0.1, 0.1, 0.1, 1. ) ;
         cairo->paint () ;     
 
         if( !m_cover )
@@ -66,7 +73,7 @@ namespace MPX
         cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
 
         r.x = (a.get_width() - m_cover->get_width())/2. ; 
-        r.y = (a.get_height() - m_cover->get_height())/2. + 1 ;
+        r.y = (a.get_height() - m_cover->get_height())/2. ; 
         r.width = m_cover->get_width() ;
         r.height = m_cover->get_height() ;
 
@@ -88,6 +95,7 @@ namespace MPX
 
         cairo->fill() ;
 
+/*
         r.x = 0 ; 
         r.y = 3 ; 
         r.width = 98 ; 
@@ -217,6 +225,8 @@ namespace MPX
             , CairoCorners::CORNERS( 3 )
         ) ;
         cairo->fill() ;
+*/
+
         return true ;
     }
 }

@@ -36,6 +36,7 @@
 #include <cmath>
 
 #include "mpx/util-graphics.hh"
+#include "mpx/util-ui.hh"
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/i-youki-theme-engine.hh"
 
@@ -104,6 +105,8 @@ namespace MPX
     KoboTitleInfo::KoboTitleInfo ()
     : m_tmod( m_current_time, text_time )
     {
+        m_theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+
         set_app_paintable (true);
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
 
@@ -156,14 +159,12 @@ namespace MPX
     void
     KoboTitleInfo::draw_frame ()
     {
-        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-
         Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
 
         const Gtk::Allocation& a = get_allocation() ;
 
-        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
-        const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ; 
+        const ThemeColor& c_base = m_theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
+        const ThemeColor& c_info = m_theme->get_color( THEME_COLOR_INFO_AREA ) ; 
 
         GdkRectangle r ;
         r.x = 1 ;
@@ -327,7 +328,7 @@ namespace MPX
                 , (a.get_height() - height) / 2 
             ) ;
 
-            const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ; 
+            const ThemeColor& c_text = m_theme->get_color( THEME_COLOR_TEXT ) ; 
 
             cairo->set_source_rgba(
                   c_text.r
