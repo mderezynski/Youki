@@ -83,27 +83,27 @@ namespace AQE
     bool
     determine_match(
           const Constraint_t&   /*IN: constraints*/
-        , const MPX::Track&     /*IN: track*/
+        , const MPX::Track_sp&  /*IN: track*/
     ) ;
 
     template <>
     bool
     determine_match<std::string>(
           const Constraint_t&   /*IN: constraints*/
-        , const MPX::Track&     /*IN: track*/
+        , const MPX::Track_sp&  /*IN: track*/
     ) ;
 
     template <>
     bool
     determine_match<StrS>(
           const Constraint_t&   /*IN: constraints*/
-        , const MPX::Track&     /*IN: track*/
+        , const MPX::Track_sp&  /*IN: track*/
     ) ;
 
     bool
     match_track(
           const Constraints_t&
-        , const MPX::Track&
+        , const MPX::Track_sp&
     ) ;
 }
 }

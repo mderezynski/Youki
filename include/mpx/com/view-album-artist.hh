@@ -1218,13 +1218,8 @@ namespace Artist
                       bool quiet = true
                 )
                 {
-                    if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0) ) 
-                    {
-                        select_row( 0, quiet ) ;
-                        return ;
-                    }
-
                     m_model->set_selected() ;
+                    m_model->m_selected_row.reset() ;
                 }
 
                 void

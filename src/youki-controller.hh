@@ -250,8 +250,8 @@ namespace MPX
             Play                            * m_play ;
             Library                         * m_library ;
     
-            boost::optional<MPX::Track>       m_track_current ;          
-            boost::optional<MPX::Track>       m_track_previous ;          
+            Track_sp                          m_track_current ;          
+            Track_sp                          m_track_previous ;          
             std::queue<gint64>                m_play_queue ;
             bool                              m_follow_track ;
 
@@ -306,7 +306,7 @@ namespace MPX
 
             void
             on_list_view_tr_track_activated(
-                  MPX::Track        /*track*/
+                  MPX::Track_sp     /*track*/
                 , bool              /*play or not*/
             ) ;
 
@@ -405,7 +405,7 @@ namespace MPX
 
             void
             play_track (
-                  const MPX::Track&
+                  const MPX::Track_sp&
             ) ;
 
         protected:

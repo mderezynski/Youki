@@ -84,7 +84,7 @@ namespace Tracks
             const double rounding = 4. ; 
         }
 
-        typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64, std::string, std::string>  Row_t ;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, Track_sp, gint64, gint64, std::string, std::string>  Row_t ;
 
 /*
         bool operator<(const Row_t& a, const Row_t& b )
@@ -266,8 +266,8 @@ namespace Tracks
 
                 virtual void
                 append_track(
-                      SQL::Row & r
-                    , const MPX::Track& track
+                      SQL::Row&             r
+                    , const MPX::Track_sp&  track
                 )
                 {
                     using boost::get ;
@@ -658,7 +658,7 @@ namespace Tracks
                 }
 
                 virtual void
-                append_track(SQL::Row& r, const MPX::Track& track)
+                append_track(SQL::Row& r, const MPX::Track_sp& track)
                 {
                     DataModel::append_track(r, track);
                 }
@@ -672,7 +672,7 @@ namespace Tracks
                 virtual void
                 insert_track(
                       SQL::Row&             r
-                    , const MPX::Track&     track
+                    , const MPX::Track_sp&  track
                 )
                 {
                     const std::string&                    title             = get<std::string>(r["title"]) ;
@@ -951,12 +951,13 @@ namespace Tracks
                         {
                             const Row_t& row = *i;
 
-                            const MPX::Track& track = get<4>(row);
+                            const MPX::Track_sp& t = get<4>(row);
+                            const MPX::Track& track = *(t.get()) ;
 
                             int t1 = true, t2 = true ;
 
                             if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
+                                t2 = AQE::match_track( m_constraints_aqe, t ) ;
 
                             if( !t2 )
                                 continue ;
@@ -973,7 +974,7 @@ namespace Tracks
                             }
 
                             if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, track ) ;
+                                t1 = AQE::match_track( m_constraints_ext, t ) ;
 
                             if( !t1 )
                                 continue ;
@@ -1076,12 +1077,13 @@ namespace Tracks
 
                         for( ModelIteratorSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            const MPX::Track& track = get<4>(**i);
+                            const MPX::Track_sp& t = get<4>(**i);
+                            const MPX::Track& track = *(t.get()) ;
 
                             int t1 = true, t2 = true ;
 
                             if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
+                                t2 = AQE::match_track( m_constraints_aqe, t ) ;
 
                             if( !t2 )
                                 continue ;
@@ -1098,7 +1100,7 @@ namespace Tracks
                             }
 
                             if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, track ) ;
+                                t1 = AQE::match_track( m_constraints_ext, t ) ;
 
                             if( !t1 )
                                 continue ;
@@ -1181,10 +1183,11 @@ namespace Tracks
 
                             int t1 = true, t2 = true ;
 
-                            const MPX::Track& track = get<4>(row);
+                            const MPX::Track_sp& t = get<4>(row);
+                            const MPX::Track& track = *(t.get()) ;
 
                             if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
+                                t2 = AQE::match_track( m_constraints_aqe, t ) ;
 
                             if( !t2 )
                                 continue ;
@@ -1201,7 +1204,7 @@ namespace Tracks
                             }
 
                             if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, track ) ;
+                                t1 = AQE::match_track( m_constraints_ext, t ) ;
 
                             if( !t1 )
                                 continue ;
@@ -1318,12 +1321,13 @@ namespace Tracks
 
                         for( ModelIteratorSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            const MPX::Track& track = get<4>(**i);
+                            const MPX::Track_sp& t = get<4>(**i);
+                            const MPX::Track& track = *(t.get()) ;
 
                             int t1 = true, t2 = true ;
 
                             if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
+                                t2 = AQE::match_track( m_constraints_aqe, t ) ;
 
                             if( !t2 )
                                 continue ;
@@ -1340,7 +1344,7 @@ namespace Tracks
                             }
 
                             if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, track ) ;
+                                t1 = AQE::match_track( m_constraints_ext, t ) ;
 
                             if( !t1 )
                                 continue ;
@@ -1537,53 +1541,83 @@ namespace Tracks
                         , ypos + 2
                     ) ;
 
-                    std::string str ;
-
-                    switch( m_column )
+                    if( m_column == 4 )
                     {
-                        case 0:
-                            str = get<0>(datarow);
-                            break;
-                        case 1:
-                            str = get<1>(datarow);
-                            break;
-                        case 2:
-                            str = get<2>(datarow);
-                            break;
-                        case 5:
-                            str = boost::lexical_cast<std::string>(get<5>(datarow)) ;
-                            break;
+                        const MPX::Track_sp& t = get<4>(datarow) ;
+                        const MPX::Track& track = *(t.get()) ;
+
+                        std::size_t quality = get<gint64>( track[ATTRIBUTE_QUALITY].get() ) ;
+
+                        GdkRectangle r ;
+
+                        r.x = xpos + 6 ;
+                        r.y = ypos + 6 ;
+
+                        for( std::size_t n = 0 ; n < quality ; ++n ) 
+                        {
+                            cairo->set_source_rgba( 1., 1., 1., 0.5 ) ;
+                            RoundedRectangle(
+                                  cairo
+                                , r.x
+                                , r.y
+                                , rowheight - 12
+                                , rowheight - 12
+                                , 2.
+                            ) ;
+                            cairo->fill() ;
+                            r.x += (rowheight-12) + 2 ;
+                        }
                     }
+                    else
+                    {
+                      std::string str ;
 
-                    Glib::RefPtr<Pango::Layout> layout; 
+                      switch( m_column )
+                      {
+                          case 0:
+                              str = get<0>(datarow);
+                              break;
+                          case 1:
+                              str = get<1>(datarow);
+                              break;
+                          case 2:
+                              str = get<2>(datarow);
+                              break;
+                          case 5:
+                              str = boost::lexical_cast<std::string>(get<5>(datarow)) ;
+                              break;
+                      }
 
-                    layout = widget.create_pango_layout( str );
+                      Glib::RefPtr<Pango::Layout> layout; 
 
-                    layout->set_ellipsize(
-                          Pango::ELLIPSIZE_END
-                    ) ;
+                      layout = widget.create_pango_layout( str );
 
-                    layout->set_width(
-                          (m_width - 12) * PANGO_SCALE
-                    ) ;
+                      layout->set_ellipsize(
+                            Pango::ELLIPSIZE_END
+                      ) ;
 
-                    layout->set_alignment(
-                          m_alignment
-                    ) ;
+                      layout->set_width(
+                            (m_width - 12) * PANGO_SCALE
+                      ) ;
 
-                    pango_cairo_show_layout(
-                          cairo->cobj()
-                        , layout->gobj()
-                    ) ;
+                      layout->set_alignment(
+                            m_alignment
+                      ) ;
 
-                    cairo->reset_clip();
-                }
+                      pango_cairo_show_layout(
+                            cairo->cobj()
+                          , layout->gobj()
+                      ) ;
+
+                      cairo->reset_clip();
+                    }
+                  }
         };
 
-        typedef boost::shared_ptr<Column>            Column_SP_t;
-        typedef std::vector<Column_SP_t>                 Columns;
+        typedef boost::shared_ptr<Column>               Column_SP_t ;
+        typedef std::vector<Column_SP_t>                Columns ;
 
-        typedef sigc::signal<void, MPX::Track, bool>    SignalTrackActivated ;
+        typedef sigc::signal<void, MPX::Track_sp, bool> SignalTrackActivated ;
         typedef sigc::signal<void>                      SignalVAdjChanged ;
         typedef sigc::signal<void>                      SignalFindAccepted ;
         typedef sigc::signal<void, const std::string&>  SignalFindPropagate ;
@@ -1769,7 +1803,7 @@ namespace Tracks
                             {
                                 using boost::get;
 
-                                MPX::Track track = get<4>(*(get<0>(m_selection.get()))) ;
+                                MPX::Track_sp track = get<4>(*(get<0>(m_selection.get()))) ;
                                 m_SIGNAL_track_activated.emit( track, !(event->state & GDK_CONTROL_MASK) ) ;
                             }
 
@@ -2034,7 +2068,7 @@ namespace Tracks
 
                         if( i.in( row )) 
                         {
-                            MPX::Track track = get<4>(m_model->row(row)) ;
+                            MPX::Track_sp track = get<4>(m_model->row(row)) ;
                             m_SIGNAL_track_activated.emit( track, true ) ;
                         }
                     }
@@ -2206,6 +2240,7 @@ namespace Tracks
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     std::size_t row = get_upper_row() ;
+                    std::size_t idx = 0 ;
 
                     int col     = 0 ;
                     int cnt     = get_page_size() + 1 ; 
@@ -2243,7 +2278,7 @@ namespace Tracks
                     {
                             while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
                             {
-                                if( !(row % 2) ) 
+                                if( !(idx % 2) ) 
                                 {
                                     GdkRectangle r ;
 
@@ -2274,6 +2309,7 @@ namespace Tracks
                                 ypos += m_row_height ;
                                 row  ++ ;
                                 cnt  -- ;
+                                idx  ++ ;
                             }
 
                             boost::optional<std::size_t> row_select ;
@@ -2603,7 +2639,8 @@ namespace Tracks
                 {
                     std::size_t row = (double( tooltip_y ) - m_row_start) / double(m_row_height) ;
 
-                    MPX::Track track = boost::get<4>( m_model->row(row) ) ;
+                    MPX::Track_sp t = boost::get<4>( m_model->row(row) ) ;
+                    const MPX::Track& track = *(t.get()) ;
 
                     boost::shared_ptr<Covers> covers = services->get<Covers>("mpx-service-covers") ;
                     Glib::RefPtr<Gdk::Pixbuf> cover ;

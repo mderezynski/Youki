@@ -467,9 +467,11 @@ namespace AQE
     bool
     determine_match(
           const Constraint_t&   c
-        , const MPX::Track&     track
+        , const MPX::Track_sp&  t
     )
     {
+        const MPX::Track& track = *(t.get()) ;
+
         g_return_val_if_fail(track.has(c.TargetAttr), false) ;
 
         bool truthvalue = false ;
@@ -512,9 +514,11 @@ namespace AQE
     bool
     determine_match<std::string>(
           const Constraint_t&   c
-        , const MPX::Track&     track
+        , const MPX::Track_sp&  t
     )
     {
+        const MPX::Track& track = *(t.get()) ;
+
         g_return_val_if_fail(track.has(c.TargetAttr), false) ;
 
         bool truthvalue = false ;
@@ -573,9 +577,11 @@ namespace AQE
     bool
     determine_match<StrS>(
           const Constraint_t&   c
-        , const MPX::Track&     track
+        , const MPX::Track_sp&  t
     )
     {
+        const MPX::Track& track = *(t.get()) ;
+
         g_return_val_if_fail(track.has(c.TargetAttr), false) ;
 
         bool truthvalue = false ;
@@ -598,8 +604,13 @@ namespace AQE
     }
 
     bool
-    match_track( const Constraints_t& c, const MPX::Track& track)
+    match_track(
+          const Constraints_t&  c
+        , const MPX::Track_sp&  t
+    )
     {
+        const MPX::Track& track = *(t.get()) ;
+
         for( Constraints_t::const_iterator i = c.begin(); i != c.end(); ++i )
         {
             const Constraint_t& c = *i ;
@@ -613,16 +624,16 @@ namespace AQE
 
             if( c.TargetValue.get().which() == 4 )
             {
-                truthvalue = determine_match<StrS>(c, track) ;
+                truthvalue = determine_match<StrS>( c, t ) ;
             }
             else
             if( c.TargetAttr >= ATTRIBUTE_TRACK )
             {
-                truthvalue = determine_match<gint64>( c, track ) ;
+                truthvalue = determine_match<gint64>( c, t ) ;
             }
             else
             {
-                truthvalue = determine_match<std::string>( c, track ) ;
+                truthvalue = determine_match<std::string>( c, t ) ;
             }
 
             if( !truthvalue )

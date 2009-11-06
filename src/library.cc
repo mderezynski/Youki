@@ -401,10 +401,12 @@ namespace MPX
 
         void
                 Library::trackSetLocation(
-                    Track&              track,
-                    const std::string&  uri
+                      Track_sp&           t
+                    , const std::string&  uri
                 )
                 {
+                        MPX::Track& track = *(t.get()) ;
+
                         track[ATTRIBUTE_LOCATION] = uri;
 #ifdef HAVE_HAL
                         if( m_Flags & F_USING_HAL )
@@ -447,8 +449,9 @@ namespace MPX
                 }
 
         std::string
-                Library::trackGetLocation( const Track& track )
+                Library::trackGetLocation( const Track_sp& t )
                 {
+                    const MPX::Track& track = *(t.get()) ;
 #ifdef HAVE_HAL
                         if( m_Flags & F_USING_HAL )
                         {

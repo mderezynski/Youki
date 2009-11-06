@@ -435,7 +435,7 @@ namespace MPX
                 {
                         SQL::Row & r = *i;
                         try{
-                            private_->FilterModelTracks->append_track(r, (*(m_library->sqlToTrack(r, true, false ).get()))) ;
+                            private_->FilterModelTracks->append_track(r, m_library->sqlToTrack(r, true, false ) ) ;
                         } catch( Library::FileQualificationError )
                         {
                         }
@@ -450,19 +450,29 @@ namespace MPX
                 c2->set_column(5) ;
                 c2->set_alignment( Pango::ALIGN_RIGHT ) ;
 
-                View::Tracks::Column_SP_t c3 (new View::Tracks::Column(_("Album"))) ;
-                c3->set_column(2) ;
+                View::Tracks::Column_SP_t c3 (new View::Tracks::Column(_("Quality"))) ;
+                c3->set_column(4) ;
 
-                View::Tracks::Column_SP_t c4 (new View::Tracks::Column(_("Artist"))) ;
-                c4->set_column(1) ;
+                View::Tracks::Column_SP_t c4 (new View::Tracks::Column(_("Album"))) ;
+                c4->set_column(2) ;
+
+                View::Tracks::Column_SP_t c5 (new View::Tracks::Column(_("Artist"))) ;
+                c5->set_column(1) ;
 
                 m_ListViewTracks->append_column(c1) ;
                 m_ListViewTracks->append_column(c2) ;
                 m_ListViewTracks->append_column(c3) ;
                 m_ListViewTracks->append_column(c4) ;
+                m_ListViewTracks->append_column(c5) ;
 
                 m_ListViewTracks->column_set_fixed(
                       1
+                    , true
+                    , 60
+                ) ;
+
+                m_ListViewTracks->column_set_fixed(
+                      2
                     , true
                     , 60
                 ) ;
@@ -998,9 +1008,7 @@ namespace MPX
                 continue ;
             }
 
-            SQL::Row & r = v[0] ; 
-            MPX::Track_sp t = m_library->sqlToTrack( r, true, false ) ;
-            private_->FilterModelTracks->insert_track( r, *(t.get()) ) ;
+            private_->FilterModelTracks->insert_track( v[0], m_library->sqlToTrack( v[0], true, false ) ) ;
         }
 
         m_new_tracks.clear() ;
@@ -1014,7 +1022,7 @@ namespace MPX
 
     void
     YoukiController::play_track(
-          const MPX::Track& t
+          const MPX::Track_sp& t
     )
     {
         try{
@@ -1066,10 +1074,12 @@ namespace MPX
 
         emit_track_out () ;
 
-        boost::optional<MPX::Track> t = m_track_current ;
+        Track_sp t = m_track_current ;
         g_return_if_fail( bool(t) ) ;
 
-        boost::optional<gint64> current_id  = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
+        const MPX::Track& track = *(t.get()) ;
+
+        boost::optional<gint64> current_id  = boost::get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ;
         boost::optional<gint64> terminal_id = m_ListViewTracks->get_terminal_id() ;
 
         if( current_id != terminal_id ) 
@@ -1083,7 +1093,7 @@ namespace MPX
                 m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % next_id ).str()) ; 
                 Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
 
-                play_track( *(p.get()) ) ;
+                play_track( p ) ;
                 return ;
             }
             else
@@ -1114,9 +1124,11 @@ namespace MPX
 
         if( m_track_previous )
         {
+                const MPX::Track& prev = *(m_track_previous.get()) ;
+
                 m_library->trackPlayed(
-                      boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
-                    , boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_ALBUM_ID].get())
+                      boost::get<gint64>(prev[ATTRIBUTE_MPX_TRACK_ID].get())
+                    , boost::get<gint64>(prev[ATTRIBUTE_MPX_ALBUM_ID].get())
                     , time(NULL)
                 ) ;
 
@@ -1176,10 +1188,12 @@ namespace MPX
     {
         m_main_position->start() ;
 
-        boost::optional<MPX::Track> t = m_track_current ;
+        Track_sp t = m_track_current ;
         g_return_if_fail( bool(t) ) ;
 
-        gint64 id_track = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
+        const MPX::Track& track = *(t.get()) ;
+
+        gint64 id_track = boost::get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ;
         m_ListViewTracks->set_currently_playing_track( id_track ) ;
 
         if( m_follow_track )
@@ -1188,13 +1202,13 @@ namespace MPX
         }
 
         std::vector<std::string> info ;
-        info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_ARTIST].get()) ) ;
-        info.push_back( boost::get<std::string>(t.get()[ATTRIBUTE_TITLE].get()) ) ;
+        info.push_back( boost::get<std::string>(track[ATTRIBUTE_ARTIST].get()) ) ;
+        info.push_back( boost::get<std::string>(track[ATTRIBUTE_TITLE].get()) ) ;
         m_main_titleinfo->set_info( info ) ;
 
-        if( t.get().has( ATTRIBUTE_MB_ALBUM_ID ) )
+        if( track.has( ATTRIBUTE_MB_ALBUM_ID ) )
         {
-                const std::string& mbid = boost::get<std::string>(t.get()[ATTRIBUTE_MB_ALBUM_ID].get()) ;
+                const std::string& mbid = boost::get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) ;
 
                 boost::shared_ptr<Covers> covers = services->get<Covers>("mpx-service-covers") ;
 
@@ -1208,19 +1222,21 @@ namespace MPX
                     covers->fetch( cover ) ; // we fetch the default cover
                 }
 
-                m_control_status_icon->set_metadata( cover, t.get() ) ;
+                m_control_status_icon->set_metadata( cover, track ) ;
                 m_cover->set( cover ) ;
         }
         else
         {
-            m_control_status_icon->set_metadata( Glib::RefPtr<Gdk::Pixbuf>(0), t.get() ) ;
+            m_control_status_icon->set_metadata( Glib::RefPtr<Gdk::Pixbuf>(0), track ) ;
         }
 
         if( m_track_previous )
         {
+                const MPX::Track& track = *(m_track_previous.get()) ;
+
                 m_library->trackPlayed(
-                      boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
-                    , boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_ALBUM_ID].get())
+                      boost::get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get())
+                    , boost::get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())
                     , time(NULL)
                 ) ;
                 m_track_previous.reset() ;
@@ -1248,11 +1264,13 @@ namespace MPX
 
     void
     YoukiController::on_list_view_tr_track_activated(
-          MPX::Track    t 
+          MPX::Track_sp t 
         , bool          play
     ) 
     {
-        emit_track_cancelled () ;
+        const MPX::Track& track = *(t.get()) ;
+
+        emit_track_cancelled() ;
 
         if( play )
         {
@@ -1260,7 +1278,7 @@ namespace MPX
         }
         else
         {
-            m_play_queue.push( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+            m_play_queue.push( boost::get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
             m_ListViewTracks->clear_selection() ;
         }
     }
@@ -1468,11 +1486,11 @@ namespace MPX
         m_conn3.unblock() ;
         m_conn4.unblock() ;
 
-        boost::optional<MPX::Track> t = m_track_current ;
-
-        if( t )
+        if( m_track_current )
         {
-            gint64 id_track = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
+            const MPX::Track& track = *(m_track_current.get()) ;
+
+            gint64 id_track = boost::get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ;
             m_ListViewTracks->scroll_to_id( id_track ) ;
         }
         else
@@ -1535,11 +1553,11 @@ namespace MPX
     {
         if( event->type == GDK_BUTTON_PRESS )
         {
-            boost::optional<MPX::Track> t = m_track_current ;
-            if( t )
+            if( m_track_current )
             {
-                m_ListViewTracks->scroll_to_id( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
-                //m_follow_track = true ;
+                const MPX::Track& track = *(m_track_current.get()) ;
+
+                m_ListViewTracks->scroll_to_id( boost::get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
             }
         }
 
@@ -1679,22 +1697,22 @@ namespace MPX
     std::map<std::string, DBus::Variant>
     YoukiController::GetMetadata ()
     {
-        boost::optional<MPX::Track> t = m_track_current ;
-
-        if( !t )
+        if( !m_track_current )
         {
             return std::map<std::string, DBus::Variant>() ;
         }
 
         std::map<std::string, DBus::Variant> m ;
 
+        const MPX::Track& track = *(m_track_current.get()) ;
+
         for( int n = ATTRIBUTE_LOCATION; n < N_ATTRIBUTES_STRING; ++n )
         {
-            if( t.get()[n].is_initialized() )
+            if( track[n].is_initialized() )
             {
                     DBus::Variant val ;
                     DBus::MessageIter iter = val.writer() ;
-                    std::string v = boost::get<std::string>( t.get()[n].get() ) ; 
+                    std::string v = boost::get<std::string>( track[n].get() ) ; 
                     iter << v ;
                     m[mpris_attribute_id_str[n-ATTRIBUTE_LOCATION]] = val ;
             }
@@ -1702,11 +1720,11 @@ namespace MPX
 
         for( int n = ATTRIBUTE_TRACK; n < N_ATTRIBUTES_INT; ++n )
         {
-            if( t.get()[n].is_initialized() )
+            if( track[n].is_initialized() )
             {
                     DBus::Variant val ;
                     DBus::MessageIter iter = val.writer() ;
-                    gint64 v = boost::get<gint64>( t.get()[n].get() ) ;
+                    gint64 v = boost::get<gint64>( track[n].get() ) ;
                     iter << v ;
                     m[mpris_attribute_id_int[n-ATTRIBUTE_TRACK]] = val ;
             }
@@ -1769,9 +1787,9 @@ namespace MPX
     )
     {
         if( m_track_current )
-            return m_track_current.get() ;
+            return *(m_track_current.get()) ;
         else
-            throw std::runtime_error("No current track!") ;
+            throw std::runtime_error("No current track!") ; // FIXME: Well
     }
 
     MPX::Track&
@@ -1779,7 +1797,7 @@ namespace MPX
     )
     {
         if( m_track_previous )
-            return m_track_previous.get() ;
+            return *(m_track_previous.get()) ;
         else
             throw std::runtime_error("No previous track!") ;
     }
@@ -1822,8 +1840,7 @@ namespace MPX
 
                     SQL::RowV v ;
                     m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % m_playqueue.back() ).str()) ; 
-                    Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
-                    play_track( *(p.get()) ) ;
+                    play_track( m_library->sqlToTrack( v[0], true, false ) ) ;
                 }
         }
     }

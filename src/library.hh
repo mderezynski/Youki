@@ -172,10 +172,10 @@ namespace MPX
             ) ;
 
             void
-            trackSetLocation( Track&, const std::string& );
+            trackSetLocation( Track_sp&, const std::string& );
 
             std::string
-            trackGetLocation( const Track& );
+            trackGetLocation( const Track_sp& );
 
             SQL::RowV
             getTrackTags(
