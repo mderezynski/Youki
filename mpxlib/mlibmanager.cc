@@ -558,23 +558,18 @@ namespace MPX
                 , &MLibManager::new_track
         )) ;
 
-        library->signal_album_artist_deleted().connect(
+        library->signal_entity_updated().connect(
             sigc::mem_fun(
                   *this
-                , &MLibManager::album_artist_deleted
+                , &MLibManager::entity_updated
         )) ;
 
-        library->signal_album_deleted().connect(
+        library->signal_entity_deleted().connect(
             sigc::mem_fun(
                   *this
-                , &MLibManager::album_deleted
+                , &MLibManager::entity_deleted
         )) ;
 
-        library->signal_track_deleted().connect(
-            sigc::mem_fun(
-                  *this
-                , &MLibManager::track_deleted
-        )) ;
 
         /*- Setup Window Geometry -----------------------------------------*/ 
     
@@ -752,27 +747,21 @@ namespace MPX
     }
 
     void
-    MLibManager::album_artist_deleted(
+    MLibManager::entity_updated(
           const int64_t&        id
+        , int                   type
     )
     {
-        ArtistDeleted( id ) ;
+        EntityUpdated( id, type ) ;
     }
 
     void
-    MLibManager::album_deleted(
+    MLibManager::entity_deleted(
           const int64_t&        id
+        , int                   type
     )
     {
-        AlbumDeleted( id ) ;
-    }
-
-    void
-    MLibManager::track_deleted(
-          const int64_t&        id
-    )
-    {
-        TrackDeleted( id ) ;
+        EntityDeleted( id, type ) ;
     }
 
     bool
@@ -1204,7 +1193,7 @@ namespace MPX
 
                 on_volumes_changed() ;
 
-                /*
+                /* FIXME: Can't do it here because it's async
                 services->get<Library_MLibMan>("mpx-service-library")->vacuumVolume(
                     device_udi_target,
                     volume_udi_target 

@@ -35,6 +35,7 @@ public:
     typedef sigc::signal<void, gint64, std::string, std::string, std::string, std::string, std::string> Signal_1int64_5string_t ;
     typedef sigc::signal<void, const std::vector<int64_t>&>                                             Signal_1int64v ;
     typedef sigc::signal<void, int64_t>                                                                 Signal_1int64 ;
+    typedef sigc::signal<void, int64_t, int>                                                            Signal_1int64_1int ;
 
 protected:
 
@@ -43,9 +44,8 @@ protected:
     Signal_1int64_5string_t SignalNewAlbum ;
     Signal_1int64           SignalNewArtist ;
     Signal_1int64           SignalNewTrack ;
-    Signal_1int64           SignalArtistDeleted ;
-    Signal_1int64           SignalAlbumDeleted ;
-    Signal_1int64           SignalTrackDeleted ;
+    Signal_1int64_1int      SignalEntityDeleted ;
+    Signal_1int64_1int      SignalEntityUpdated ;
 
 public:
 
@@ -74,27 +74,21 @@ public:
     }
 
     Signal_1int64
-    signal_artist_deleted ()
-    {
-        return SignalArtistDeleted ;
-    }
-
-    Signal_1int64
-    signal_album_deleted ()
-    {
-        return SignalAlbumDeleted ;
-    }
-
-    Signal_1int64
     signal_new_track ()
     {
         return SignalNewTrack ;
     }
 
-    Signal_1int64
-    signal_track_deleted ()
+    Signal_1int64_1int
+    signal_entity_deleted ()
     {
-        return SignalTrackDeleted ;
+        return SignalEntityDeleted ;
+    }
+
+    Signal_1int64_1int
+    signal_entity_updated ()
+    {
+        return SignalEntityUpdated ;
     }
 
     /* signal handlers for this interface
@@ -143,27 +137,21 @@ public:
     }
 
     virtual
-    void ArtistDeleted(
+    void EntityDeleted(
           const int64_t&        id
+        , const int&            type
     ) 
     {
-        SignalArtistDeleted.emit( id ) ;
+        SignalEntityDeleted.emit( id, type ) ;
     }
 
     virtual
-    void AlbumDeleted(
+    void EntityUpdated(
           const int64_t&        id
+        , const int&            type
     ) 
     {
-        SignalAlbumDeleted.emit( id ) ;
-    }
-
-    virtual
-    void TrackDeleted(
-          const int64_t&        id
-    ) 
-    {
-        SignalTrackDeleted.emit( id ) ;
+        SignalEntityUpdated.emit( id, type ) ;
     }
 };
 

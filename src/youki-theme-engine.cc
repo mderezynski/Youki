@@ -114,6 +114,21 @@ namespace
         color.b = int_from_hexbyte(s_b) / 255. ;
         color.a = int_from_hexbyte(s_a) / 255. ;
     }
+
+    using namespace MPX ;
+
+    ThemeColor
+    theme_color_from_gdk( const Gdk::Color& gdk )
+    {
+        ThemeColor c ;
+    
+        c.r = gdk.get_red_p() ;
+        c.g = gdk.get_green_p() ;
+        c.b = gdk.get_blue_p() ;
+        c.a = 1 ;
+
+        return c ;
+    }
 }
 
 namespace MPX
@@ -292,6 +307,30 @@ namespace MPX
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
         colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 
+        colors[THEME_COLOR_BACKGROUND] = theme_color_from_gdk(  tv.get_style()->get_bg( Gtk::STATE_NORMAL )) ;
+        colors[THEME_COLOR_BASE] = theme_color_from_gdk( tv.get_style()->get_base( Gtk::STATE_NORMAL )) ;
+
+        Util::color_to_hsb( tv.get_style()->get_base( Gtk::STATE_NORMAL ), h, s, b ) ;
+        b = std::max( 0.10, b-0.10 ) ;
+        colors[THEME_COLOR_BASE_ALTERNATE] = theme_color_from_gdk( Util::color_from_hsb ( h, s, b )) ; 
+
+        colors[THEME_COLOR_TEXT] = theme_color_from_gdk(  tv.get_style()->get_text( Gtk::STATE_NORMAL )) ;
+        colors[THEME_COLOR_TEXT_SELECTED] = theme_color_from_gdk(  tv.get_style()->get_fg( Gtk::STATE_SELECTED )) ;
+        colors[THEME_COLOR_DRAWER] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
+        colors[THEME_COLOR_WINDOW_BORDER] = ThemeColor( 0.25, 0.25, 0.25, 1. ) ; 
+
+
+        Util::color_to_hsb( tv.get_style()->get_bg( Gtk::STATE_NORMAL ), h, s, b ) ;
+        b = std::max( 0.10, b-0.20 ) ;
+        s = std::max( 0.10, s-0.10 ) ;
+        colors[THEME_COLOR_ENTRY_OUTLINE] = theme_color_from_gdk( Util::color_from_hsb ( h, s, b )) ; 
+
+        colors[THEME_COLOR_TREELINES] = ThemeColor( .5, .5, .5, 1. ) ; 
+        colors[THEME_COLOR_INFO_AREA] = theme_color_from_gdk( tv.get_style()->get_base( Gtk::STATE_NORMAL )) ;
+        colors[THEME_COLOR_VOLUME] = ThemeColor( .7, .7, .7, 1. ) ;
+        colors[THEME_COLOR_RESIZE_GRIP] = ThemeColor( 1., 1., 1., .10 ) ; 
+
+/*
         colors[THEME_COLOR_BACKGROUND] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
         colors[THEME_COLOR_BASE] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
         colors[THEME_COLOR_BASE_ALTERNATE] = ThemeColor( .2, .2, .2, 1. ) ;
@@ -304,6 +343,7 @@ namespace MPX
         colors[THEME_COLOR_INFO_AREA] = ThemeColor( .8, .8, .8, .08 ) ;
         colors[THEME_COLOR_VOLUME] = ThemeColor( .7, .7, .7, 1. ) ;
         colors[THEME_COLOR_RESIZE_GRIP] = ThemeColor( 1., 1., 1., .10 ) ; 
+*/
 
         Theme theme (
               "Youki-Default"
@@ -375,7 +415,7 @@ namespace MPX
             , r.y + r.height
         ) ;
 
-        double alpha = sensitive ? 1. : .3 ;
+        double alpha = sensitive ? 1. : .6 ;
         
         double h, s, b ;
         
@@ -384,7 +424,7 @@ namespace MPX
         Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.75 ; 
+        b *= 0.70 ; 
         Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
@@ -428,6 +468,7 @@ namespace MPX
 
         cairo->fill(); 
 
+/*
         gradient = Cairo::LinearGradient::create(
               r.x + r.width / 2
             , r.y  
@@ -472,14 +513,70 @@ namespace MPX
         ) ;
 
         cairo->fill() ;
+*/
+
+/*
+        {
+            cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+            int x = r.x ; 
+            int y = r.y ; 
+            int w = r.width ; 
+            int h = r.height ; 
+            double r = 4. ;
+
+            cairo->move_to(x + r, y);
+            cairo->arc(x + w - r, y + r, r, M_PI * 1.5, M_PI * 2);
+            cairo->line_to( w, y + .35*h ) ;
+            cairo->curve_to( x+.40*w, y+.35*h, x+.45*w, y+.70*h, x+.0*w, y+.55*h ) ;
+            cairo->arc(x + r, y + r, r, M_PI, M_PI * 1.5);
+
+            Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create( x+w/2, y, x+w/2, y + .20*h ) ;
+
+            gradient->add_color_stop_rgba(
+                  0
+                , 1.
+                , 1.
+                , 1.
+                , .85
+            ) ;
+
+            gradient->add_color_stop_rgba(
+                  .4 
+                , 1.
+                , 1.
+                , 1.
+                , .65
+            ) ;
+
+            gradient->add_color_stop_rgba(
+                  .65 
+                , 1.
+                , 1.
+                , 1.
+                , .45
+            ) ;
+
+            gradient->add_color_stop_rgba(
+                  1.
+                , 1.
+                , 1.
+                , 1.
+                , .25
+            ) ;
+
+            cairo->set_source( gradient ) ; 
+            cairo->fill() ;
+        }
+*/
 
         RoundedRectangle(
               cairo
-            , r.x 
-            , r.y 
-            , r.width 
-            , r.height 
-            , rounding 
+            , r.x
+            , r.y
+            , r.width
+            , r.height
+            , rounding
         ) ;
         cairo->set_source_rgba(
               c.r

@@ -160,29 +160,26 @@ namespace MPX
             ) ;
 
             void
-            album_artist_deleted(
+            entity_updated(
                   const int64_t&
+                , int
             ) ;
 
             void
-            album_deleted(
+            entity_deleted(
                   const int64_t&
+                , int
             ) ;
 
             void
-            track_deleted(
-                  const int64_t&
-            ) ;
-
-            void
-            rescan_volumes () ;
+            rescan_volumes() ;
 
 #ifdef HAVE_HAL
             void
-            clear_volumes () ;
+            clear_volumes() ;
 
             void
-            populate_volumes () ;
+            populate_volumes() ;
 
             void
             build_fstree(

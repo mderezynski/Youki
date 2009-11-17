@@ -308,6 +308,39 @@ namespace Albums
                         m_iter_map.erase( i );
                     }
                 }
+
+                void
+                update_album(
+                      Cairo::RefPtr<Cairo::ImageSurface>    surface
+                    , gint64                                id_album
+                    , gint64                                id_artist
+                    , const std::string&                    album
+                    , const std::string&                    album_artist
+                    , const std::string&                    mbid
+                    , const std::string&                    type
+                    , const std::string&                    year
+                    , const std::string&                    label
+                    , std::size_t                           track_count
+
+                )
+                {
+                    IdIterMap_t::iterator i = m_iter_map.find( id_album ) ;
+
+                    Row_t row(
+                          surface
+                        , id_album
+                        , id_artist
+                        , album
+                        , album_artist
+                        , mbid
+                        , get_rt( type )
+                        , year
+                        , label
+                        , track_count
+                    ) ; 
+
+                    *(i->second) = row ;
+                }
         };
 
         typedef boost::shared_ptr<DataModel> DataModel_SP_t;
@@ -1380,7 +1413,7 @@ namespace Albums
 
                                 if( endpos > (m_visible_height - offset))  
                                 {
-                                    init_scroll( adj_value + excess + (offset ? (m_row_height-offset):0) - (offset>0)*m_row_height, SCROLL_DIRECTION_DOWN ) ;
+                                    init_scroll( adj_value + excess + (offset ? (m_row_height-offset):0) /*- (offset>0)*m_row_height + m_row_height*/, SCROLL_DIRECTION_DOWN ) ;
                                 }
                             }
                         }

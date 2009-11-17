@@ -1536,11 +1536,6 @@ namespace Tracks
 
                     cairo->clip();
 
-                    cairo->move_to(
-                          xpos + 6
-                        , ypos + 2
-                    ) ;
-
                     if( m_column == 4 )
                     {
                         const MPX::Track_sp& t = get<4>(datarow) ;
@@ -1555,7 +1550,12 @@ namespace Tracks
 
                         for( std::size_t n = 0 ; n < quality ; ++n ) 
                         {
-                            cairo->set_source_rgba( 1., 1., 1., 0.5 ) ;
+                            cairo->set_source_rgba(
+                                  color.r
+                                , color.g
+                                , color.b
+                                , 0.6 
+                            ) ;
                             RoundedRectangle(
                                   cairo
                                 , r.x
@@ -1570,6 +1570,11 @@ namespace Tracks
                     }
                     else
                     {
+                      cairo->move_to(
+                            xpos + 6
+                          , ypos + 2
+                      ) ;
+
                       std::string str ;
 
                       switch( m_column )
@@ -1609,8 +1614,9 @@ namespace Tracks
                           , layout->gobj()
                       ) ;
 
-                      cairo->reset_clip();
                     }
+
+                    cairo->reset_clip();
                   }
         };
 

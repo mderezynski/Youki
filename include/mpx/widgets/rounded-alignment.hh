@@ -3,28 +3,13 @@
 
 #include <gtkmm.h>
 #include "mpx/widgets/cairo-extensions.hh"
+#include "mpx/widgets/rounded-frame.hh"
 
 namespace MPX
 {
     class RoundedScrolledWindow
     : public Gtk::ScrolledWindow 
     {
-        protected:
-
-                virtual bool
-                on_expose_event(
-                      GdkEventExpose*
-                ) ;
-
-                virtual void
-                on_size_allocate(
-                      Gtk::Allocation&
-                ) ;
-
-        protected:
-
-                Cairo::RefPtr<Cairo::LinearGradient> m_gradient ;
-
         public:
 
                 RoundedScrolledWindow(
@@ -32,6 +17,14 @@ namespace MPX
 
                 virtual
                 ~RoundedScrolledWindow() ;
+
+                void
+                add_with_frame(Gtk::Widget&) ;
+
+        private:
+
+                void
+                probe_adjustable() ;
     };
 }
 #endif // _YOUKI_ROUNDED_ALIGNMENT__HH

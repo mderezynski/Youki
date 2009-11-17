@@ -36,6 +36,7 @@ SET(mpx_widgets_SOURCES
   dialog-simple-entry.cc
   rounded-layout.cc
   rounded-alignment.cc
+  rounded-frame.cc
   task-dialog.cc
   timed-confirmation.cc
   ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c

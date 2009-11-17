@@ -6,11 +6,19 @@
 
         <method name="Start"/>
         <method name="Exit"/>
-
         <method name="ShowWindow"/>
-
         <signal name="ScanStart"/>
         <signal name="ScanEnd"/>
+
+        <signal name="EntityUpdated">
+            <arg type="x" direction="out"/> 
+            <arg type="i" direction="out"/>
+        </signal>
+
+        <signal name="EntityDeleted">
+            <arg type="x" direction="out"/> 
+            <arg type="i" direction="out"/>
+        </signal>
 
         <signal name="NewTrack">
             <arg type="x" direction="out"/> 
@@ -27,18 +35,6 @@
 
         <signal name="NewArtist">
             <arg type="x" direction="out"/> 
-        </signal>
-
-        <signal name="ArtistDeleted">
-            <arg type="x" direction="out"/>
-        </signal>
-
-        <signal name="AlbumDeleted">
-            <arg type="x" direction="out"/>
-        </signal>
-
-        <signal name="TrackDeleted">
-            <arg type="x" direction="out"/>
         </signal>
 
   </interface>

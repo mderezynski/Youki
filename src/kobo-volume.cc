@@ -160,8 +160,8 @@ namespace MPX
             layout->get_extents( rl, ri ) ;
 
             cairo->move_to(
-                  fmax( 2, 2 + double((a.get_width() - pad*2)) * double(percent) - (rl.get_width()/PANGO_SCALE) - (pad+4) ) 
-                , (get_height() - (rl.get_height()/PANGO_SCALE))/2.
+                  fmax( 2, 2 + double((a.get_width() - pad*2)) * double(percent) - (ri.get_width()/PANGO_SCALE) - (pad+4) ) 
+                , (get_height() - (ri.get_height()/PANGO_SCALE))/2.
             ) ;
 
             cairo->set_source_rgba(

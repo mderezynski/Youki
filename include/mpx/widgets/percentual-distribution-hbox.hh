@@ -49,20 +49,26 @@ namespace MPX
 
                 GList * children = GTK_BOX(gobj())->GSEAL(children) ;
 
+                if( g_list_length(children) == 0 )
+                    return ;
+
                 Gtk::Allocation alloc_child = alloc ;
+
+                double overall_alloc_width = alloc.get_width() ;
+                overall_alloc_width -= get_spacing() * (g_list_length(children)-1) ;
 
                 for( int n = 0 ; children ; children = children->next )
                 {
                     GtkBoxChild * child = static_cast<GtkBoxChild*>(children->data) ;
                     Gtk::Widget * widget = Glib::wrap( child->widget, false ) ;
 
-                    double width_t = double(alloc.get_width()) * m_widths[n] ;
+                    double width_t = overall_alloc_width * m_widths[n] ;
 
                     alloc_child.set_width( width_t ) ;
                     widget->size_allocate( alloc_child ) ;
 
-                    alloc_child.set_x( alloc_child.get_x() + width_t ) ;
                     n++ ;
+                    alloc_child.set_x( alloc_child.get_x() + width_t + get_spacing() ) ;
                 }
             }
     };

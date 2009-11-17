@@ -24,7 +24,7 @@ namespace MPX
     {
         if( cover )
         {
-            m_cover = cover->scale_simple( 100, 100 , Gdk::INTERP_BILINEAR ) ;
+            m_cover = cover->scale_simple( 94, 94 , Gdk::INTERP_BILINEAR ) ;
         }
         else
         {
@@ -47,69 +47,34 @@ namespace MPX
     )
     {
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
-        
-        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
 
+        const Gtk::Allocation& a = get_allocation() ;
+
+        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
+        const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ; 
+
+        GdkRectangle r ;
+        r.x = 1 ;
+        r.y = 1 ;
+        r.width = a.get_width() - 2 ; 
+        r.height = a.get_height() - 2 ; 
+
+        cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
         cairo->set_source_rgba(
               c_base.r
             , c_base.g
             , c_base.b
             , c_base.a
         ) ;
-        cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
-        cairo->paint () ;     
-
-        if( !m_cover )
-        {
-            return true ;
-        }
-
-        const Gtk::Allocation& a = get_allocation() ;
-
-        GdkRectangle r ;
-
-        cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
-
-        r.x = (a.get_width() - m_cover->get_width())/2. ; 
-        r.y = (a.get_height() - m_cover->get_height())/2. ; 
-        r.width = m_cover->get_width() ;
-        r.height = m_cover->get_height() ;
-
-        Gdk::Cairo::set_source_pixbuf(
-              cairo
-            , m_cover
-            , r.x
-            , r.y
-        ) ;
-
-        RoundedRectangle(
-              cairo
-            , r.x 
-            , r.y 
-            , r.width 
-            , r.height 
-            , 4. 
-        ) ;
-
-        cairo->fill() ;
-
-/*
-        r.x = 0 ; 
-        r.y = 3 ; 
-        r.width = 98 ; 
-        r.height = 98 ; 
-
-        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
-        const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ; 
+        cairo->paint () ;
 
         cairo->set_operator( Cairo::OPERATOR_OVER ) ;
         cairo->set_source_rgba(
               c_info.r 
             , c_info.g
             , c_info.b
-            , c_info.a 
+            , c_info.a
         ) ;
         RoundedRectangle(
               cairo
@@ -122,18 +87,18 @@ namespace MPX
         cairo->fill () ;
 
         Gdk::Color cgdk ;
-        cgdk.set_rgb_p( 1., 1., 1. ) ; 
+        cgdk.set_rgb_p( 0.4, 0.4, 0.4 ) ; 
 
         Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
-              (r.x + r.width) / 2
+              r.x + r.width / 2
             , r.y  
-            , (r.x + r.width) / 2
+            , r.x + r.width / 2
             , r.y + r.height
         ) ;
 
         double h, s, b ;
     
-        double alpha = 0.15 ;
+        double alpha = 0.2 ;
         
         Util::color_to_hsb( cgdk, h, s, b ) ;
         b *= 0.90 ; 
@@ -187,9 +152,9 @@ namespace MPX
         c.b = cgdk.get_blue_p() ;
 
         gradient = Cairo::LinearGradient::create(
-              (r.x + r.width) / 2
+              r.x + r.width / 2
             , r.y  
-            , (r.x + r.width) / 2
+            , r.x + r.width / 2
             , r.y + (r.height / 1.7)
         ) ;
         gradient->add_color_stop_rgba(
@@ -225,7 +190,51 @@ namespace MPX
             , CairoCorners::CORNERS( 3 )
         ) ;
         cairo->fill() ;
-*/
+
+        if( m_cover )
+        {
+            r.x = 1 ; 
+            r.y = 1 ;
+            r.width = m_cover->get_width() ;
+            r.height = m_cover->get_height() ;
+
+            Gdk::Cairo::set_source_pixbuf(
+                  cairo
+                , m_cover
+                , r.x
+                , r.y
+            ) ;
+
+            RoundedRectangle(
+                  cairo
+                , r.x 
+                , r.y 
+                , r.width 
+                , r.height 
+                , 4. 
+            ) ;
+
+            cairo->clip() ;
+            cairo->paint_with_alpha( 0.85 ) ;
+            cairo->reset_clip() ;
+        }
+
+        r.x = 1 ;
+        r.y = 1 ;
+        r.width = a.get_width() - 2 ;
+        r.height = a.get_height() - 2 ;
+
+        cairo->set_source_rgba( 0.3, 0.3, 0.3, 1. ) ; 
+        cairo->set_line_width( 0.5 ) ;
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 4. 
+        ) ;
+        cairo->stroke() ;
 
         return true ;
     }

@@ -163,57 +163,39 @@ namespace MPX
                 , std::string
                 , std::string
                 , std::string
-                , std::string>                                  SignalNewAlbum; 
+                , std::string>                                  SignalNewAlbum ; 
 
             typedef sigc::signal<void,
-                gint64 /*artist id*/>                           SignalNewArtist;
+                gint64 /*artist id*/>                           SignalNewArtist ;
 
             typedef sigc::signal<void,
-                gint64 /*track id*/>                            SignalNewTrack;
+                gint64 /*track id*/>                            SignalNewTrack ;
+
 
             typedef sigc::signal<void,
-                gint64 /*album id*/>                            SignalAlbumDeleted; 
+                gint64 /*id*/                                   
+              , int>                                            SignalEntityUpdated ;
 
             typedef sigc::signal<void,
-                gint64/*artistid*/>                             SignalAlbumArtistDeleted;
+                gint64 /*id*/                                   
+              , int>                                            SignalEntityDeleted ;
 
-            typedef sigc::signal<void,
-                gint64/*artistid*/>                             SignalArtistDeleted;
-
-            typedef sigc::signal<void,
-                gint64/*artistid*/>                             SignalTrackDeleted;
-
-			typedef sigc::signal<void,
-                gint64 /*track id*/>                            SignalTrackUpdated;
-
-            typedef sigc::signal<void,
-                gint64 /*album id*/>                            SignalAlbumUpdated;
-
-            struct SignalsT
+            struct Signals_t
             {
-                SignalNewAlbum                  NewAlbum;
-                SignalNewArtist                 NewArtist;
-                SignalNewTrack                  NewTrack;
+                SignalNewAlbum                  NewAlbum ;
+                SignalNewArtist                 NewArtist ;
+                SignalNewTrack                  NewTrack ;
 
-				SignalAlbumUpdated	            AlbumUpdated;
-				SignalTrackUpdated              TrackUpdated;
-
-                SignalAlbumDeleted              AlbumDeleted;
-                SignalTrackDeleted              TrackDeleted;
-                SignalArtistDeleted             ArtistDeleted;
-                SignalAlbumArtistDeleted        AlbumArtistDeleted;
+                SignalEntityUpdated             EntityUpdated ;
+                SignalEntityDeleted             EntityDeleted ;
             };
 
-            SignalsT Signals;
+            Signals_t Signals ;
 
             SignalNewAlbum&
             signal_new_album()
             { return Signals.NewAlbum ; }
             
-            SignalAlbumDeleted&
-            signal_album_deleted()
-            { return Signals.AlbumDeleted ; }
-
             SignalNewArtist&
             signal_new_artist()
             { return Signals.NewArtist ; }
@@ -222,25 +204,14 @@ namespace MPX
             signal_new_track()
             { return Signals.NewTrack ; }
 
-            SignalTrackDeleted&
-            signal_track_deleted()
-            { return Signals.TrackDeleted ; }
 
-            SignalTrackUpdated&
-            signal_track_updated()
-            { return Signals.TrackUpdated ; }
+            SignalEntityUpdated&
+            signal_entity_updated()
+            { return Signals.EntityUpdated ; }
 
-            SignalAlbumUpdated&
-            signal_album_updated()
-            { return Signals.AlbumUpdated ; }
-
-            SignalArtistDeleted&
-            signal_artist_deleted()
-            { return Signals.ArtistDeleted ; }
-
-            SignalAlbumArtistDeleted&
-            signal_album_artist_deleted()
-            { return Signals.AlbumArtistDeleted ; }
+            SignalEntityDeleted&
+            signal_entity_deleted()
+            { return Signals.EntityDeleted ; }
 
         public:
 

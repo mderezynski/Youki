@@ -16,8 +16,8 @@
 #include "mpx/com/view-tracks.hh"
 
 #include "mpx/widgets/cairo-extensions.hh"
-#include "mpx/widgets/rounded-alignment.hh"
 #include "mpx/widgets/percentual-distribution-hbox.hh"
+#include "mpx/widgets/rounded-frame.hh"
 
 #include "mpx/i-youki-theme-engine.hh"
 
@@ -219,23 +219,18 @@ namespace MPX
                 , &YoukiController::on_library_new_track
         )) ;
 
-        m_mlibman_dbus_proxy->signal_artist_deleted().connect(
+        m_mlibman_dbus_proxy->signal_entity_deleted().connect(
             sigc::mem_fun(
                   *this
-                , &YoukiController::on_library_artist_deleted
+                , &YoukiController::on_library_entity_deleted
         )) ;
 
-        m_mlibman_dbus_proxy->signal_album_deleted().connect(
+        m_mlibman_dbus_proxy->signal_entity_updated().connect(
             sigc::mem_fun(
                   *this
-                , &YoukiController::on_library_album_deleted
+                , &YoukiController::on_library_entity_updated
         )) ;
 
-        m_mlibman_dbus_proxy->signal_track_deleted().connect(
-            sigc::mem_fun(
-                  *this
-                , &YoukiController::on_library_track_deleted
-        )) ;
 
         m_covers    = services->get<Covers>("mpx-service-covers").get() ;
         m_play      = services->get<Play>("mpx-service-play").get() ;
@@ -290,7 +285,8 @@ namespace MPX
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Bottom       = Gtk::manage( new Gtk::HBox ) ;
         m_VBox_Bottom       = Gtk::manage( new Gtk::VBox ) ;
-        
+       
+        m_HBox_Main->set_spacing( 6 ) ; 
         m_VBox->set_spacing( 2 ) ;
         m_VBox_Bottom->set_spacing( 2 ) ;
         m_HBox_Bottom->set_spacing( 4 ) ;
@@ -318,9 +314,13 @@ namespace MPX
         m_ListViewArtist        = Gtk::manage( new View::Artist::Class ) ;
         m_ListViewAlbums        = Gtk::manage( new View::Albums::Class ) ;
 
-        m_ScrolledWinArtist = Gtk::manage( new RoundedScrolledWindow ) ;
-        m_ScrolledWinAlbums = Gtk::manage( new RoundedScrolledWindow ) ;
-        m_ScrolledWinTracks = Gtk::manage( new RoundedScrolledWindow ) ;
+        m_ScrolledWinArtist = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
+
+        m_ScrolledWinArtist->set_shadow_type( Gtk::SHADOW_NONE ) ;
+        m_ScrolledWinAlbums->set_shadow_type( Gtk::SHADOW_NONE ) ;
+        m_ScrolledWinTracks->set_shadow_type( Gtk::SHADOW_NONE ) ;
 
         m_main_window       = new MainWindow ;
         m_main_window->signal_key_press_event().connect(
@@ -344,7 +344,7 @@ namespace MPX
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
         m_cover = Gtk::manage( new KoboCover ) ;
-        m_cover->set_size_request( 100, 100 ) ;
+        m_cover->set_size_request( 96, 96 ) ;
 
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(
@@ -399,14 +399,17 @@ namespace MPX
         m_Alignment_Entry->property_bottom_padding() = 2 ;
         m_Alignment_Entry->property_left_padding() = 2 ;
         m_Alignment_Entry->property_right_padding() = 2 ;
+
+/*
         m_Alignment_Entry->signal_expose_event().connect(
             sigc::bind(
                 sigc::mem_fun(
                       *this  
-                    , &YoukiController::on_alignment_expose
+                    , &YoukiController::on_expose_render_outline
                 )
                 , m_Alignment_Entry
         )) ; 
+*/
 
         on_style_changed() ;
 
@@ -477,7 +480,10 @@ namespace MPX
                     , 60
                 ) ;
 
-                m_ScrolledWinTracks->add( *m_ListViewTracks ) ;
+                RoundedFrame * frame = Gtk::manage( new RoundedFrame ) ;
+                frame->add( *m_ListViewTracks ) ;
+
+                m_ScrolledWinTracks->add( *frame ) ;
                 m_ScrolledWinTracks->show_all() ;
 
                 m_conn4 = m_Entry->signal_changed().connect(
@@ -513,7 +519,10 @@ namespace MPX
 
                 m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
 
-                m_ScrolledWinArtist->add( *m_ListViewArtist ) ;
+                RoundedFrame * frame = Gtk::manage( new RoundedFrame ) ;
+                frame->add( *m_ListViewArtist ) ;
+
+                m_ScrolledWinArtist->add( *frame ) ;
                 m_ScrolledWinArtist->show_all() ;
         }
 
@@ -584,7 +593,10 @@ namespace MPX
 
                 m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
 
-                m_ScrolledWinAlbums->add( *m_ListViewAlbums ) ;
+                RoundedFrame * frame = Gtk::manage( new RoundedFrame ) ;
+                frame->add( *m_ListViewAlbums ) ;
+
+                m_ScrolledWinAlbums->add( *frame ) ;
                 m_ScrolledWinAlbums->show_all() ;
         }
 
@@ -751,15 +763,18 @@ namespace MPX
         m_ListViewAlbums->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_ListViewTracks->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
+/*
         m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
         m_Entry->modify_base( Gtk::STATE_PRELIGHT, c ) ;
         m_Entry->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
         m_Entry->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
+*/
 
         c.set_rgb_p( c_bg.r, c_bg.g, c_bg.b ) ; 
 
+#if 0
         m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
@@ -815,6 +830,7 @@ namespace MPX
         cgdk.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
         m_main_position->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
         m_main_position->modify_base( Gtk::STATE_NORMAL, cgdk ) ;
+#endif
     }
 
     void
@@ -956,41 +972,121 @@ namespace MPX
     }
 
     void
-    YoukiController::on_library_artist_deleted(
-          gint64               id
+    YoukiController::on_library_entity_deleted(
+          gint64                id
+        , int                   type
     )
     {
-        private_->FilterModelArtist->erase_artist( id ) ; 
-        private_->FilterModelArtist->regen_mapping() ; 
+        switch( type )
+        {
+            case 0: // track
+            {
+                private_->FilterModelTracks->erase_track( id ) ; 
+                private_->FilterModelTracks->regen_mapping() ; 
+            }
+            break ;
 
-        gint64 max_artist, max_albums ;
-        private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
-        max_artist-- ;
-        private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+            case 1: // album
+            {
+                private_->FilterModelAlbums->erase_album( id ) ; 
+                private_->FilterModelAlbums->regen_mapping() ;
+
+                gint64 max_artist, max_albums ;
+                private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
+                max_albums-- ;
+                private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+            }
+            break ;
+
+            case 2: // artist
+            {
+            }
+            break ;
+
+            case 3: // album artist
+            {
+                private_->FilterModelArtist->erase_artist( id ) ; 
+                private_->FilterModelArtist->regen_mapping() ; 
+
+                gint64 max_artist, max_albums ;
+                private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
+                max_artist-- ;
+                private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+            }
+            break;
+        }
     }
 
     void
-    YoukiController::on_library_album_deleted(
-          gint64               id
+    YoukiController::on_library_entity_updated(
+          gint64                id
+        , int                   type
     )
     {
-        private_->FilterModelAlbums->erase_album( id ) ; 
-        private_->FilterModelAlbums->regen_mapping() ;
+        switch( type )
+        {
+            case 0: // track
+            {
+            }
+            break ;
 
-        gint64 max_artist, max_albums ;
-        private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
-        max_albums-- ;
-        private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+            case 1: // album
+            {
+              SQL::RowV v ;
+
+              m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
+
+              g_return_if_fail( (v.size() == 1) ) ;
+
+              SQL::Row & r = v[0] ; 
+
+              const std::string& mbid = get<std::string>(r["mb_album_id"]) ;
+
+              Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
+
+              services->get<Covers>("mpx-service-covers")->fetch(
+                    mbid
+                  , cover_pb
+                  , 64
+              ) ;
+
+              Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
+
+              if( cover_pb ) 
+              {
+                  cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
+              }
+
+              SQL::RowV v2 ;
+              m_library->getSQL( v2, (boost::format("SELECT count(*) AS cnt FROM track_view WHERE album_j = %lld") % id).str() ) ;
+
+              private_->FilterModelAlbums->update_album(
+                    cover_is
+                  , id 
+                  , get<gint64>(r["album_artist_id"])
+                  , get<std::string>(r["album"])
+                  , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
+                  , get<std::string>(r["mb_album_id"])
+                  , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
+                  , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
+                  , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
+                  , get<gint64>(v2[0]["cnt"])
+              ) ;
+            }
+            break ;
+
+            case 2: // artist
+            {
+            }
+            break ;
+
+            case 3: // album artist
+            {
+            }
+            break;
+        }
     }
 
-    void
-    YoukiController::on_library_track_deleted(
-          gint64               id
-    )
-    {
-        private_->FilterModelTracks->erase_track( id ) ; 
-        private_->FilterModelTracks->regen_mapping() ; 
-    }
 
     void
     YoukiController::push_new_tracks(
@@ -1013,8 +1109,6 @@ namespace MPX
 
         m_new_tracks.clear() ;
 
-        private_->FilterModelArtist->regen_mapping() ;
-        private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelTracks->regen_mapping() ;
     }
 
@@ -1853,9 +1947,9 @@ namespace MPX
     }
 
     bool
-    YoukiController::on_alignment_expose(
+    YoukiController::on_expose_render_outline(
           GdkEventExpose* event
-        , Gtk::Alignment* widget
+        , Gtk::Widget* widget
     )
     {
             boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;

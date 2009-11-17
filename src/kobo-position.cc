@@ -192,7 +192,13 @@ namespace MPX
             , 15
             , 2.
         ) ;
-        cairo->fill () ;
+        cairo->fill_preserve () ;
+
+        cairo->save() ;
+        cairo->set_source_rgba( c.r, c.g, c.b, 1. ) ;
+        cairo->set_line_width( 0.5 ) ;
+        cairo->stroke() ;
+        cairo->restore() ;
 
         // BAR
 
@@ -302,8 +308,8 @@ namespace MPX
 
             layout->get_extents( rl, ri ) ; 
 
-            r.width = rl.get_width() / PANGO_SCALE ;
-            r.height = rl.get_height() / PANGO_SCALE ;
+            r.width = ri.get_width() / PANGO_SCALE ;
+            r.height = ri.get_height() / PANGO_SCALE ;
             r.x = fmax( 3, 3 + double(a.get_width()) * double(percent) - r.width - 7 ) ; 
             r.y = (a.get_height() - r.height) / 2 ; 
 
@@ -332,8 +338,8 @@ namespace MPX
 
                     layout->get_extents( rl, ri ) ; 
 
-                    r.width = rl.get_width() / PANGO_SCALE ;
-                    r.height = rl.get_height() / PANGO_SCALE ;
+                    r.width = ri.get_width() / PANGO_SCALE ;
+                    r.height = ri.get_height() / PANGO_SCALE ;
                     r.x = 3 + double(a.get_width()) - r.width - 7 ;
                     r.y = (a.get_height() - r.height) / 2 ; 
 

@@ -22,6 +22,7 @@
 //  MPX is covered by.
 #include "config.h"
 #include "library-mlibman.hh"
+#include "library-scanner-thread-mlibman.hh"
 
 #include <boost/format.hpp>
 #include <glibmm.h>
@@ -683,25 +684,7 @@ namespace MPX
                     , EntityType  type
                 )
                 {
-                    switch( type )
-                    {
-                        case ENTITY_TRACK:
-                            Signals.TrackDeleted.emit( id );
-                            break;
-
-                        case ENTITY_ALBUM:
-                            Signals.AlbumDeleted.emit( id );
-                            break;
-
-                        case ENTITY_ARTIST:
-                            Signals.ArtistDeleted.emit( id );
-                            break;
-
-                        case ENTITY_ALBUM_ARTIST:
-                            Signals.AlbumArtistDeleted.emit( id );
-                            break;
-
-                    }
+                    Signals.EntityDeleted.emit( id, int(type) ) ;
                 }
 
         void
@@ -710,21 +693,7 @@ namespace MPX
                     , EntityType  type
                 )
                 {
-                    switch( type )
-                    {
-                        case ENTITY_ALBUM:
-                            Signals.AlbumUpdated.emit( id );
-                            break;
-
-                        case ENTITY_TRACK:
-                            Signals.TrackUpdated.emit( id );
-                            break;
-
-                        case ENTITY_ARTIST:
-                        case ENTITY_ALBUM_ARTIST:
-                            break;
-
-                    }
+                    Signals.EntityUpdated.emit( id, int(type) ) ;
                 }
 
         void
@@ -785,7 +754,7 @@ namespace MPX
 */
                                                 {
                                                         execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(rt["id"])).str()); 
-                                                        Signals.TrackDeleted.emit( get<gint64>(rt["id"]) );
+                                                        Signals.EntityDeleted.emit( get<gint64>(rt["id"]), ENTITY_TRACK );
                                                 }
                                         } catch(Glib::Error) {
                                                 g_message(G_STRLOC ": Error while trying to remove track at URI '%s'", uri.c_str());
@@ -837,7 +806,7 @@ namespace MPX
                         Row& r = *i;
                         mm->push_message((boost::format(_("Removing Track: %lld of %lld")) % gint64(std::distance(rows.begin(), i)) % gint64(rows.size())).str());
                         execSQL( mprintf("DELETE FROM track WHERE id = '%lld'", get<gint64>(r["id"]))); 
-                        Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
+                        Signals.EntityDeleted.emit( get<gint64>(r["id"]), ENTITY_TRACK );
                     }
 
                     remove_dangling();

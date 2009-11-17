@@ -115,7 +115,7 @@ namespace MPX
         m_timer.stop ();
         m_timer.reset ();
 
-        set_size_request( -1, 32 ) ;
+        set_size_request( -1, 24 ) ;
     }
 
     void
@@ -162,15 +162,14 @@ namespace MPX
         Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
 
         const Gtk::Allocation& a = get_allocation() ;
-
         const ThemeColor& c_base = m_theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
         const ThemeColor& c_info = m_theme->get_color( THEME_COLOR_INFO_AREA ) ; 
 
         GdkRectangle r ;
         r.x = 1 ;
-        r.y = 3 ;
+        r.y = 1 ;
         r.width = a.get_width() - 2 ;
-        r.height = a.get_height() - 2 - 4 ;
+        r.height = a.get_height() - 2 ; 
 
         cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
         cairo->set_source_rgba(
@@ -302,6 +301,18 @@ namespace MPX
             , CairoCorners::CORNERS( 3 )
         ) ;
         cairo->fill() ;
+
+        cairo->set_source_rgba( 0.3, 0.3, 0.3, 1. ) ; 
+        cairo->set_line_width( 0.5 ) ;
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 4. 
+        ) ;
+        cairo->stroke() ;
 
         {
             m_current_time = m_timer.elapsed () ;

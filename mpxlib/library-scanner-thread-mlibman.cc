@@ -1724,6 +1724,11 @@ MPX::LibraryScannerThread_MLibMan::insert(
 
   pthreaddata->NewTrack.emit( get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) )  ;
 
+  if( p->Album.second == ENTITY_IS_NOT_NEW )
+  {
+    pthreaddata->EntityUpdated( p->Album.first, ENTITY_ALBUM ) ;
+  }
+
   return SCAN_RESULT_OK ; 
 }
 

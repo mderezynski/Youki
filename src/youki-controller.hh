@@ -390,9 +390,9 @@ namespace MPX
             ) ;
 
             bool
-            on_alignment_expose(
+            on_expose_render_outline(
                   GdkEventExpose* event
-                , Gtk::Alignment* widget
+                , Gtk::Widget* widget
             ) ;
     
         protected:
@@ -437,22 +437,19 @@ namespace MPX
             ) ;
 
             void
+            on_library_entity_deleted(
+                  gint64
+                , int
+            ) ;
+
+            void
+            on_library_entity_updated(
+                  gint64
+                , int
+            ) ;
+
+            void
             push_new_tracks(
-            ) ;
-
-            void
-            on_library_album_deleted(
-                  gint64
-            ) ;
-
-            void
-            on_library_artist_deleted(
-                  gint64
-            ) ;
-
-            void
-            on_library_track_deleted(
-                  gint64
             ) ;
 
         protected:

@@ -39,7 +39,7 @@ namespace
     const int WIDTH = 10 ;
     const int SPACING = 1 ;
     const int HEIGHT = 36;
-    const double ALPHA = 0.8 ;
+    const double ALPHA = 1. ; 
 }
 
 namespace MPX
@@ -174,9 +174,9 @@ namespace MPX
 
         GdkRectangle r ;
         r.x = 1 ;
-        r.y = 1 ;
+        r.y = 3 ;
         r.width = a.get_width() - 2 ;
-        r.height = a.get_height() - 2 ;
+        r.height = a.get_height() - 2 - 4 ;
 
         cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
         cairo->set_source_rgba(
@@ -204,7 +204,6 @@ namespace MPX
         ) ;
         cairo->fill () ;
 
-/*
         Gdk::Color cgdk ;
         cgdk.set_rgb_p( 0.4, 0.4, 0.4 ) ; 
 
@@ -309,7 +308,18 @@ namespace MPX
             , CairoCorners::CORNERS( 3 )
         ) ;
         cairo->fill() ;
-*/
+
+        cairo->set_source_rgba( 0.3, 0.3, 0.3, 1. ) ; 
+        cairo->set_line_width( 0.5 ) ;
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 4. 
+        ) ;
+        cairo->stroke() ;
  
         for( int n = 0; n < 56 ; ++n ) 
         {
