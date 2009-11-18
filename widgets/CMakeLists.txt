@@ -21,8 +21,8 @@ SET(mpx_widgets_VERSION 0.0)
 
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
-  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --body ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list   > ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
-  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --header ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list > ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
+  COMMAND ${GLIB_GENMARSHAL} --body ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list   > ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
+  COMMAND ${GLIB_GENMARSHAL} --header ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list > ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list
 )
 
@@ -38,8 +38,8 @@ SET(mpx_widgets_SOURCES
   rounded-frame.cc
   task-dialog.cc
   timed-confirmation.cc
-  widget-marshalers.c
-  widget-marshalers.h
+  ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
+  ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
 )
 
 ADD_LIBRARY(mpx-widgets SHARED ${mpx_widgets_SOURCES})
