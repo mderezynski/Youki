@@ -35,12 +35,11 @@ SET(mpx_widgets_SOURCES
   cairo-extensions.cc
   dialog-simple-entry.cc
   rounded-layout.cc
-  rounded-alignment.cc
   rounded-frame.cc
   task-dialog.cc
   timed-confirmation.cc
-  ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
-  ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
+  widget-marshalers.c
+  widget-marshalers.h
 )
 
 ADD_LIBRARY(mpx-widgets SHARED ${mpx_widgets_SOURCES})

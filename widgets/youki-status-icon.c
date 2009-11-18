@@ -297,7 +297,7 @@ youki_status_icon_class_init (YoukiStatusIconClass *class)
 		  G_STRUCT_OFFSET (YoukiStatusIconClass, popup_menu),
 		  NULL,
 		  NULL,
-		  widget_VOID__UINT_UINT, 
+		  g_cclosure_user_marshal_VOID__UINT_UINT, 
 		  G_TYPE_NONE,
 		  2,
 		  G_TYPE_UINT,

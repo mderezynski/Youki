@@ -486,92 +486,96 @@ namespace MPX
     }
 
     int
-    SQLDB::statement_prepare (SQLite3Statement  &statement,
-                              const std::string &sql) const
+    SQLDB::statement_prepare(
+          SQLite3Statement&     statement
+        , const std::string&    sql
+    ) const
     {
-      char const* tail;
-      int status = sqlite3_prepare_v2 (m_sqlite,
-                                       sql.c_str(),
-                                       std::strlen (sql.c_str ()),
-                                       &statement,
-                                       &tail);
+        char const* tail ;
 
-      if (status == SQLITE_SCHEMA)
-      {
-        sqlite3_reset (statement);
+        int status = sqlite3_prepare_v2(
+              m_sqlite
+            , sql.c_str()
+            , sql.length() 
+            , &statement
+            , &tail
+        ) ;
 
-        status = sqlite3_prepare (m_sqlite,
-                                  sql.c_str(),
-                                  std::strlen (sql.c_str()),
-                                  &statement,
-                                  &tail);
-      }
+        if( status == SQLITE_SCHEMA )
+        {
+            sqlite3_reset( statement ) ;
 
-      if (status)
-      {
-        g_warning ("SQL Error: '%s', SQL Statement: '%s'", sqlite3_errmsg (m_sqlite), sql.c_str ());
-        sqlite3_reset (statement);
-      }
+            status = sqlite3_prepare(
+                  m_sqlite
+                , sql.c_str()
+                , sql.length() 
+                , &statement
+                , &tail
+            ) ;
+        }
 
-      return status;
+        if( status )
+        {
+            g_warning( "SQL Error: '%s', SQL Statement: '%s'", sqlite3_errmsg( m_sqlite ), sql.c_str() );
+            sqlite3_reset( statement ) ;
+        }
+
+        return status ;
     }
 
     void
-    SQLDB::assemble_row (SQLite3Statement &statement,
-                         RowV & rows) const
+    SQLDB::assemble_row(
+          SQLite3Statement& statement
+        , RowV&             rows
+    ) const
     {
-      unsigned int columns = sqlite3_column_count (statement);
+      unsigned int columns = sqlite3_column_count( statement ) ;
   
-      Row row;
-      for (unsigned int n = 0 ; n < columns; ++n)
+      Row row ;
+
+      for( unsigned int n = 0 ; n < columns; ++n )
       {
-            const char * name = sqlite3_column_name (statement, n);
-            if (name)
+            const char* name = sqlite3_column_name (statement, n);
+
+            if( name )
             {
-                  switch (sqlite3_column_type (statement, n))
+                  switch( sqlite3_column_type( statement, n ))
                   {
-                    case SQLITE_NULL:
-                    {
-                      /*....*/
-                      break;
-                    }
-
-                    case SQLITE_INTEGER:
-                    {
-                      row.insert (std::make_pair (name, gint64 (sqlite3_column_int64 (statement, n))));
-                      break;
-                    }
-
-                    case SQLITE_FLOAT:
-                    {
-                      row.insert (std::make_pair (name, double (sqlite3_column_double (statement, n))));
-                      break;
-                    }
-
-                    case SQLITE_TEXT:
-                    {
-                      char const* value = reinterpret_cast<char const*> (sqlite3_column_text (statement, n));
-                      if (value)
+                      case SQLITE_NULL:
+                      case SQLITE_BLOB:
                       {
-                        row.insert (std::make_pair (name, string (value)));
+                          //
+                          break;
                       }
-                      break;
-                    }
 
-                    case SQLITE_BLOB:
-                    {
-                      void const* blob = reinterpret_cast<void const*> (sqlite3_column_blob (statement, n));
-                      if (blob)
+                      case SQLITE_INTEGER:
                       {
-                        int bytes = sqlite3_column_bytes(statement, n);
-                        row.insert (std::make_pair (name, Blob(blob, bytes))); 
+                          row.insert(std::make_pair( name, static_cast<gint64>( sqlite3_column_int64( statement, n ))));
+                          break;
                       }
-                      break;
-                    }
+
+                      case SQLITE_FLOAT:
+                      {
+                          row.insert(std::make_pair( name, static_cast<double>( sqlite3_column_double( statement, n ))));
+                          break;
+                      }
+
+                      case SQLITE_TEXT:
+                      {
+                          char const* value = reinterpret_cast<char const*>( sqlite3_column_text( statement, n ));
+
+                          if( value )
+                          {
+                              row.insert( std::make_pair( name, std::string( value )));
+                          }
+
+                          break;
+                      }
                   }
             }
       }
-      rows.push_back (row);
+
+      rows.push_back( row ) ;
     }
 
     int64_t 

@@ -318,32 +318,12 @@ namespace MPX
         colors[THEME_COLOR_TEXT_SELECTED] = theme_color_from_gdk(  tv.get_style()->get_fg( Gtk::STATE_SELECTED )) ;
         colors[THEME_COLOR_DRAWER] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
         colors[THEME_COLOR_WINDOW_BORDER] = ThemeColor( 0.25, 0.25, 0.25, 1. ) ; 
-
-
-        Util::color_to_hsb( tv.get_style()->get_bg( Gtk::STATE_NORMAL ), h, s, b ) ;
-        b = std::max( 0.10, b-0.20 ) ;
-        s = std::max( 0.10, s-0.10 ) ;
-        colors[THEME_COLOR_ENTRY_OUTLINE] = theme_color_from_gdk( Util::color_from_hsb ( h, s, b )) ; 
+        colors[THEME_COLOR_ENTRY_OUTLINE] = theme_color_from_gdk( tv.get_style()->get_dark( Gtk::STATE_ACTIVE ) ) ;
 
         colors[THEME_COLOR_TREELINES] = ThemeColor( .5, .5, .5, 1. ) ; 
         colors[THEME_COLOR_INFO_AREA] = theme_color_from_gdk( tv.get_style()->get_base( Gtk::STATE_NORMAL )) ;
         colors[THEME_COLOR_VOLUME] = ThemeColor( .7, .7, .7, 1. ) ;
         colors[THEME_COLOR_RESIZE_GRIP] = ThemeColor( 1., 1., 1., .10 ) ; 
-
-/*
-        colors[THEME_COLOR_BACKGROUND] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
-        colors[THEME_COLOR_BASE] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
-        colors[THEME_COLOR_BASE_ALTERNATE] = ThemeColor( .2, .2, .2, 1. ) ;
-        colors[THEME_COLOR_TEXT] = ThemeColor( 1., 1., 1., 1. ) ;
-        colors[THEME_COLOR_TEXT_SELECTED] = ThemeColor( 1., 1., 1., 1. ) ;
-        colors[THEME_COLOR_DRAWER] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
-        colors[THEME_COLOR_WINDOW_BORDER] = ThemeColor( 0.25, 0.25, 0.25, 1. ) ; 
-        colors[THEME_COLOR_ENTRY_OUTLINE] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
-        colors[THEME_COLOR_TREELINES] = ThemeColor( .5, .5, .5, 1. ) ; 
-        colors[THEME_COLOR_INFO_AREA] = ThemeColor( .8, .8, .8, .08 ) ;
-        colors[THEME_COLOR_VOLUME] = ThemeColor( .7, .7, .7, 1. ) ;
-        colors[THEME_COLOR_RESIZE_GRIP] = ThemeColor( 1., 1., 1., .10 ) ; 
-*/
 
         Theme theme (
               "Youki-Default"

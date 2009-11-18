@@ -120,60 +120,8 @@ namespace MPX
       , N_ATTRIBUTES_INT
     };
 
-    class Blob
-    {
-        private:
-
-            void*  m_data ;
-            size_t m_data_size ;
-
-        public:
-
-            Blob( // ctor
-                  void const*   d
-                , size_t        s
-            )
-            {
-                m_data = g_memdup( d, s ) ; 
-                m_data_size = s ;
-            };
-
-            Blob( // copy ctor
-                  const Blob&   other
-            )
-            {
-                m_data = g_memdup( other.m_data, other.m_data_size ) ;
-                m_data_size = other.m_data_size ;
-            }
-
-            virtual
-            ~Blob () // dtor
-            {
-                g_free( m_data ) ;
-            }
-
-            void* const&
-            data() const
-            {
-                return m_data ;
-            }
-
-            size_t
-            size() const
-            {
-                return m_data_size ;
-            }
-
-            bool operator==(
-                  const Blob&   other
-            ) const
-            {
-                return m_data == other.m_data ;
-            }
-    };
-
     typedef std::set<std::string> StrS ;
-    typedef boost::variant<gint64, gdouble, std::string, Blob, StrS> Variant ;
+    typedef boost::variant<gint64, gdouble, std::string, StrS> Variant ;
     typedef boost::optional<Variant> OVariant ;
 
     class Track

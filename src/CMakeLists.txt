@@ -59,8 +59,8 @@ SET(youki_bin_SOURCES
   dialog-about.cc
   dialog-equalizer.hh
   dialog-equalizer.cc
-  glib-marshalers.c
   glib-marshalers.h
+  glib-marshalers.c
   youki-spectrum.hh
   youki-spectrum.cc
   jnethttpsrc.h

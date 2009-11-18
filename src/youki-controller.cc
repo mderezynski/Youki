@@ -286,7 +286,7 @@ namespace MPX
         m_HBox_Bottom       = Gtk::manage( new Gtk::HBox ) ;
         m_VBox_Bottom       = Gtk::manage( new Gtk::VBox ) ;
        
-        m_HBox_Main->set_spacing( 6 ) ; 
+        m_HBox_Main->set_spacing( 8 ) ; 
         m_VBox->set_spacing( 2 ) ;
         m_VBox_Bottom->set_spacing( 2 ) ;
         m_HBox_Bottom->set_spacing( 4 ) ;
