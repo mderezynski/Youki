@@ -954,30 +954,23 @@ namespace Tracks
                             const MPX::Track_sp& t = get<4>(row);
                             const MPX::Track& track = *(t.get()) ;
 
-                            int t1 = true, t2 = true ;
-
-                            if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, t ) ;
-
-                            if( !t2 )
-                                continue ;
-
-                            if( t2 )
+                            if( !m_constraints_aqe.empty() && !AQE::match_track( m_constraints_aqe, t ))
                             {
-                                new_mapping_unfiltered.push_back( i ) ;
-
-                                gint64 id_album  = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
-                                gint64 id_artist = get<6>(*i) ;
-
-                                constraints_albums[id_album] = constraints_albums[id_album] + 1 ;
-                                constraints_artist[id_artist] = constraints_artist[id_artist] + 1 ;
+                                continue ;
                             }
 
-                            if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, t ) ;
+                            new_mapping_unfiltered.push_back( i ) ;
 
-                            if( !t1 )
+                            if( !m_constraints_ext.empty() && !AQE::match_track( m_constraints_ext, t ))
+                            {                            
                                 continue ;
+                            }
+
+                            gint64 id_album  = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
+                            gint64 id_artist = get<6>(*i) ;
+
+                            constraints_albums[id_album] = constraints_albums[id_album] + 1 ;
+                            constraints_artist[id_artist] = constraints_artist[id_artist] + 1 ;
 
                             new_mapping.push_back( i ) ; 
                         }
@@ -1080,30 +1073,23 @@ namespace Tracks
                             const MPX::Track_sp& t = get<4>(**i);
                             const MPX::Track& track = *(t.get()) ;
 
-                            int t1 = true, t2 = true ;
-
-                            if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, t ) ;
-
-                            if( !t2 )
-                                continue ;
-
-                            if( t2 )
+                            if( !m_constraints_aqe.empty() && !AQE::match_track( m_constraints_aqe, t ))
                             {
-                                new_mapping_unfiltered.push_back( *i ) ;
-
-                                gint64 id_album  = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
-                                gint64 id_artist = get<6>(**i) ;
-
-                                constraints_albums[id_album] = constraints_albums[id_album] + 1 ;
-                                constraints_artist[id_artist] = constraints_artist[id_artist] + 1 ;
+                                continue ;
                             }
 
-                            if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, t ) ;
+                            new_mapping_unfiltered.push_back( *i ) ;
 
-                            if( !t1 )
+                            if( !m_constraints_ext.empty() && !AQE::match_track( m_constraints_ext, t ))
+                            {
                                 continue ;
+                            }
+
+                            gint64 id_album  = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
+                            gint64 id_artist = get<6>(**i) ;
+
+                            constraints_albums[id_album] = constraints_albums[id_album] + 1 ;
+                            constraints_artist[id_artist] = constraints_artist[id_artist] + 1 ;
 
                             new_mapping.push_back( *i ) ;
                         }
@@ -1181,33 +1167,26 @@ namespace Tracks
                         {
                             const Row_t& row = **i ;
 
-                            int t1 = true, t2 = true ;
-
                             const MPX::Track_sp& t = get<4>(row);
                             const MPX::Track& track = *(t.get()) ;
 
-                            if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, t ) ;
-
-                            if( !t2 )
-                                continue ;
-
-                            if( t2 )
+                            if( !m_constraints_aqe.empty() && !AQE::match_track( m_constraints_aqe, t ))
                             {
-                                new_mapping_unfiltered.push_back( *i ) ;
-
-                                gint64 id_album  = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
-                                gint64 id_artist = get<6>(**i) ;
-
-                                constraints_albums[id_album] = constraints_albums[id_album] + 1 ;
-                                constraints_artist[id_artist] = constraints_artist[id_artist] + 1 ;
+                                continue ;
                             }
 
-                            if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, t ) ;
+                            new_mapping_unfiltered.push_back( *i ) ;
 
-                            if( !t1 )
+                            if( !m_constraints_ext.empty() && !AQE::match_track( m_constraints_ext, t )) 
+                            {
                                 continue ;
+                            }
+
+                            gint64 id_album  = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
+                            gint64 id_artist = get<6>(**i) ;
+
+                            constraints_albums[id_album] = constraints_albums[id_album] + 1 ;
+                            constraints_artist[id_artist] = constraints_artist[id_artist] + 1 ;
 
                             new_mapping.push_back( *i ) ; 
                         }
@@ -1324,30 +1303,23 @@ namespace Tracks
                             const MPX::Track_sp& t = get<4>(**i);
                             const MPX::Track& track = *(t.get()) ;
 
-                            int t1 = true, t2 = true ;
-
-                            if( !m_constraints_aqe.empty() )
-                                t2 = AQE::match_track( m_constraints_aqe, t ) ;
-
-                            if( !t2 )
-                                continue ;
-
-                            if( t2 )
+                            if( !m_constraints_aqe.empty() && !AQE::match_track( m_constraints_aqe, t ))
                             {
-                                new_mapping_unfiltered.push_back( *i ) ;
-
-                                gint64 id_album  = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
-                                gint64 id_artist = get<6>(**i) ;
-
-                                constraints_albums[id_album] = constraints_albums[id_album] + 1 ;
-                                constraints_artist[id_artist] = constraints_artist[id_artist] + 1 ;
+                                continue ;
                             }
 
-                            if( !m_constraints_ext.empty() )
-                                t1 = AQE::match_track( m_constraints_ext, t ) ;
+                            new_mapping_unfiltered.push_back( *i ) ;
 
-                            if( !t1 )
+                            if( !m_constraints_ext.empty() && !AQE::match_track( m_constraints_ext, t ))
+                            {
                                 continue ;
+                            }
+
+                            gint64 id_album  = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
+                            gint64 id_artist = get<6>(**i) ;
+
+                            constraints_albums[id_album] = constraints_albums[id_album] + 1 ;
+                            constraints_artist[id_artist] = constraints_artist[id_artist] + 1 ;
 
                             new_mapping.push_back( *i ) ;
                         }

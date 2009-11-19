@@ -455,7 +455,7 @@ namespace Artist
                 void
                 render(
                       Cairo::RefPtr<Cairo::Context>     cairo
-                    , const Row_t&                       datarow
+                    , const Row_t&                      datarow
                     , Gtk::Widget&                      widget
                     , int                               row
                     , int                               xpos
