@@ -205,7 +205,7 @@ namespace MPX
         cairo->fill () ;
 
         Gdk::Color cgdk ;
-        cgdk.set_rgb_p( 0.4, 0.4, 0.4 ) ; 
+        cgdk.set_rgb_p( 0.15, 0.15, 0.15 ) ; 
 
         Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
               r.x + r.width / 2
@@ -216,18 +216,18 @@ namespace MPX
 
         double h, s, b ;
     
-        double alpha = 0.2 ;
+        double alpha = 0.8 ;
         
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.90 ; 
+        b *= 0.95 ; 
         Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.75 ; 
+        b *= 0.90 ; 
         Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.45 ; 
+        b *= 0.85 ; 
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
 
         gradient->add_color_stop_rgba(
@@ -242,14 +242,14 @@ namespace MPX
             , c2.get_red_p()
             , c2.get_green_p()
             , c2.get_blue_p()
-            , alpha / 2.5
+            , alpha / 1.5
         ) ;
         gradient->add_color_stop_rgba(
               1. 
             , c3.get_red_p()
             , c3.get_green_p()
             , c3.get_blue_p()
-            , alpha / 3.5
+            , alpha / 2.3
         ) ;
         cairo->set_source( gradient ) ;
         cairo->set_operator( Cairo::OPERATOR_OVER ) ;
@@ -273,7 +273,7 @@ namespace MPX
               r.x + r.width / 2
             , r.y  
             , r.x + r.width / 2
-            , r.y + (r.height / 1.7)
+            , r.y + r.height
         ) ;
         gradient->add_color_stop_rgba(
               0
@@ -303,14 +303,13 @@ namespace MPX
             , r.x 
             , r.y
             , r.width
-            , r.height / 1.7 
+            , r.height
             , 4.
-            , CairoCorners::CORNERS( 3 )
         ) ;
         cairo->fill() ;
 
-        cairo->set_source_rgba( 0.3, 0.3, 0.3, 1. ) ; 
-        cairo->set_line_width( 0.5 ) ;
+        cairo->set_source_rgba( 0.1, 0.1, 0.1, 1. ) ; 
+        cairo->set_line_width( 0.75 ) ;
         RoundedRectangle(
               cairo
             , r.x 

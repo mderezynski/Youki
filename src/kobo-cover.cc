@@ -24,7 +24,7 @@ namespace MPX
     {
         if( cover )
         {
-            m_cover = cover->scale_simple( 94, 94 , Gdk::INTERP_BILINEAR ) ;
+            m_cover = cover->scale_simple( 96, 96 , Gdk::INTERP_BILINEAR ) ;
         }
         else
         {
