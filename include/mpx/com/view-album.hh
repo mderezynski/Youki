@@ -1404,6 +1404,7 @@ namespace Albums
                                 select_row( row2 ) ;
                             }
 
+#if 0
                             double adj_value = m_prop_vadj.get_value()->get_value() ;
 
                             {
@@ -1416,16 +1417,19 @@ namespace Albums
                                     init_scroll( adj_value + excess + (offset ? (m_row_height-offset):0) /*- (offset>0)*m_row_height + m_row_height*/, SCROLL_DIRECTION_DOWN ) ;
                                 }
                             }
+#endif
                         }
                         else
                         {
                             if( m_Model_I.in( row )) 
                             {
                                 select_row( row ) ;
+#if 0
                                 init_scroll(
                                       row * m_row_height
                                     , SCROLL_DIRECTION_UP
                                 ) ;
+#endif
                             }
                         }
                     }

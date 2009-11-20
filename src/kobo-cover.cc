@@ -24,7 +24,7 @@ namespace MPX
     {
         if( cover )
         {
-            m_cover = cover->scale_simple( 96, 96 , Gdk::INTERP_BILINEAR ) ;
+            m_cover = cover->scale_simple( 97, 97 , Gdk::INTERP_BILINEAR ) ;
         }
         else
         {
@@ -195,8 +195,8 @@ namespace MPX
         {
             r.x = 1 ; 
             r.y = 1 ;
-            r.width = m_cover->get_width() ;
-            r.height = m_cover->get_height() ;
+            r.width = 97 ; 
+            r.height = 97 ; 
 
             Gdk::Cairo::set_source_pixbuf(
                   cairo
@@ -221,11 +221,11 @@ namespace MPX
 
         r.x = 1 ;
         r.y = 1 ;
-        r.width = a.get_width() - 2 ;
-        r.height = a.get_height() - 2 ;
+        r.width = 97 ; 
+        r.height = 97 ; 
 
         cairo->set_source_rgba( 0.3, 0.3, 0.3, 1. ) ; 
-        cairo->set_line_width( 0.5 ) ;
+        cairo->set_line_width( 0.75 ) ;
         RoundedRectangle(
               cairo
             , r.x 

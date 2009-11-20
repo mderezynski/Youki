@@ -588,6 +588,7 @@ namespace MPX
                         //// MAINAREA BORDER 
                         const ThemeColor& brd = theme->get_color( THEME_COLOR_WINDOW_BORDER ) ;
 
+/*
                         cr->rectangle(
                               1
                             , 20
@@ -596,6 +597,7 @@ namespace MPX
                         ) ;
                         cr->clip() ;
 
+*/
                         RoundedRectangle(
                               cr
                             , 1
