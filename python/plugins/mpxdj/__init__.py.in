@@ -403,9 +403,9 @@ class OPTION__PlayAll(BaseOPTION__):
 
 class OPTION__EntertainMe(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs, model):
+    def __init__( self, lib, v, xml, queue, mcs ):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
+        BaseOPTION__.__init__( self, lib, v, xml, queue, mcs )
 
     def run(self):
 
@@ -418,11 +418,11 @@ class OPTION__EntertainMe(BaseOPTION__):
     def ENTERTAIN_Local(self):
 
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 10")
+        self.lib.getSQL(rv, "SELECT id FROM track_view ORDER BY pcount DESC LIMIT 25")
     
         if len(rv):
             random.shuffle(rv)
-            extract_IDs_n(rv, self.v, 1)
+            extract_IDs(rv, self.v)
         else:
             self.ENTERTAIN_LastFm()
   
@@ -535,8 +535,8 @@ class MPXDJ(mpx.Plugin):
 
             
         self.callables = [
-            OPTION__Analyzer
-#            OPTION__EntertainMe, 
+            OPTION__Analyzer,
+            OPTION__EntertainMe
 #            OPTION__TopTunes, 
 #            OPTION__RandomMix, 
 #            None,
@@ -547,8 +547,8 @@ class MPXDJ(mpx.Plugin):
         ]
 
         self.helptexts = [
-            "Analyzes the playlist and plays similar Music"
-#            "Creates a running order composed of the most frequently played tracks.",
+            "Analyzes the playlist and plays similar Music",
+            "Creates a running order composed of the most frequently played tracks."
 #            "Plays some of the best rated tracks",
 #            "Plays random, but similar tracks",
 #            "",
@@ -559,8 +559,8 @@ class MPXDJ(mpx.Plugin):
         ]   
 
         self.actionnames = [
-            "mpxdj-mode-analyzer"
-#            "mpxdj-mode-entertain",
+            "mpxdj-mode-analyzer",
+            "mpxdj-mode-entertain"
 #            "mpxdj-mode-toptunes",
 #            "mpxdj-mode-random",
 #            "mpxdj-mode-memorylane",
@@ -571,8 +571,8 @@ class MPXDJ(mpx.Plugin):
         ] 
 
         self.options = [
-            "Analyzer"
-#            "Entertain Me!",
+            "Analyzer",
+            "Entertain Me!"
 #            "Top Tunes",
 #            "Random Mix",
 #            "Memory Lane",
@@ -713,8 +713,8 @@ class MPXDJ(mpx.Plugin):
                         print "Next track: " + str(idv[0])
                         self.youki.queue_next_track(idv[0]) 
                     
-        except:
-                pass
+        except Exception, e:
+                print str(e)
 
         self.abort = False
         self.working = False

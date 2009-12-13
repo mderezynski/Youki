@@ -320,7 +320,7 @@ namespace MPX
 
             CoverFetchContext * data = new CoverFetchContext( qual, m_stores_cur );
 
-            if( i < data->stores.size() )
+            while( i < data->stores.size() )
             {
                 while( !data->stores[i] )
                 {
@@ -331,21 +331,27 @@ namespace MPX
                 { 
                     create_or_lock( data, m_mutexes ) ;
                     StorePtr store = data->stores[i] ; 
+                    g_message("Trying artwork store [%u]", i) ;
                     store->load_artwork( data ) ;
                     if( store->get_state() == FETCH_STATE_COVER_SAVED )
                     {
+                        g_message("[%d]: Got Cover!", i) ;
                         pthreaddata->GotCover.emit( qual.mbid ) ;
                         create_or_unlock( data, m_mutexes );
-                        delete data;
-                        return false;
+                        delete data ;
+                        return false ;
                     }
+                    else
+                        g_message("[%d]: No Cover!", i) ;
                 }
+
+                ++i ;
             }
 
             delete data;
         }
 
-        return false;
+        return false ;
     }
 
     bool

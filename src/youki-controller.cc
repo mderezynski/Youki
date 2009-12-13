@@ -446,21 +446,21 @@ namespace MPX
 
                 m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
 
-                View::Tracks::Column_SP_t c1 (new View::Tracks::Column(_("Title"))) ;
-                c1->set_column(0) ;
+                View::Tracks::Column_SP_t c1 (new View::Tracks::Column(_("Track"))) ;
+                c1->set_column(5) ;
+                c1->set_alignment( Pango::ALIGN_RIGHT ) ;
 
-                View::Tracks::Column_SP_t c2 (new View::Tracks::Column(_("Track"))) ;
-                c2->set_column(5) ;
-                c2->set_alignment( Pango::ALIGN_RIGHT ) ;
+                View::Tracks::Column_SP_t c2 (new View::Tracks::Column(_("Title"))) ;
+                c2->set_column(0) ;
 
-                View::Tracks::Column_SP_t c3 (new View::Tracks::Column(_("Quality"))) ;
-                c3->set_column(4) ;
+                View::Tracks::Column_SP_t c3 (new View::Tracks::Column(_("Artist"))) ;
+                c3->set_column(1) ;
 
                 View::Tracks::Column_SP_t c4 (new View::Tracks::Column(_("Album"))) ;
                 c4->set_column(2) ;
 
-                View::Tracks::Column_SP_t c5 (new View::Tracks::Column(_("Artist"))) ;
-                c5->set_column(1) ;
+                View::Tracks::Column_SP_t c5 (new View::Tracks::Column(_("Quality"))) ;
+                c5->set_column(4) ;
 
                 m_ListViewTracks->append_column(c1) ;
                 m_ListViewTracks->append_column(c2) ;
@@ -469,13 +469,13 @@ namespace MPX
                 m_ListViewTracks->append_column(c5) ;
 
                 m_ListViewTracks->column_set_fixed(
-                      1
+                      0
                     , true
                     , 60
                 ) ;
 
                 m_ListViewTracks->column_set_fixed(
-                      2
+                      4 
                     , true
                     , 60
                 ) ;
@@ -877,7 +877,7 @@ namespace MPX
     {
         m_new_tracks.push_back( id ) ;
        
-        if( m_new_tracks.size() == 200 )  
+        if( m_new_tracks.size() == 50 )  
         {
             push_new_tracks() ;
         }
@@ -1110,6 +1110,9 @@ namespace MPX
         m_new_tracks.clear() ;
 
         private_->FilterModelTracks->regen_mapping() ;
+
+        while (gtk_events_pending())
+            gtk_main_iteration() ;
     }
 
 ////////////////

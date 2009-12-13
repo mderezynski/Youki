@@ -67,7 +67,6 @@ namespace
 
                 try{
                     URI u ( (boost::format( "http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4" ) % value).str(), true ) ;
-
                     MPX::XmlInstance<lfm_similarartists::lfm> * Xml = new MPX::XmlInstance<lfm_similarartists::lfm>( Glib::ustring( u ) );
 
                     for( lfm_similarartists::similarartists::artist_sequence::const_iterator i = Xml->xml().similarartists().artist().begin(); i != Xml->xml().similarartists().artist().end(); ++i )
@@ -92,7 +91,6 @@ namespace
 
                 try{
                     URI u ( (boost::format( "http://ws.audioscrobbler.com/2.0/?method=tag.gettopartists&tag=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4" ) % value).str(), true ) ;
-
                     MPX::XmlInstance<lfm_tagtopartists::lfm> * Xml = new MPX::XmlInstance<lfm_tagtopartists::lfm>( Glib::ustring( u ) );
 
                     for( lfm_tagtopartists::topartists::artist_sequence::const_iterator i = Xml->xml().topartists().artist().begin(); i != Xml->xml().topartists().artist().end(); ++i )
@@ -117,11 +115,11 @@ namespace
 
                 try{
                     URI u ( (boost::format( "http://ws.audioscrobbler.com/2.0/?method=tag.gettopalbums&tag=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4" ) % value).str(), true ) ;
-
                     MPX::XmlInstance<lfm_tagtopalbums::lfm> * Xml = new MPX::XmlInstance<lfm_tagtopalbums::lfm>( Glib::ustring( u ) );
 
                     for( lfm_tagtopalbums::topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
                     {
+                        g_message("MBID: %s", (*i).mbid().c_str()) ;
                         s.insert( (*i).mbid() ) ;
                     }
 
@@ -476,35 +474,40 @@ namespace AQE
 
         bool truthvalue = false ;
 
-        switch( c.MatchType )
+        try{
+          switch( c.MatchType )
+          {
+              case MT_EQUAL:
+                  truthvalue = boost::get<T>(track[c.TargetAttr].get()) == boost::get<T>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_NOT_EQUAL:
+                  truthvalue = boost::get<T>(track[c.TargetAttr].get()) != boost::get<T>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_GREATER_THAN:
+                  truthvalue = boost::get<T>(track[c.TargetAttr].get())  > boost::get<T>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_LESSER_THAN:
+                  truthvalue = boost::get<T>(track[c.TargetAttr].get())  < boost::get<T>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_GREATER_THAN_OR_EQUAL:
+                  truthvalue = boost::get<T>(track[c.TargetAttr].get()) >= boost::get<T>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_LESSER_THAN_OR_EQUAL:
+                  truthvalue = boost::get<T>(track[c.TargetAttr].get()) <= boost::get<T>(c.TargetValue.get()) ;
+                  break  ;
+
+              default:
+                  truthvalue = false  ;
+                  break  ;
+          }
+        } catch( boost::bad_get& cxe )
         {
-            case MT_EQUAL:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get()) == boost::get<T>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_NOT_EQUAL:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get()) != boost::get<T>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_GREATER_THAN:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get())  > boost::get<T>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_LESSER_THAN:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get())  < boost::get<T>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_GREATER_THAN_OR_EQUAL:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get()) >= boost::get<T>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_LESSER_THAN_OR_EQUAL:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get()) <= boost::get<T>(c.TargetValue.get()) ;
-                break  ;
-
-            default:
-                truthvalue = false  ;
-                break  ;
+            g_message("%s: boost::bad_get encountered! %s", G_STRLOC, cxe.what() ) ;
         }
 
         return (c.InverseMatch) ? !truthvalue : truthvalue ;
@@ -519,55 +522,58 @@ namespace AQE
     {
         const MPX::Track& track = *(t.get()) ;
 
-        g_return_val_if_fail(track.has(c.TargetAttr), false) ;
-
         bool truthvalue = false ;
 
-        switch( c.MatchType )
+        try{
+          switch( c.MatchType )
+          {
+              case MT_EQUAL:
+                  truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) == boost::get<std::string>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_NOT_EQUAL:
+                  truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) != boost::get<std::string>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_GREATER_THAN:
+                  truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  > boost::get<std::string>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_LESSER_THAN:
+                  truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  < boost::get<std::string>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_GREATER_THAN_OR_EQUAL:
+                  truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) >= boost::get<std::string>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_LESSER_THAN_OR_EQUAL:
+                  truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) <= boost::get<std::string>(c.TargetValue.get()) ;
+                  break  ;
+
+              case MT_FUZZY_EQUAL:
+                  truthvalue = Util::match_keys(boost::get<std::string>(track[c.TargetAttr].get()), boost::get<std::string>(c.TargetValue.get())) ;
+                  break  ;
+
+              case MT_EQUAL_BEGIN:
+
+                  {
+                      Glib::ustring m = Glib::ustring(boost::get<std::string>(track[c.TargetAttr].get())).lowercase() ;
+                      Glib::ustring v = Glib::ustring(boost::get<std::string>(c.TargetValue.get())).lowercase() ;
+
+                      truthvalue = (!m.empty() && !v.empty()) && m.substr( 0, v.length()) == v ;
+                  }
+
+                  break  ;
+          
+              case MT_UNDEFINED:
+              default:
+                  truthvalue = false  ;
+                  break  ;
+          }
+        } catch( boost::bad_get& cxe )
         {
-            case MT_EQUAL:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) == boost::get<std::string>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_NOT_EQUAL:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) != boost::get<std::string>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_GREATER_THAN:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  > boost::get<std::string>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_LESSER_THAN:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  < boost::get<std::string>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_GREATER_THAN_OR_EQUAL:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) >= boost::get<std::string>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_LESSER_THAN_OR_EQUAL:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) <= boost::get<std::string>(c.TargetValue.get()) ;
-                break  ;
-
-            case MT_FUZZY_EQUAL:
-                truthvalue = Util::match_keys(boost::get<std::string>(track[c.TargetAttr].get()), boost::get<std::string>(c.TargetValue.get())) ;
-                break  ;
-
-            case MT_EQUAL_BEGIN:
-
-                {
-                    Glib::ustring m = Glib::ustring(boost::get<std::string>(track[c.TargetAttr].get())).lowercase() ;
-                    Glib::ustring v = Glib::ustring(boost::get<std::string>(c.TargetValue.get())).lowercase() ;
-
-                    truthvalue = (!m.empty() && !v.empty()) && m.substr( 0, v.length()) == v ;
-                }
-
-                break  ;
-        
-            case MT_UNDEFINED:
-            default:
-                truthvalue = false  ;
-                break  ;
+            g_message("%s: boost::bad_get encountered! %s, MatchType: %d, TargetAttr: %d", G_STRLOC, cxe.what(), int(c.MatchType), int(c.TargetAttr) ) ;
         }
 
         return (c.InverseMatch) ? !truthvalue : truthvalue ;
@@ -586,18 +592,23 @@ namespace AQE
 
         bool truthvalue = false ;
 
-        const StrS&         strset              = boost::get<StrS>(c.TargetValue.get()) ;
-        const std::string&  track_target_val    = boost::get<std::string>(track[c.TargetAttr].get()) ;
+        try{
+          const StrS&         strset              = boost::get<StrS>(c.TargetValue.get()) ;
+          const std::string&  track_target_val    = boost::get<std::string>(track[c.TargetAttr].get()) ;
 
-        switch( c.MatchType )
+          switch( c.MatchType )
+          {
+              case MT_EQUAL:
+                  truthvalue = strset.count( track_target_val ) ; 
+                  break  ;
+         
+              case MT_UNDEFINED:
+              default:
+                  break  ;
+          }
+        } catch( boost::bad_get& cxe )
         {
-            case MT_EQUAL:
-                truthvalue = strset.count( track_target_val ) ; 
-                break  ;
-       
-            case MT_UNDEFINED:
-            default:
-                break  ;
+            g_message("%s: boost::bad_get encountered! %s", G_STRLOC, cxe.what() ) ;
         }
 
         return (c.InverseMatch) ? !truthvalue : truthvalue ;
@@ -622,7 +633,7 @@ namespace AQE
         
             bool truthvalue = false ; 
 
-            if( c.TargetValue.get().which() == 4 )
+            if( c.TargetValue.get().which() == VT_STRSET )
             {
                 truthvalue = determine_match<StrS>( c, t ) ;
             }

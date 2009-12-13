@@ -120,9 +120,17 @@ namespace MPX
       , N_ATTRIBUTES_INT
     };
 
-    typedef std::set<std::string> StrS ;
-    typedef boost::variant<gint64, gdouble, std::string, StrS> Variant ;
-    typedef boost::optional<Variant> OVariant ;
+    typedef std::set<std::string>                               StrS ;
+    typedef boost::variant<gint64, gdouble, std::string, StrS>  Variant ;
+    typedef boost::optional<Variant>                            OVariant ;
+
+    enum VariantType
+    {
+          VT_INT
+        , VT_FLOAT
+        , VT_STRING
+        , VT_STRSET
+    };
 
     class Track
     {
