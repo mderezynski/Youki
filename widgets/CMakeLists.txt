@@ -38,8 +38,8 @@ SET(mpx_widgets_SOURCES
   rounded-frame.cc
   task-dialog.cc
   timed-confirmation.cc
-  widget-marshalers.c
-  widget-marshalers.h
+  ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
+  ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
 )
 
 ADD_LIBRARY(mpx-widgets SHARED ${mpx_widgets_SOURCES})
