@@ -61,8 +61,8 @@ SET(youki_bin_SOURCES
   dialog-equalizer.cc
   glib-marshalers.h
   glib-marshalers.c
-  youki-spectrum.hh
-  youki-spectrum.cc
+  youki-spectrum-titleinfo.hh
+  youki-spectrum-titleinfo.cc
   jnethttpsrc.h
   jnethttpsrc.cc
   kobo-position.hh

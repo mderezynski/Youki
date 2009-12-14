@@ -198,7 +198,7 @@ namespace MPX
         cairo->fill () ;
 
         Gdk::Color cgdk ;
-        cgdk.set_rgb_p( 0.15, 0.15, 0.15 ) ; 
+        cgdk.set_rgb_p( 0.25, 0.25, 0.25 ) ; 
 
         Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
               r.x + r.width / 2
@@ -209,18 +209,20 @@ namespace MPX
 
         double h, s, b ;
     
-        double alpha = 0.8 ;
+        double alpha = 1. ;
         
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.90 ; 
+        b *= 1.05 ;
+        s *= 0.55 ;
         Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.90 ; 
+        s *= 0.55 ;
         Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.85 ; 
+        b *= 0.9 ;
+        s *= 0.60 ;
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
 
         gradient->add_color_stop_rgba(
@@ -228,21 +230,21 @@ namespace MPX
             , c1.get_red_p()
             , c1.get_green_p()
             , c1.get_blue_p()
-            , alpha 
+            , alpha / 1.05
         ) ;
         gradient->add_color_stop_rgba(
-              .40
+              .20
             , c2.get_red_p()
             , c2.get_green_p()
             , c2.get_blue_p()
-            , alpha / 1.5
+            , alpha / 1.05
         ) ;
         gradient->add_color_stop_rgba(
-              1. 
+              1 
             , c3.get_red_p()
             , c3.get_green_p()
             , c3.get_blue_p()
-            , alpha / 2.3
+            , alpha
         ) ;
         cairo->set_source( gradient ) ;
         cairo->set_operator( Cairo::OPERATOR_OVER ) ;
@@ -256,6 +258,7 @@ namespace MPX
         ) ;
         cairo->fill(); 
 
+/*
         ThemeColor c ;
 
         c.r = cgdk.get_red_p() ;
@@ -273,21 +276,21 @@ namespace MPX
             , c.r
             , c.g
             , c.b
-            , alpha / 2.4 
+            , alpha / 3.2 
         ) ;
         gradient->add_color_stop_rgba(
               0.5
             , c.r
             , c.g
             , c.b
-            , alpha / 4.3 
+            , alpha / 2.8 
         ) ;
         gradient->add_color_stop_rgba(
               1 
             , c.r
             , c.g
             , c.b
-            , alpha / 6.5 
+            , alpha / 2.4 
         ) ;
         cairo->set_source( gradient ) ;
         cairo->set_operator( Cairo::OPERATOR_OVER ) ;
@@ -300,8 +303,9 @@ namespace MPX
             , 4.
         ) ;
         cairo->fill() ;
+*/
 
-        cairo->set_source_rgba( 0.1, 0.1, 0.1, 1. ) ; 
+        cairo->set_source_rgba( 0.15, 0.15, 0.15, 1. ) ; 
         cairo->set_line_width( 0.75 ) ;
         RoundedRectangle(
               cairo
@@ -333,6 +337,8 @@ namespace MPX
             int width, height;
             layout->get_pixel_size( width, height ) ;
 
+            cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+
             cairo->move_to(
                   (a.get_width() - width) / 2 - 50
                 , (a.get_height() - height) / 2 
@@ -340,15 +346,33 @@ namespace MPX
 
             const ThemeColor& c_text = m_theme->get_color( THEME_COLOR_TEXT_SELECTED ) ; 
 
+            Gdk::Color cgdk ;
+            cgdk.set_rgb_p( c_text.r, c_text.g, c_text.b ) ;
+
+            pango_cairo_layout_path( cairo->cobj(), layout->gobj() ) ;
+
             cairo->set_source_rgba(
                   c_text.r 
                 , c_text.g 
                 , c_text.b 
-                , alpha 
+                , alpha
             ) ; 
-            cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+            cairo->fill_preserve() ;
 
-            pango_cairo_show_layout( cairo->cobj(), layout->gobj() ) ;
+            double h,s,b ;
+            Util::color_to_hsb( cgdk, h, s, b ) ;
+            b *= 0.7 ;
+            s *= 0.75 ;
+            Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+            cairo->set_source_rgba(
+                  c1.get_red_p() 
+                , c1.get_green_p() 
+                , c1.get_blue_p() 
+                , alpha
+            ) ; 
+            cairo->set_line_width( 0.5 ) ;
+            cairo->stroke() ;
         }
     }
 

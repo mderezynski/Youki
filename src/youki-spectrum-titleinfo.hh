@@ -1,5 +1,5 @@
-#ifndef _YOUKI_SPECTRUM__HH
-#define _YOUKI_SPECTRUM__HH
+#ifndef _YOUKI_SPECTRUM_TITLEINFO__HH
+#define _YOUKI_SPECTRUM_TITLEINFO__HH
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
@@ -7,19 +7,20 @@
 #include <string>
 #include <sigc++/sigc++.h>
 
+#include "mpx/algorithm/modulo.hh"
+
 #include "mpx/i-youki-play.hh"
 #include "mpx/i-youki-theme-engine.hh"
 #include "mpx/mpx-types.hh"
 
 namespace MPX
 {
-    class YoukiSpectrum
+    class YoukiSpectrumTitleinfo
     : public Gtk::DrawingArea 
     {
         private:
 
             sigc::signal<void>        m_signal ;
-
             std::vector<float>        m_spectrum_data ;
             std::vector<float>        m_spectrum_peak ;
 
@@ -44,8 +45,8 @@ namespace MPX
               return m_signal ;
             }
 
-            YoukiSpectrum () ;
-            virtual ~YoukiSpectrum () {}
+            YoukiSpectrumTitleinfo () ;
+            virtual ~YoukiSpectrumTitleinfo () {}
 
             void
             reset(
@@ -74,14 +75,58 @@ namespace MPX
             ) ;
 
             void
+            draw_titleinfo(
+                  Cairo::RefPtr<Cairo::Context>&
+            );
+
+            void
+            draw_background(
+                  Cairo::RefPtr<Cairo::Context>&
+            );
+
+            void
             on_play_status_changed(
             ) ;
 
             bool
             redraw_handler(
             ) ;
+
+      public:
+
+          void
+          set_info(
+              const std::vector<std::string>&
+          ) ;
+
+          void
+          clear () ;
+    
+      private:
+
+          double total_animation_time ;
+          double start_time ;
+          double end_time ; 
+
+          std::vector<std::string>    m_info ;
+          sigc::connection            m_update_connection;
+          Glib::Timer                 m_timer;
+          Modulo<double>              m_tmod ;
+          double                      m_current_time ;
+
+          bool
+          update_frame ();
+
+          double
+          cos_smooth (double x) ;
+
+          std::string 
+          get_text_at_time () ;
+
+          double
+          get_text_alpha_at_time () ;
    };
 }
 
 
-#endif // _YOUKI_SPECTRUM__HH
+#endif // _YOUKI_SPECTRUM_TITLEINFO__HH

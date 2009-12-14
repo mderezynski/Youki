@@ -11,11 +11,10 @@
 #include "kobo-main.hh"
 #include "kobo-position.hh"
 #include "kobo-cover.hh"
-#include "kobo-titleinfo.hh"
 #include "kobo-volume.hh"
 
 #include "youki-simpleinfo.hh"
-#include "youki-spectrum.hh"
+#include "youki-spectrum-titleinfo.hh"
 
 #include "mpx/widgets/youki-tristate-button.hh"
 #include "mpx/widgets/youki-toggle-button.hh"
@@ -209,9 +208,8 @@ namespace MPX
             int                               m_main_window_x 
                                             , m_main_window_y ;
             
-            YoukiSpectrum                   * m_main_spectrum ;
+            YoukiSpectrumTitleinfo          * m_main_spectrum_titleinfo ;
             KoboPosition                    * m_main_position ;
-            KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
             YoukiTristateButton             * m_main_love_button;
 

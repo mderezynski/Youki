@@ -9,10 +9,12 @@
 #include "mpx/i-youki-theme-engine.hh"
 #include "mpx/mpx-main.hh"
 
-#include "youki-spectrum.hh"
+#include "youki-spectrum-titleinfo.hh"
 
 namespace
 {
+    // Spectrum Constants
+
     struct Color
     {
           guint8 r;
@@ -23,7 +25,6 @@ namespace
     Color colors[] =
     {
           { 0xff, 0xb1, 0x6f },
-//          { 0xff, 0xc8, 0x7f },
           { 0xff, 0xcf, 0x7e },
           { 0xf6, 0xe6, 0x99 },
           { 0xf1, 0xfc, 0xd4 },
@@ -33,25 +34,129 @@ namespace
           { 0xd5, 0xdd, 0xea },
           { 0xee, 0xc1, 0xc8 },
           { 0xee, 0xaa, 0xb7 },
-//          { 0xec, 0xce, 0xb6 },
     };
 
-    const int WIDTH = 10 ;
-    const int SPACING = 1 ;
-    const int HEIGHT = 36;
-    const double ALPHA = 1. ; 
+    const int       WIDTH = 10 ;
+    const int       SPACING = 1 ;
+    const int       HEIGHT = 36;
+    const double    ALPHA = 1. ; 
+
+    // Text Animation Settings
+
+    int const animation_fps = 24;
+    int const animation_frame_period_ms = 1000 / animation_fps;
+
+    int const    text_size_px           = 14 ;
+    double const text_fade_in_time      = 0.2 ;
+    double const text_fade_out_time     = 0.05 ;
+    double const text_hold_time         = 5. ; 
+    double const text_time              = text_fade_in_time + text_fade_out_time + text_hold_time;
+    double const text_full_alpha        = 0.90 ;
+    double const initial_delay          = 0.0 ;
+
 }
 
 namespace MPX
 {
-    YoukiSpectrum::YoukiSpectrum(
+    inline double
+    YoukiSpectrumTitleinfo::cos_smooth (double x)
+    {
+        return (1.0 - std::cos (x * G_PI)) / 2.0;
+    }
+
+    std::string
+    YoukiSpectrumTitleinfo::get_text_at_time ()
+    {
+        if( !m_info.empty() )
+        {
+            unsigned int line = std::fmod( ( m_current_time / text_time ), m_info.size() ) ;
+            return m_info[line];
+        }
+        else
+        {
+            return "" ;
+        }
+    }
+
+    double
+    YoukiSpectrumTitleinfo::get_text_alpha_at_time ()
+    {
+        {
+            double offset = m_tmod ; 
+
+            if (offset < text_fade_in_time)
+            {
+                return text_full_alpha * cos_smooth (offset / text_fade_in_time);
+            }
+            else if (offset < text_fade_in_time + text_hold_time)
+            {
+                return text_full_alpha;
+            }
+            else
+            {
+                return text_full_alpha * cos_smooth (1.0 - (offset - text_fade_in_time - text_hold_time) / text_fade_out_time);
+            }
+        }
+    }
+
+    void
+    YoukiSpectrumTitleinfo::clear ()
+    {
+        m_info.clear() ;
+        m_timer.stop () ;
+        m_timer.reset () ;
+        m_update_connection.disconnect () ;
+
+        queue_draw () ;
+    }
+
+    void
+    YoukiSpectrumTitleinfo::set_info(
+        const std::vector<std::string>& i
+    )
+    {
+        m_info = i ;
+
+        total_animation_time    = m_info.size() * text_time;
+        start_time              = initial_delay;
+        end_time                = start_time + total_animation_time;
+
+        m_timer.reset () ;
+
+        if( !m_update_connection )
+        {
+            m_timer.start ();
+            m_update_connection = Glib::signal_timeout().connect(
+                sigc::mem_fun(
+                      *this
+                    , &YoukiSpectrumTitleinfo::update_frame
+                    )
+                , animation_frame_period_ms
+            ) ;
+        }
+    }
+
+    bool
+    YoukiSpectrumTitleinfo::update_frame ()
+    {
+        queue_draw ();
+        return true;
+    }
+
+    ///////////////////////////////////
+
+    YoukiSpectrumTitleinfo::YoukiSpectrumTitleinfo(
     )
     : m_spectrum_data( SPECT_BANDS, 0 )
     , m_spectrum_peak( SPECT_BANDS, 0 )
     , m_mode( SPECTRUM_MODE_VOCODER )
+    , m_tmod( m_current_time, text_time )
     {
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
-        set_size_request( -1, 50 ) ;
+        set_size_request( -1, 78 ) ;
+
+        m_timer.stop ();
+        m_timer.reset ();
 
         m_theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
@@ -62,26 +167,26 @@ namespace MPX
         m_play->property_status().signal_changed().connect(
                 sigc::mem_fun(
                       *this
-                    , &YoukiSpectrum::on_play_status_changed
+                    , &YoukiSpectrumTitleinfo::on_play_status_changed
         )) ;
 
         m_play->signal_spectrum().connect(
             sigc::mem_fun(
                   *this
-                , &YoukiSpectrum::update_spectrum
+                , &YoukiSpectrumTitleinfo::update_spectrum
         )) ;
 
         Glib::signal_timeout().connect(
             sigc::mem_fun(
                   *this
-                , &YoukiSpectrum::redraw_handler
+                , &YoukiSpectrumTitleinfo::redraw_handler
             )
             , 1000./24.
         ) ;
     }
 
     void
-    YoukiSpectrum::on_play_status_changed()
+    YoukiSpectrumTitleinfo::on_play_status_changed()
     {
         m_play_status = PlayStatus( m_play->property_status().get_value() ) ;
 
@@ -93,7 +198,7 @@ namespace MPX
     }
 
     bool
-    YoukiSpectrum::redraw_handler()
+    YoukiSpectrumTitleinfo::redraw_handler()
     {
         if( m_play_status == PLAYSTATUS_PLAYING || m_play_status == PLAYSTATUS_PAUSED )
         {
@@ -101,7 +206,7 @@ namespace MPX
             {
                 for( int n = 0; n < SPECT_BANDS; ++n )
                 {
-                    m_spectrum_data[n] = fmax( m_spectrum_data[n] - 1, -72 ) ; 
+                    m_spectrum_data[n] = fmax( m_spectrum_data[n] - 2, -72 ) ; 
                 }
             }
 
@@ -112,14 +217,14 @@ namespace MPX
     }
 
     void
-    YoukiSpectrum::reset ()
+    YoukiSpectrumTitleinfo::reset ()
     {
         std::fill( m_spectrum_data.begin(), m_spectrum_data.end(), 0. ) ;
         std::fill( m_spectrum_peak.begin(), m_spectrum_peak.end(), 0. ) ;
     }
 
     void
-    YoukiSpectrum::update_spectrum(
+    YoukiSpectrumTitleinfo::update_spectrum(
         const Spectrum& spectrum
     )
     {
@@ -141,7 +246,7 @@ namespace MPX
     }
 
     bool
-    YoukiSpectrum::on_button_press_event(
+    YoukiSpectrumTitleinfo::on_button_press_event(
         GdkEventButton* G_GNUC_UNUSED 
     )
     {
@@ -151,22 +256,26 @@ namespace MPX
     }
 
     bool
-    YoukiSpectrum::on_expose_event(
+    YoukiSpectrumTitleinfo::on_expose_event(
         GdkEventExpose* G_GNUC_UNUSED 
     )
     {
         Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context ();
 
+        draw_background( cairo ) ;
         draw_spectrum( cairo ) ;
+        draw_titleinfo( cairo ) ;
 
         return true;
     }
 
     void
-    YoukiSpectrum::draw_spectrum(
+    YoukiSpectrumTitleinfo::draw_background(
           Cairo::RefPtr<Cairo::Context>&                cairo
     )
     {
+        cairo->save() ;
+
         const Gtk::Allocation& a = get_allocation ();
 
         const ThemeColor& c_base = m_theme->get_color( THEME_COLOR_BACKGROUND ) ; // all hail to the C-Base!
@@ -205,7 +314,7 @@ namespace MPX
         cairo->fill () ;
 
         Gdk::Color cgdk ;
-        cgdk.set_rgb_p( 0.15, 0.15, 0.15 ) ; 
+        cgdk.set_rgb_p( 0.25, 0.25, 0.25 ) ; 
 
         Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
               r.x + r.width / 2
@@ -216,18 +325,20 @@ namespace MPX
 
         double h, s, b ;
     
-        double alpha = 0.8 ;
+        double alpha = 1. ; 
         
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.95 ; 
+        b *= 1.05 ; 
+        s *= 0.55 ; 
         Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.90 ; 
+        s *= 0.55 ; 
         Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.85 ; 
+        b *= 0.9 ; 
+        s *= 0.60 ;
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
 
         gradient->add_color_stop_rgba(
@@ -235,21 +346,21 @@ namespace MPX
             , c1.get_red_p()
             , c1.get_green_p()
             , c1.get_blue_p()
-            , alpha 
+            , alpha / 1.05
         ) ;
         gradient->add_color_stop_rgba(
-              .40
+              .20
             , c2.get_red_p()
             , c2.get_green_p()
             , c2.get_blue_p()
-            , alpha / 1.5
+            , alpha / 1.05
         ) ;
         gradient->add_color_stop_rgba(
               1. 
             , c3.get_red_p()
             , c3.get_green_p()
             , c3.get_blue_p()
-            , alpha / 2.3
+            , alpha
         ) ;
         cairo->set_source( gradient ) ;
         cairo->set_operator( Cairo::OPERATOR_OVER ) ;
@@ -263,52 +374,24 @@ namespace MPX
         ) ;
         cairo->fill(); 
 
-        ThemeColor c ;
+        std::valarray<double> dashes ( 3 ) ;
+        dashes[0] = 0. ;
+        dashes[1] = 1. ;
+        dashes[2] = 0. ;
+        cairo->set_line_width(
+              .75
+        ) ;
+        cairo->set_dash(
+              dashes
+            , 0 
+        ) ;
+        cairo->move_to( r.x + 2, 28 ) ;
+        cairo->line_to( r.width - 4, 28 ) ;
+        cairo->set_source_rgba( 1., 1., 1., 0.75 ) ; 
+        cairo->stroke(); 
+        cairo->unset_dash() ; 
 
-        c.r = cgdk.get_red_p() ;
-        c.g = cgdk.get_green_p() ;
-        c.b = cgdk.get_blue_p() ;
-
-        gradient = Cairo::LinearGradient::create(
-              r.x + r.width / 2
-            , r.y  
-            , r.x + r.width / 2
-            , r.y + r.height
-        ) ;
-        gradient->add_color_stop_rgba(
-              0
-            , c.r
-            , c.g
-            , c.b
-            , alpha / 2.4 
-        ) ;
-        gradient->add_color_stop_rgba(
-              0.5
-            , c.r
-            , c.g
-            , c.b
-            , alpha / 4.3 
-        ) ;
-        gradient->add_color_stop_rgba(
-              1 
-            , c.r
-            , c.g
-            , c.b
-            , alpha / 6.5 
-        ) ;
-        cairo->set_source( gradient ) ;
-        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
-        RoundedRectangle(
-              cairo
-            , r.x 
-            , r.y
-            , r.width
-            , r.height
-            , 4.
-        ) ;
-        cairo->fill() ;
-
-        cairo->set_source_rgba( 0.1, 0.1, 0.1, 1. ) ; 
+        cairo->set_source_rgba( 0.25, 0.25, 0.25, 1. ) ; 
         cairo->set_line_width( 0.75 ) ;
         RoundedRectangle(
               cairo
@@ -319,7 +402,87 @@ namespace MPX
             , 4. 
         ) ;
         cairo->stroke() ;
- 
+
+        cairo->restore() ;
+    }
+
+    void
+    YoukiSpectrumTitleinfo::draw_titleinfo(
+          Cairo::RefPtr<Cairo::Context>&                cairo
+    )
+    {
+        cairo->save() ;
+
+        const Gtk::Allocation& a = get_allocation ();
+
+        m_current_time = m_timer.elapsed () ;
+
+        int text_size_pt = static_cast<int>( (text_size_px * 72) / Util::screen_get_y_resolution( Gdk::Screen::get_default() )) ;
+
+        Pango::FontDescription font_desc = get_style()->get_font() ;
+        font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
+        font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
+
+        std::string text  = get_text_at_time() ;
+        double      alpha = get_text_alpha_at_time() ;
+
+        Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
+
+        layout->set_font_description( font_desc ) ;
+        layout->set_text( text ) ;
+
+        int width, height;
+        layout->get_pixel_size( width, height ) ;
+
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+
+        cairo->move_to(
+              (a.get_width() - width) / 2
+            , 7 
+        ) ;
+
+        const ThemeColor& c_text = m_theme->get_color( THEME_COLOR_TEXT_SELECTED ) ; 
+
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c_text.r, c_text.g, c_text.b ) ;
+
+        pango_cairo_layout_path( cairo->cobj(), layout->gobj() ) ;
+
+        cairo->set_source_rgba(
+              c_text.r 
+            , c_text.g 
+            , c_text.b 
+            , alpha
+        ) ; 
+        cairo->fill_preserve() ;
+
+        double h,s,b ;
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.7 ;
+        s *= 0.75 ;
+        Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+        cairo->set_source_rgba(
+              c1.get_red_p() 
+            , c1.get_green_p() 
+            , c1.get_blue_p() 
+            , alpha
+        ) ; 
+        cairo->set_line_width( 0.5 ) ;
+        cairo->stroke() ;
+
+        cairo->restore() ;
+    }
+
+    void
+    YoukiSpectrumTitleinfo::draw_spectrum(
+          Cairo::RefPtr<Cairo::Context>&                cairo
+    )
+    {
+        cairo->save() ;
+
+        const Gtk::Allocation& a = get_allocation ();
+
         for( int n = 0; n < 56 ; ++n ) 
         {
             int   x = 0
@@ -347,6 +510,7 @@ namespace MPX
                         , double(colors[n/6].b)/255.
                         , ALPHA - (0.65 - ((0.65 * (1.0 - std::cos ((bar/36.) * G_PI)) / 1.5)))
                     ) ;
+/*
                     RoundedRectangle(
                           cairo
                         , x - 50
@@ -356,6 +520,26 @@ namespace MPX
                         , 1.
                     ) ;
                     cairo->fill ();
+*/
+
+/*
+                    cairo->set_source_rgba(
+                          1. 
+                        , 1. 
+                        , 1. 
+                        , ALPHA - (0.65 - ((0.65 * (1.0 - std::cos ((bar/36.) * G_PI)) / 1.5)))
+                    ) ;
+*/
+                    RoundedRectangle(
+                          cairo
+                        , x
+                        , (HEIGHT-y) + 7 + 28 
+                        , w
+                        , - h
+                        , 1.
+                    ) ;
+                    cairo->set_line_width( 0.75 ) ;
+                    cairo->stroke ();
                 }
             }
             else
@@ -370,12 +554,12 @@ namespace MPX
                           double(colors[n/6].r)/255.
                         , double(colors[n/6].g)/255.
                         , double(colors[n/6].b)/255.
-                        , ALPHA
+                        , ALPHA * 0.9
                     ) ;
                     RoundedRectangle(
                           cairo
-                        , x - 50
-                        , y + 7 
+                        , x
+                        , y + 7 + 28 
                         , w
                         , h
                         , 1.
@@ -384,5 +568,7 @@ namespace MPX
                 }
             }
         }
+
+        cairo->restore() ;
     }
 }

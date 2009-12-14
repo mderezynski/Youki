@@ -353,20 +353,8 @@ namespace MPX
                 , &YoukiController::on_position_seek
         )) ;
 
-        m_main_titleinfo    = Gtk::manage( new KoboTitleInfo ) ;
-        m_main_titleinfo->signal_button_press_event().connect(
-            sigc::mem_fun(
-                  *this
-                , &YoukiController::on_title_clicked
-        )) ;
-
-//        m_main_love_button          = Gtk::manage( new YoukiTristateButton( 16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no" )) ;
-//        m_main_love_button->set_default_state( TRISTATE_BUTTON_STATE_NONE ) ;
-//        m_main_love_button->set_state( TRISTATE_BUTTON_STATE_NONE ) ;
-//        m_main_love_button->set_sensitive( false ) ;
-
-        m_main_spectrum     = new YoukiSpectrum ;
-        m_main_spectrum->signal_clicked().connect(
+        m_main_spectrum_titleinfo = new YoukiSpectrumTitleinfo ;
+        m_main_spectrum_titleinfo->signal_clicked().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_info_area_clicked
@@ -664,8 +652,8 @@ namespace MPX
         )) ;
 
         m_HBox_Main->add_percentage( 0.15 ) ;
-        m_HBox_Main->add_percentage( 0.20 ) ;
-        m_HBox_Main->add_percentage( 0.65 ) ;
+        m_HBox_Main->add_percentage( 0.25 ) ;
+        m_HBox_Main->add_percentage( 0.60 ) ;
 
         m_HBox_Main->pack_start( *m_ScrolledWinArtist, true, true, 0 ) ;
         m_HBox_Main->pack_start( *m_ScrolledWinAlbums, true, true, 0 ) ;
@@ -686,21 +674,16 @@ namespace MPX
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
-        m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
-
         m_HBox_Bottom->pack_start( *m_cover, false, false, 0 ) ;
 
-        m_VBox_Bottom->pack_start( *m_HBox_Info, false, false, 0 ) ;
-        m_VBox_Bottom->pack_start( *m_main_spectrum, false, false, 0 ) ;
+        m_VBox_Bottom->pack_start( *m_main_spectrum_titleinfo, false, false, 0 ) ;
         m_VBox_Bottom->pack_start( *m_HBox_Controls, false, false, 0 ) ;
 
         m_HBox_Bottom->pack_start( *m_VBox_Bottom, true, true, 0 ) ;
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Main, true, true, 0 ) ;
-//        m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Bottom, false, false, 0 ) ;
-//        m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
 
         m_HBox_Bottom->show_all() ;
 
@@ -1251,26 +1234,22 @@ namespace MPX
                 m_track_current.reset() ;
                 m_track_previous.reset() ;
                 m_seek_position.reset() ; 
-
                 m_playqueue.clear() ;
-
                 m_ListViewTracks->clear_active_track() ;
-
-                m_main_titleinfo->clear() ;
+                m_main_spectrum_titleinfo->clear() ;
                 m_control_status_icon->clear() ;
                 m_cover->clear() ;
-
                 m_main_position->set_position( 0, 0 ) ;
-                m_main_window->queue_draw () ;    
 
+                m_main_window->queue_draw () ;    
                 break ;
 
             case PLAYSTATUS_WAITING:
 
                 m_seek_position.reset() ; 
-                m_main_titleinfo->clear() ;
-                m_main_window->queue_draw () ;    
+                m_main_spectrum_titleinfo->clear() ;
 
+                m_main_window->queue_draw () ;    
                 break ;
 
             case PLAYSTATUS_PAUSED:
@@ -1301,7 +1280,8 @@ namespace MPX
         std::vector<std::string> info ;
         info.push_back( boost::get<std::string>(track[ATTRIBUTE_ARTIST].get()) ) ;
         info.push_back( boost::get<std::string>(track[ATTRIBUTE_TITLE].get()) ) ;
-        m_main_titleinfo->set_info( info ) ;
+
+        m_main_spectrum_titleinfo->set_info( info ) ;
 
         if( track.has( ATTRIBUTE_MB_ALBUM_ID ) )
         {
