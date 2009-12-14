@@ -75,8 +75,6 @@ SET(youki_bin_SOURCES
   youki-notification.cc
   youki-simpleinfo.hh
   youki-simpleinfo.cc
-  kobo-cover.hh
-  kobo-cover.cc
   kobo-main.hh
   kobo-main.cc
   kobo-titleinfo.hh

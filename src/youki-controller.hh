@@ -10,7 +10,6 @@
 
 #include "kobo-main.hh"
 #include "kobo-position.hh"
-#include "kobo-cover.hh"
 #include "kobo-volume.hh"
 
 #include "youki-simpleinfo.hh"
@@ -229,8 +228,6 @@ namespace MPX
             Gtk::VBox                       * m_VBox_Bottom ;
             
             Gtk::Entry                      * m_Entry ;
-
-            KoboCover                       * m_cover ;
 
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;

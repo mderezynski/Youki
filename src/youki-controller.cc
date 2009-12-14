@@ -343,9 +343,6 @@ namespace MPX
         Gdk::Color background ;
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
-        m_cover = Gtk::manage( new KoboCover ) ;
-        m_cover->set_size_request( 99, 99 ) ;
-
         m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(
             sigc::mem_fun(
@@ -674,16 +671,12 @@ namespace MPX
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
-        m_HBox_Bottom->pack_start( *m_cover, false, false, 0 ) ;
-
         m_VBox_Bottom->pack_start( *m_main_spectrum_titleinfo, false, false, 0 ) ;
         m_VBox_Bottom->pack_start( *m_HBox_Controls, false, false, 0 ) ;
 
-        m_HBox_Bottom->pack_start( *m_VBox_Bottom, true, true, 0 ) ;
-
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Main, true, true, 0 ) ;
-        m_VBox->pack_start( *m_HBox_Bottom, false, false, 0 ) ;
+        m_VBox->pack_start( *m_VBox_Bottom, false, false, 0 ) ;
 
         m_HBox_Bottom->show_all() ;
 
@@ -1238,7 +1231,6 @@ namespace MPX
                 m_ListViewTracks->clear_active_track() ;
                 m_main_spectrum_titleinfo->clear() ;
                 m_control_status_icon->clear() ;
-                m_cover->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
 
                 m_main_window->queue_draw () ;    
@@ -1281,8 +1273,6 @@ namespace MPX
         info.push_back( boost::get<std::string>(track[ATTRIBUTE_ARTIST].get()) ) ;
         info.push_back( boost::get<std::string>(track[ATTRIBUTE_TITLE].get()) ) ;
 
-        m_main_spectrum_titleinfo->set_info( info ) ;
-
         if( track.has( ATTRIBUTE_MB_ALBUM_ID ) )
         {
                 const std::string& mbid = boost::get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) ;
@@ -1300,11 +1290,12 @@ namespace MPX
                 }
 
                 m_control_status_icon->set_metadata( cover, track ) ;
-                m_cover->set( cover ) ;
+                m_main_spectrum_titleinfo->set_info( info, cover ) ;
         }
         else
         {
             m_control_status_icon->set_metadata( Glib::RefPtr<Gdk::Pixbuf>(0), track ) ;
+            m_main_spectrum_titleinfo->set_info( info, Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
         }
 
         if( m_track_previous )

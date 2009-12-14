@@ -105,6 +105,7 @@ namespace MPX
         m_info.clear() ;
         m_timer.stop () ;
         m_timer.reset () ;
+        m_cover.reset () ;
         m_update_connection.disconnect () ;
 
         queue_draw () ;
@@ -112,10 +113,12 @@ namespace MPX
 
     void
     YoukiSpectrumTitleinfo::set_info(
-        const std::vector<std::string>& i
+          const std::vector<std::string>&   i
+        , Glib::RefPtr<Gdk::Pixbuf>         cover
     )
     {
         m_info = i ;
+        m_cover = cover->scale_simple( 66, 66, Gdk::INTERP_BILINEAR ) ;
 
         total_animation_time    = m_info.size() * text_time;
         start_time              = initial_delay;
@@ -265,6 +268,7 @@ namespace MPX
         draw_background( cairo ) ;
         draw_spectrum( cairo ) ;
         draw_titleinfo( cairo ) ;
+        draw_cover( cairo ) ;
 
         return true;
     }
@@ -385,8 +389,8 @@ namespace MPX
               dashes
             , 0 
         ) ;
-        cairo->move_to( r.x + 2, 28 ) ;
-        cairo->line_to( r.width - 4, 28 ) ;
+        cairo->move_to( r.x + 6 + 66 , 30 ) ;
+        cairo->line_to( r.width - 4, 30 ) ;
         cairo->set_source_rgba( 1., 1., 1., 0.75 ) ; 
         cairo->stroke(); 
         cairo->unset_dash() ; 
@@ -567,6 +571,59 @@ namespace MPX
                     cairo->fill ();
                 }
             }
+        }
+
+        cairo->restore() ;
+    }
+
+    void
+    YoukiSpectrumTitleinfo::draw_cover(
+          Cairo::RefPtr<Cairo::Context>&                cairo
+    )
+    {
+        cairo->save() ;
+
+        if( m_cover )
+        {
+            GdkRectangle r ;
+
+            r.x = 4 ; 
+            r.y = 6 ;
+            r.width = 66 ; 
+            r.height = 66 ; 
+
+            Gdk::Cairo::set_source_pixbuf(
+                  cairo
+                , m_cover
+                , r.x
+                , r.y
+            ) ;
+
+            RoundedRectangle(
+                  cairo
+                , r.x 
+                , r.y 
+                , r.width 
+                , r.height 
+                , 4. 
+            ) ;
+
+            cairo->clip() ;
+            cairo->paint_with_alpha( 0.90 ) ;
+            cairo->reset_clip() ;
+
+            RoundedRectangle(
+                  cairo
+                , r.x 
+                , r.y 
+                , r.width 
+                , r.height 
+                , 4. 
+            ) ;
+
+            cairo->set_source_rgba( 1., 1., 1., 0.75 ) ; 
+            cairo->set_line_width(0.75) ;
+            cairo->stroke(); 
         }
 
         cairo->restore() ;

@@ -85,6 +85,11 @@ namespace MPX
             );
 
             void
+            draw_cover(
+                  Cairo::RefPtr<Cairo::Context>&
+            );
+
+            void
             on_play_status_changed(
             ) ;
 
@@ -97,6 +102,7 @@ namespace MPX
           void
           set_info(
               const std::vector<std::string>&
+            , Glib::RefPtr<Gdk::Pixbuf>
           ) ;
 
           void
@@ -125,6 +131,11 @@ namespace MPX
 
           double
           get_text_alpha_at_time () ;
+
+      private:
+
+          Glib::RefPtr<Gdk::Pixbuf> m_cover ;
+
    };
 }
 
