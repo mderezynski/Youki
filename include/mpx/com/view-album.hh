@@ -847,9 +847,10 @@ namespace Albums
 
                     Pango::FontDescription font_desc[N_LS] ;
 
-                    font_desc[L1] =  widget.get_style()->get_font() ;
+                    font_desc[L1] = widget.get_style()->get_font() ;
                     font_desc[L1].set_size( text_size_pt[L1] * PANGO_SCALE ) ;
                     font_desc[L1].set_weight( Pango::WEIGHT_BOLD ) ;
+                    font_desc[L1].set_style( Pango::STYLE_ITALIC ) ;
 
                     font_desc[L2] =  widget.get_style()->get_font() ;
                     font_desc[L2].set_size( text_size_pt[L2] * PANGO_SCALE ) ;
@@ -871,26 +872,6 @@ namespace Albums
 
                             int yoff  = 2 ;
 
-                            if( !album_name_only )
-                            {
-                                //// ARTIST
-                                layout[L1]->set_text( get<4>(data_row) )  ;
-                                layout[L1]->get_pixel_size( width, height ) ;
-                                cairo->move_to(
-                                      xpos + 8 
-                                    , ypos + yoff
-                                ) ;
-                                cairo->set_source_rgba(
-                                      color.r
-                                    , color.g
-                                    , color.b
-                                    , .6
-                                ) ;
-                                pango_cairo_show_layout( cairo->cobj(), layout[L1]->gobj() ) ;
-
-                                yoff = 16 ;
-                            }
-
                             //// ALBUM
                             layout[L2]->set_text( get<3>(data_row) )  ;
                             layout[L2]->get_pixel_size( width, height ) ;
@@ -906,14 +887,35 @@ namespace Albums
                             ) ;
                             pango_cairo_show_layout( cairo->cobj(), layout[L2]->gobj() ) ;
 
+                            yoff = 18 ;
+
+                            //// ARTIST
+                            layout[L1]->set_text( get<4>(data_row) )  ;
+                            layout[L1]->get_pixel_size( width, height ) ;
+                            cairo->move_to(
+                                  xpos + 8 
+                                , ypos + yoff
+                            ) ;
+                            cairo->set_source_rgba(
+                                  color.r
+                                , color.g
+                                , color.b
+                                , .6
+                            ) ;
+                            pango_cairo_show_layout( cairo->cobj(), layout[L1]->gobj() ) ;
+
                             //// YEAR + LABEL
+
+                            font_desc[L1].set_style( Pango::STYLE_NORMAL ) ;
+                            layout[L1]->set_font_description( font_desc[L1] ) ;
+
                             if( get<8>(data_row).empty() )
                             {
                                 layout[L1]->set_text( get<7>(data_row) ) ; 
                             }
                             else
                             {
-                                layout[L1]->set_markup( (boost::format("%s <span color='#404040'>•</span> %s") % Glib::Markup::escape_text(get<7>(data_row)).c_str() % Glib::Markup::escape_text(get<8>(data_row)).c_str()).str() ) ;
+                                layout[L1]->set_markup( (boost::format("%s / %s") % Glib::Markup::escape_text(get<7>(data_row)).c_str() % Glib::Markup::escape_text(get<8>(data_row)).c_str()).str() ) ;
                             }
                                 
                             layout[L1]->get_pixel_size( width, height ) ;
@@ -1602,36 +1604,43 @@ namespace Albums
                         {
                             cairo->save(); 
 
-                            cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+/*
+                            gint64 id_1 = get<2>(**row_iter) ;
+                            gint64 id_2 = get<2>(**m_model->row_iter(row+1)) ;  
+*/
 
-                            cairo->set_line_width(
-                                  .5
-                            ) ;
+//                            if( id_1 != id_2 )
+                            {
+                                cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
-                            cairo->set_dash(
-                                  dashes
-                                , 0
-                            ) ;
+                                cairo->set_dash(
+                                      dashes
+                                    , 0
+                                ) ;
 
-                            cairo->set_source_rgba(
-                                  c_treelines.r 
-                                , c_treelines.g
-                                , c_treelines.b
-                                , c_treelines.a 
-                            ) ;
+                                cairo->set_source_rgba(
+                                      c_treelines.r 
+                                    , c_treelines.g
+                                    , c_treelines.b
+                                    , c_treelines.a 
+                                ) ;
 
-                            cairo->move_to(
-                                  0
-                                , ypos - 1 
-                            ) ; 
+                                cairo->set_line_width( 0.75 ) ; 
 
-                            cairo->line_to(
-                                  a.get_width() - 2
-                                , ypos - 1 
-                            ) ;
+                                cairo->move_to(
+                                      0
+                                    , ypos - 1 
+                                ) ; 
 
-                            cairo->stroke() ;
-                            cairo->restore(); 
+                                cairo->line_to(
+                                      a.get_width() - 2
+                                    , ypos - 1 
+                                ) ;
+
+                                cairo->stroke() ;
+                            }
+
+                            cairo->restore() ; 
                         }
 
                         row ++ ;
@@ -1955,6 +1964,11 @@ namespace Albums
                 {
                     cancel_search() ;
                     return false ;
+                }
+
+                void
+                on_got_cover( gint64 id )
+                {
                 }
 
             public:

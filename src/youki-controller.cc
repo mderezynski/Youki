@@ -438,14 +438,15 @@ namespace MPX
                 View::Tracks::Column_SP_t c2 (new View::Tracks::Column(_("Title"))) ;
                 c2->set_column(0) ;
 
-                View::Tracks::Column_SP_t c3 (new View::Tracks::Column(_("Artist"))) ;
-                c3->set_column(1) ;
+                View::Tracks::Column_SP_t c3 (new View::Tracks::Column(_("Time"))) ;
+                c3->set_column(9) ;
+                c3->set_alignment( Pango::ALIGN_RIGHT ) ;
 
-                View::Tracks::Column_SP_t c4 (new View::Tracks::Column(_("Album"))) ;
-                c4->set_column(2) ;
+                View::Tracks::Column_SP_t c4 (new View::Tracks::Column(_("Artist"))) ;
+                c4->set_column(1) ;
 
-                View::Tracks::Column_SP_t c5 (new View::Tracks::Column(_("Quality"))) ;
-                c5->set_column(4) ;
+                View::Tracks::Column_SP_t c5 (new View::Tracks::Column(_("Album"))) ;
+                c5->set_column(2) ;
 
                 m_ListViewTracks->append_column(c1) ;
                 m_ListViewTracks->append_column(c2) ;
@@ -460,7 +461,7 @@ namespace MPX
                 ) ;
 
                 m_ListViewTracks->column_set_fixed(
-                      4 
+                      2
                     , true
                     , 60
                 ) ;
@@ -727,7 +728,6 @@ namespace MPX
 
         const ThemeColor& c_bg   = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
         const ThemeColor& c_base = theme->get_color( THEME_COLOR_BASE ) ; 
-        const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ;
 
         Gdk::Color c ;
         c.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
@@ -901,14 +901,13 @@ namespace MPX
         const std::string& mbid = get<std::string>(r["mb_album_id"]) ;
 
         Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
+        Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
 
         services->get<Covers>("mpx-service-covers")->fetch(
               mbid
             , cover_pb
             , 64
         ) ;
-
-        Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
 
         if( cover_pb ) 
         {
@@ -922,6 +921,8 @@ namespace MPX
             rq.uri      =   s3 ;
             rq.artist   =   s4 ;
             rq.album    =   s5 ;
+            rq.id       =   id ;
+
             m_covers->cache( rq, true ) ;
         }
 

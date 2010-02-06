@@ -275,6 +275,7 @@ namespace MPX
         RefPtr<Gdk::Pixbuf> cover
     )
     {
+        g_message("Saving cover as: '%s'", get_thumb_path( mbid ).c_str()) ;
         cover->save( get_thumb_path( mbid ), "png" );
         m_pixbuf_cache[mbid] = cover;
     }
@@ -310,7 +311,7 @@ namespace MPX
 
         if( file_test( thumb_path, FILE_TEST_EXISTS ))
         {
-            pthreaddata->GotCover.emit( qual.mbid ) ;
+            pthreaddata->GotCover.emit( qual.id ) ;
             return false ; 
         }
 
@@ -329,15 +330,15 @@ namespace MPX
             
                 if( i < data->stores.size() )
                 { 
-                    create_or_lock( data, m_mutexes ) ;
+//                    create_or_lock( data, m_mutexes ) ;
                     StorePtr store = data->stores[i] ; 
                     g_message("Trying artwork store [%u]", i) ;
                     store->load_artwork( data ) ;
                     if( store->get_state() == FETCH_STATE_COVER_SAVED )
                     {
                         g_message("[%d]: Got Cover!", i) ;
-                        pthreaddata->GotCover.emit( qual.mbid ) ;
-                        create_or_unlock( data, m_mutexes );
+                        pthreaddata->GotCover.emit( qual.id ) ;
+//                        create_or_unlock( data, m_mutexes );
                         delete data ;
                         return false ;
                     }

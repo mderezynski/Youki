@@ -275,12 +275,13 @@ namespace MPX
                         if( r.count("album.album") )
                                 album = get<std::string>(r["album.album"]);
 
-                        RequestQualifier rq;
-                        rq.mbid   = mb_album_id;
-                        rq.asin   = amazon_asin;
-                        rq.uri    = location;
-                        rq.artist = album_artist;
-                        rq.album  = album;
+                        RequestQualifier rq ;
+                        rq.mbid   = mb_album_id ;
+                        rq.asin   = amazon_asin ;
+                        rq.uri    = location ;
+                        rq.artist = album_artist ;
+                        rq.album  = album ;
+                        rq.id     = get<gint64>(r["id"]) ;
 
                         services->get<Covers>("mpx-service-covers")->cache(
                               rq

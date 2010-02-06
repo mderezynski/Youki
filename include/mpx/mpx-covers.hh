@@ -65,11 +65,12 @@ namespace MPX
 
     struct RequestQualifier
     {
-        std::string mbid;
-        std::string asin;
-        std::string uri;
-        std::string artist;
-        std::string album;
+        std::string mbid ;
+        std::string asin ; 
+        std::string uri ;
+        std::string artist ;
+        std::string album ;
+        gint64      id ;
     };
 
     struct CoverFetchContext
@@ -89,8 +90,8 @@ namespace MPX
         }
     };
 
-    typedef sigc::signal<void, const std::string&>  SignalGotCover_t ;
-    typedef sigx::signal_f<SignalGotCover_t>        SignalGotCover_xt ;
+    typedef sigc::signal<void, gint64>          SignalGotCover_t ;
+    typedef sigx::signal_f<SignalGotCover_t>    SignalGotCover_xt ;
 
     class CoverStore ;
     class Library ;

@@ -84,7 +84,7 @@ namespace Tracks
             const double rounding = 4. ; 
         }
 
-        typedef boost::tuple<std::string, std::string, std::string, gint64, Track_sp, gint64, gint64, std::string, std::string>  Row_t ;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, Track_sp, gint64, gint64, std::string, std::string, gint64>  Row_t ;
 
 /*
         bool operator<(const Row_t& a, const Row_t& b )
@@ -281,6 +281,7 @@ namespace Tracks
                     gint64          id          = 0
                                   , track_n     = 0
                                   , id_artist   = 0
+                                  , time        = 0
                     ;
 
                     if( r.count("id") )
@@ -290,7 +291,11 @@ namespace Tracks
                     else
                         g_critical("%s: No id for track, extremely suspicious", G_STRLOC) ;
 
-                    artist = get<std::string>(r["artist"]) ;
+                    if( r.count("artist") )
+                        artist = get<std::string>(r["artist"]) ;
+
+                    if( r.count("time") )
+                        time = get<gint64>(r["time"]) ;
 
                     if( r.count("album") )
                         album = get<std::string>(r["album"]) ;
@@ -317,7 +322,7 @@ namespace Tracks
                                                        ? get<std::string>(r["album_artist_sortname"])
                                                        : get<std::string>(r["album_artist"]) ;
 
-                    Row_t row ( title, artist, album, id, track, track_n, id_artist, order_artist, release_date ) ;
+                    Row_t row ( title, artist, album, id, track, track_n, id_artist, order_artist, release_date, time ) ;
                     m_realmodel->push_back(row) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -686,6 +691,7 @@ namespace Tracks
                     gint64                                id                = get<gint64>(r["id"]) ;
                     gint64                                track_n           = get<gint64>(r["track"]) ;
                     gint64                                id_artist         = get<gint64>(r["mpx_album_artist_id"]) ;
+                    gint64                                time              = get<gint64>(r["time"]) ;
 
                     const std::string&                    order_artist      = r.count("album_artist_sortname")
                                                                               ? get<std::string>(r["album_artist_sortname"])
@@ -702,6 +708,7 @@ namespace Tracks
                         , id_artist
                         , order_artist
                         , release_date
+                        , time
                     ) ; 
 
                     Model_t::iterator i = m_realmodel->insert(
@@ -1508,39 +1515,6 @@ namespace Tracks
 
                     cairo->clip();
 
-                    if( m_column == 4 )
-                    {
-                        const MPX::Track_sp& t = get<4>(datarow) ;
-                        const MPX::Track& track = *(t.get()) ;
-
-                        std::size_t quality = get<gint64>( track[ATTRIBUTE_QUALITY].get() ) ;
-
-                        GdkRectangle r ;
-
-                        r.x = xpos + 6 ;
-                        r.y = ypos + 6 ;
-
-                        for( std::size_t n = 0 ; n < quality ; ++n ) 
-                        {
-                            cairo->set_source_rgba(
-                                  color.r
-                                , color.g
-                                , color.b
-                                , 0.6 
-                            ) ;
-                            RoundedRectangle(
-                                  cairo
-                                , r.x
-                                , r.y
-                                , rowheight - 12
-                                , rowheight - 12
-                                , 2.
-                            ) ;
-                            cairo->fill() ;
-                            r.x += (rowheight-12) + 2 ;
-                        }
-                    }
-                    else
                     {
                       cairo->move_to(
                             xpos + 6
@@ -1560,8 +1534,17 @@ namespace Tracks
                           case 2:
                               str = get<2>(datarow);
                               break;
+                          case 3:
+                              str = get<3>(datarow);
+                              break;
                           case 5:
                               str = boost::lexical_cast<std::string>(get<5>(datarow)) ;
+                              break;
+                          case 9:
+                              {
+                                gint64 time_ = get<9>(datarow) ;
+                                str = ((boost::format("%02d:%02d") % (time_/60) % (time_ % 60)).str()) ;
+                              }
                               break;
                       }
 

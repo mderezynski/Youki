@@ -83,6 +83,8 @@ namespace MPX
     void
     RemoteStore::load_artwork(CoverFetchContext* ctx)
     {
+        g_message( G_STRFUNC ) ;
+
         if( can_load_artwork( ctx ) )
         {
             fetch_image( get_url( ctx ), ctx ) ;
@@ -94,17 +96,19 @@ namespace MPX
     {
         if( can_load_artwork( ctx ) )
         {
+            g_message( G_STRFUNC ) ;
+            g_message( url.c_str() ) ;
+
             request = Soup::RequestSync::create ( url ) ; 
             guint code = request->run() ;
 
-            if (code == 200)
+            if( code == 200 )
             {
                 save_image(
                       request->get_data_raw()
                     , request->get_data_size()
                     , ctx
                 ) ;
-                m_fetch_state = FETCH_STATE_COVER_SAVED ; 
             }
             else
             {
@@ -132,19 +136,26 @@ namespace MPX
 
         RefPtr<Gdk::Pixbuf> cover = loader->get_pixbuf();
 
-        if (cover->get_width() == 1 && cover->get_height() == 1)
+        g_message(G_STRLOC) ;
+
+        if( cover->get_width() == 1 && cover->get_height() == 1 )
         {
+            g_message(G_STRLOC) ;
+
             request_failed( ctx );
             return;
         }
         else
         { 
+            g_message(G_STRLOC) ;
+
             try{
                     covers.cache_artwork( ctx->qualifier.mbid, cover );
                     m_fetch_state = FETCH_STATE_COVER_SAVED;
             } catch( Glib::FileError & cxe )
             {
                     g_message("File Error while trying to save cover image: %s", cxe.what().c_str());
+                    request_failed( ctx ) ;
             }
         }
     }
@@ -152,7 +163,7 @@ namespace MPX
     void
     RemoteStore::request_failed( CoverFetchContext *ctx )
     {
-        m_fetch_state = FETCH_STATE_NOT_FETCHED;
+        m_fetch_state = FETCH_STATE_NOT_FETCHED ;
     }
 
     // --------------------------------------------------
@@ -286,12 +297,15 @@ namespace MPX
 			    image_url = xpath_get_text(
                     request->get_data_raw(),
                     request->get_data_size(),
-					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target",
-                    "mb=http://musicbrainz.org/ns/mmd-1.0#"
+					"/mb:metadata/mb:release/mb:relation-list//mb:relation[@type='CoverArtLink']/@target",
+                    "mb=http://musicbrainz.org/ns/mmd-1.0# ext=http://musicbrainz.org/ns/ext-1.0#"
                 ); 
+
+                g_message("Image URL: '%s'", image_url.c_str() ) ;
 			}
             catch (std::runtime_error & cxe)
 			{
+                g_message("Runtime error: %s", cxe.what() ) ;
 				return;
 			}
 

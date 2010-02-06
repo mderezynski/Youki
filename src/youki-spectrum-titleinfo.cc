@@ -377,7 +377,7 @@ namespace MPX
             , 4. 
         ) ;
         cairo->fill(); 
-
+/*
         std::valarray<double> dashes ( 3 ) ;
         dashes[0] = 0. ;
         dashes[1] = 1. ;
@@ -394,9 +394,51 @@ namespace MPX
         cairo->set_source_rgba( 1., 1., 1., 0.75 ) ; 
         cairo->stroke(); 
         cairo->unset_dash() ; 
+*/
 
-        cairo->set_source_rgba( 0.25, 0.25, 0.25, 1. ) ; 
-        cairo->set_line_width( 0.75 ) ;
+        gradient = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y + 3 
+            , r.x + r.width / 2
+            , 24
+        ) ;
+
+        gradient->add_color_stop_rgba(
+              0
+            , .45 
+            , .45
+            , .45
+            , 1. 
+        ) ;
+        gradient->add_color_stop_rgba(
+              .25 
+            , .40 
+            , .40
+            , .40
+            , 1. 
+        ) ;
+        gradient->add_color_stop_rgba(
+              1.
+            , .35 
+            , .35
+            , .35
+            , 1. 
+        ) ;
+        cairo->set_source( gradient ) ;
+
+        RoundedRectangle(
+              cairo
+            , r.x + 74 
+            , r.y + 3
+            , r.width - 76 
+            , 24
+            , 4. 
+        ) ;
+        cairo->fill_preserve() ;
+        cairo->set_source_rgba( 0.35, 0.35, 0.35, 1. ) ; 
+        cairo->set_line_width( 0.75 ) ; 
+        cairo->stroke() ;
+
         RoundedRectangle(
               cairo
             , r.x 
@@ -405,6 +447,8 @@ namespace MPX
             , r.height 
             , 4. 
         ) ;
+        cairo->set_source_rgba( 0.20, 0.20, 0.20, 1. ) ; 
+        cairo->set_line_width( 1. ) ; 
         cairo->stroke() ;
 
         cairo->restore() ;
@@ -612,6 +656,8 @@ namespace MPX
             cairo->paint_with_alpha( 0.90 ) ;
             cairo->reset_clip() ;
 
+            cairo->set_line_width( 1. ) ; 
+
             RoundedRectangle(
                   cairo
                 , r.x 
@@ -621,8 +667,19 @@ namespace MPX
                 , 4. 
             ) ;
 
-            cairo->set_source_rgba( 1., 1., 1., 0.75 ) ; 
-            cairo->set_line_width(0.75) ;
+            cairo->set_source_rgba( 0.35, 0.35, 0.35, 1. ) ; 
+            cairo->stroke(); 
+
+            RoundedRectangle(
+                  cairo
+                , r.x + 1
+                , r.y + 1
+                , r.width - 2 
+                , r.height - 2
+                , 4. 
+            ) ;
+
+            cairo->set_source_rgba( 0.40, 0.40, 0.40, 1. ) ; 
             cairo->stroke(); 
         }
 

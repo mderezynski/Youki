@@ -78,6 +78,7 @@ namespace
       }
 
       // do register namespace
+      g_message("prefix: '%s', href='%s'", prefix, href) ;
       if(xmlXPathRegisterNs(xpathCtx, prefix, href) != 0)
       {
           g_warning (G_STRLOC ": unable to register NS with prefix=\"%s\" and href=\"%s\"", prefix, href);
