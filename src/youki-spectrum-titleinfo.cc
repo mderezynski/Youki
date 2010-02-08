@@ -25,6 +25,7 @@ namespace
     Color colors[] =
     {
           { 0xff, 0xb1, 0x6f },
+          { 0xff, 0xb1, 0x6f },
           { 0xff, 0xcf, 0x7e },
           { 0xf6, 0xe6, 0x99 },
           { 0xf1, 0xfc, 0xd4 },
@@ -118,8 +119,9 @@ namespace MPX
     )
     {
         m_info = i ;
-        m_cover = cover->scale_simple( 66, 66, Gdk::INTERP_BILINEAR ) ;
+        m_cover = cover->scale_simple( 99, 99, Gdk::INTERP_BILINEAR ) ;
 
+/*
         total_animation_time    = m_info.size() * text_time;
         start_time              = initial_delay;
         end_time                = start_time + total_animation_time;
@@ -137,6 +139,7 @@ namespace MPX
                 , animation_frame_period_ms
             ) ;
         }
+*/
     }
 
     bool
@@ -156,7 +159,7 @@ namespace MPX
     , m_tmod( m_current_time, text_time )
     {
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
-        set_size_request( -1, 78 ) ;
+        set_size_request( -1, 112 ) ;
 
         m_timer.stop ();
         m_timer.reset ();
@@ -243,7 +246,7 @@ namespace MPX
                 else if( spectrum[n] > m_spectrum_data[n] )
                         m_spectrum_data[n] = spectrum[n] ;
                 else
-                        m_spectrum_data[n] = fmin( m_spectrum_data[n] - 2, 0 ) ;
+                        m_spectrum_data[n] = fmin( m_spectrum_data[n] - 4, 0 ) ;
             }
         }
     }
@@ -396,6 +399,7 @@ namespace MPX
         cairo->unset_dash() ; 
 */
 
+/*
         gradient = Cairo::LinearGradient::create(
               r.x + r.width / 2
             , r.y + 3 
@@ -450,6 +454,7 @@ namespace MPX
         cairo->set_source_rgba( 0.20, 0.20, 0.20, 1. ) ; 
         cairo->set_line_width( 1. ) ; 
         cairo->stroke() ;
+*/
 
         cairo->restore() ;
     }
@@ -459,65 +464,81 @@ namespace MPX
           Cairo::RefPtr<Cairo::Context>&                cairo
     )
     {
-        cairo->save() ;
+        if( m_info.empty())
+            return ;
 
+        cairo->save() ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+        const ThemeColor& c_text = m_theme->get_color( THEME_COLOR_TEXT_SELECTED ) ; 
         const Gtk::Allocation& a = get_allocation ();
 
-        m_current_time = m_timer.elapsed () ;
 
-        int text_size_pt = static_cast<int>( (text_size_px * 72) / Util::screen_get_y_resolution( Gdk::Screen::get_default() )) ;
+
+        int text_size_pt = static_cast<int>( (14 * 72) / Util::screen_get_y_resolution( Gdk::Screen::get_default() )) ;
 
         Pango::FontDescription font_desc = get_style()->get_font() ;
         font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
         font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
 
-        std::string text  = get_text_at_time() ;
-        double      alpha = get_text_alpha_at_time() ;
-
         Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
-
         layout->set_font_description( font_desc ) ;
-        layout->set_text( text ) ;
-
+        layout->set_text( m_info[0] ) ;
         int width, height;
         layout->get_pixel_size( width, height ) ;
 
-        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
-
         cairo->move_to(
-              (a.get_width() - width) / 2
-            , 7 
+              108 
+            , 8
         ) ;
 
-        const ThemeColor& c_text = m_theme->get_color( THEME_COLOR_TEXT_SELECTED ) ; 
-
-        Gdk::Color cgdk ;
-        cgdk.set_rgb_p( c_text.r, c_text.g, c_text.b ) ;
-
         pango_cairo_layout_path( cairo->cobj(), layout->gobj() ) ;
-
         cairo->set_source_rgba(
               c_text.r 
             , c_text.g 
             , c_text.b 
-            , alpha
+            , 1.
         ) ; 
-        cairo->fill_preserve() ;
+        cairo->fill() ;
 
-        double h,s,b ;
-        Util::color_to_hsb( cgdk, h, s, b ) ;
-        b *= 0.7 ;
-        s *= 0.75 ;
-        Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
 
+        layout->set_text( m_info[1] ) ;
+        layout->get_pixel_size( width, height ) ;
+
+        cairo->move_to(
+              108 
+            , 8 + height
+        ) ;
+        pango_cairo_layout_path( cairo->cobj(), layout->gobj() ) ;
         cairo->set_source_rgba(
-              c1.get_red_p() 
-            , c1.get_green_p() 
-            , c1.get_blue_p() 
-            , alpha
-        ) ; 
-        cairo->set_line_width( 0.5 ) ;
-        cairo->stroke() ;
+              c_text.r 
+            , c_text.g 
+            , c_text.b 
+            , 0.60 
+        ) ;
+        cairo->fill() ;
+
+        text_size_pt = static_cast<int>( (20 * 72) / Util::screen_get_y_resolution( Gdk::Screen::get_default() )) ;
+
+        font_desc = get_style()->get_font() ;
+        font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
+        font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
+
+        layout->set_font_description( font_desc ) ;
+        layout->set_text( m_info[2] ) ;
+        layout->get_pixel_size( width, height ) ;
+
+        cairo->move_to(
+              108 
+            , 112 - height - 8 
+        ) ;
+        pango_cairo_layout_path( cairo->cobj(), layout->gobj() ) ;
+        cairo->set_source_rgba(
+              c_text.r 
+            , c_text.g 
+            , c_text.b 
+            , 1. 
+        ) ;
+        cairo->fill() ;
 
         cairo->restore() ;
     }
@@ -531,14 +552,14 @@ namespace MPX
 
         const Gtk::Allocation& a = get_allocation ();
 
-        for( int n = 0; n < 56 ; ++n ) 
+        for( int n = 63; n >= 0 ; --n ) 
         {
             int   x = 0
                 , y = 0
                 , w = 0
                 , h = 0 ;
 
-            x = a.get_width()/2 - ((WIDTH+SPACING)*56)/2 + (WIDTH+SPACING)*n ; 
+            x = /*a.get_width()/2 - ((WIDTH+SPACING)*56)/2 + */ a.get_width() - (WIDTH+SPACING)*n - 24 ; 
             w = WIDTH ;
 
             //// BAR 
@@ -592,26 +613,31 @@ namespace MPX
             }
             else
             {
-                int   bar = m_spectrum_data[n] / 2 ;
-                y = - bar ;
-                h =   bar + HEIGHT ;
-
-                if( w && h ) 
                 {
+                    double field_alpha = 1 - ((-m_spectrum_data[n])/72.) ;
+
+                    field_alpha = (field_alpha < 0.1) ? 0.1 : field_alpha ;
+
+                    int row = n / 8 ;
+                    int field = n - (row * 8) ;
+
                     cairo->set_source_rgba(
-                          double(colors[n/6].r)/255.
-                        , double(colors[n/6].g)/255.
-                        , double(colors[n/6].b)/255.
-                        , ALPHA * 0.9
+                          double(colors[row+2].r)/255.
+                        , double(colors[row+2].g)/255.
+                        , double(colors[row+2].b)/255.
+                        , field_alpha 
                     ) ;
+
+
                     RoundedRectangle(
                           cairo
-                        , x
-                        , y + 7 + 28 
-                        , w
-                        , h
-                        , 1.
+                        , a.get_width() - (150) + field * 18
+                        , 8 + row * 12 
+                        , 16 
+                        , 10
+                        , 2.
                     ) ;
+
                     cairo->fill ();
                 }
             }
@@ -633,8 +659,8 @@ namespace MPX
 
             r.x = 4 ; 
             r.y = 6 ;
-            r.width = 66 ; 
-            r.height = 66 ; 
+            r.width = 99 ; 
+            r.height = 99 ; 
 
             Gdk::Cairo::set_source_pixbuf(
                   cairo
@@ -652,10 +678,8 @@ namespace MPX
                 , 4. 
             ) ;
 
-            cairo->clip() ;
-            cairo->paint_with_alpha( 0.90 ) ;
-            cairo->reset_clip() ;
-
+            cairo->fill() ;
+/*
             cairo->set_line_width( 1. ) ; 
 
             RoundedRectangle(
@@ -681,6 +705,8 @@ namespace MPX
 
             cairo->set_source_rgba( 0.40, 0.40, 0.40, 1. ) ; 
             cairo->stroke(); 
+
+*/
         }
 
         cairo->restore() ;

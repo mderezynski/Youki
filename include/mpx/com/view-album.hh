@@ -246,6 +246,7 @@ namespace Albums
                 )
                 {
                     Row_t row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year, label, track_count ) ; 
+
                     m_realmodel->push_back( row ) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -683,8 +684,10 @@ namespace Albums
                                 , 64 
                                 , rounding
                             ) ;
-
-                            cairo->fill() ;
+                
+                            cairo->save() ;
+                            cairo->paint_with_alpha(get<10>data_row) ;
+                            cairo->restore ;
 
                             ReleaseType rt = get<6>(data_row) ;
 

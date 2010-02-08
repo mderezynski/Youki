@@ -532,13 +532,14 @@ namespace MPX
                     , ""
                     , ""
                     , 0
+                    , 0
                 ) ;
 
                 boost::shared_ptr<Covers> c = services->get<Covers>("mpx-service-covers") ;
 
                 SQL::RowV v ;
 
-                m_library->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album" ) ;
+                m_library->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label, album_playscore FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album" ) ;
 
                 for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                 {
@@ -574,6 +575,7 @@ namespace MPX
                         , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
                         , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
                         , get<gint64>(v2[0]["cnt"])
+                        , get<gint64>(r["album_playscore"]) ;
                     ) ;
                 }
 
@@ -892,7 +894,7 @@ namespace MPX
     {
         SQL::RowV v ;
 
-        m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
+        m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label, album_playscore FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
 
         g_return_if_fail( (v.size() == 1) ) ;
 
@@ -940,6 +942,7 @@ namespace MPX
             , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
             , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
             , get<gint64>(v2[0]["cnt"])
+            , get<gint64>(r["album_playscore"]) ;
         ) ;
 
         gint64 max_artist, max_albums ;
@@ -1272,6 +1275,7 @@ namespace MPX
 
         std::vector<std::string> info ;
         info.push_back( boost::get<std::string>(track[ATTRIBUTE_ARTIST].get()) ) ;
+        info.push_back( boost::get<std::string>(track[ATTRIBUTE_ALBUM].get()) ) ;
         info.push_back( boost::get<std::string>(track[ATTRIBUTE_TITLE].get()) ) ;
 
         if( track.has( ATTRIBUTE_MB_ALBUM_ID ) )
