@@ -1,5 +1,5 @@
 //  MPX
-//  Copyright (C) 2005-2007 MPX development.
+//  Copyright (C) 2010 MPX development.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2 
@@ -47,142 +47,9 @@
 using namespace Glib;
 using boost::get;
 
-namespace
-{
-        using namespace MPX::SQL;
-
-        struct AttrInfo
-        {
-                char const* id;
-                ValueType   type;
-        };
-
-        AttrInfo attrs[] =
-        {
-                {   "location",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "title",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "genre",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "comment",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "label",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "musicip_puid",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "hash",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "mb_track_id",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "artist",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "artist_sortname",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "mb_artist_id",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "album",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "mb_album_id",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "mb_release_date",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "mb_release_country",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "mb_release_type",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "amazon_asin",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "album_artist",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "album_artist_sortname",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "mb_album_artist_id",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "type",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "hal_volume_udi",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "hal_device_udi",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "hal_vrp",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "insert_path",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "location_name",
-                        VALUE_TYPE_STRING   }, 
-
-                {   "track",
-                        VALUE_TYPE_INT      },
-
-                {   "time",
-                        VALUE_TYPE_INT      },
-
-                {   "rating",
-                        VALUE_TYPE_INT      },
-
-                {   "date",
-                        VALUE_TYPE_INT      },
-
-                {   "mtime",
-                        VALUE_TYPE_INT      },
-
-                {   "bitrate",
-                        VALUE_TYPE_INT      },
-
-                {   "samplerate",
-                        VALUE_TYPE_INT      },
-
-                {   "pcount",
-                        VALUE_TYPE_INT      },
-
-                {   "pdate",
-                        VALUE_TYPE_INT      },
-
-                {   "insert_date",
-                        VALUE_TYPE_INT      },
-
-                {   "is_mb_album_artist",
-                        VALUE_TYPE_INT      },
-
-                {   "active",
-                        VALUE_TYPE_INT      },
-
-                {   "audio_quality",
-                        VALUE_TYPE_INT      },
-
-                {   "device_id",
-                        VALUE_TYPE_INT      },
-        };
-}
-
 namespace MPX
 {
+        using namespace  MPX::SQL ;
 
         Library::Library(
         )
@@ -322,7 +189,7 @@ namespace MPX
         void
                 Library::reload ()
                 {
-                        Signals.Reload.emit();
+//                        Signals.Reload.emit();
                 }
 
 
@@ -620,21 +487,9 @@ namespace MPX
 
                         execSQL((boost::format ("UPDATE album SET album_playscore = '%f' WHERE album.id = '%lld'") % score % album_id).str());
 
-/*
-                        v.clear(); 
-                        getSQL(
-                              v
-                            , (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id).str()
-                        );
-
-                        Track_sp t = sqlToTrack( v[0] );
-
-                        gint64 id_album = get<gint64>(v[0]["album_j"]);
-                        gint64 id_artst = get<gint64>(v[0]["album_artist_j"]);
-
                         Signals.AlbumUpdated.emit( album_id ) ;
-                        Signals.TrackUpdated.emit( (*t.get()), id_album, id_artst );
-*/
+
+                //        Signals.TrackUpdated.emit( (*t.get()), id_album, id_artst );
                 }
 
         void
@@ -901,7 +756,7 @@ namespace MPX
 
                     execSQL("COMMIT");
 
-                    Signals.Collection.New.emit( id );
+//                    Signals.Collection.New.emit( id );
                    
                     return id; 
                 }
@@ -930,7 +785,7 @@ namespace MPX
 
                     execSQL("COMMIT");
 
-                    Signals.Collection.Deleted.emit( id );
+//                    Signals.Collection.Deleted.emit( id );
                 }
 
         void
@@ -951,7 +806,7 @@ namespace MPX
                                     *i
                             ));
                             // XXX: We can afford to emit the signal here even though we are in a transaction, because the tracks already exist in the library
-                            Signals.Collection.NewTrack.emit( id, *i );
+//                            Signals.Collection.NewTrack.emit( id, *i );
                     }
 
                     execSQL("COMMIT");
@@ -973,7 +828,7 @@ namespace MPX
                                     *i
                             ));
 
-                            Signals.Collection.TrackDeleted.emit( id, *i );
+//                            Signals.Collection.TrackDeleted.emit( id, *i );
                     }
                 }
 

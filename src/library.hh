@@ -286,6 +286,7 @@ namespace MPX
 
             typedef sigc::signal<void>                          SignalReload;
 
+/*
             struct CollectionSignalsT
             {
                 SignalNewCollection             New; 
@@ -293,40 +294,19 @@ namespace MPX
                 SignalNewCollectionTrack        NewTrack;
                 SignalCollectionTrackDeleted    TrackDeleted;
             };
+*/
 
             struct SignalsT
             {
-                SignalTrackTagged               TrackTagged;
-				SignalReload                    Reload;
-                CollectionSignalsT              Collection;
+                SignalAlbumUpdated          AlbumUpdated ;
             };
 
-            SignalsT Signals;
+            SignalsT Signals ;
 
-            SignalNewCollection&
-            signal_collection_new()
-            { return Signals.Collection.New ; }
+            SignalAlbumUpdated&
+            signal_album_updated()
+            { return Signals.AlbumUpdated ; }
             
-            SignalCollectionDeleted&
-            signal_collection_deleted()
-            { return Signals.Collection.Deleted ; }
-
-            SignalNewCollectionTrack&
-            signal_collection_new_track()
-            { return Signals.Collection.NewTrack ; }
-            
-            SignalCollectionTrackDeleted&
-            signal_collection_track_deleted()
-            { return Signals.Collection.TrackDeleted ; }
-
-            SignalTrackTagged&
-            signal_track_tagged()
-            { return Signals.TrackTagged ; }
-
-            SignalReload&
-            signal_reload()
-            { return Signals.Reload ; }
-
         public:
 
             enum Flags

@@ -1,5 +1,5 @@
 //  MPX
-//  Copyright (C) 2005-2007 MPX development.
+//  Copyright (C) 2010 MPX development.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -76,28 +76,6 @@ using namespace TagLib;
 
 namespace
 {
-  int
-  pixel_size(
-        MPX::CoverSize size
-  )
-  {
-    int pixel_size = 0;
-    switch (size)
-    {
-      case MPX::COVER_SIZE_ALBUM:
-        pixel_size = 90;
-        break;
-
-      case MPX::COVER_SIZE_DEFAULT:
-        pixel_size = 384;
-        break;
-
-      default:
-        pixel_size = 256;
-    }
-    return pixel_size;
-  }
-
   using namespace MPX;
 
   void
@@ -330,15 +308,14 @@ namespace MPX
             
                 if( i < data->stores.size() )
                 { 
-//                    create_or_lock( data, m_mutexes ) ;
+                    create_or_lock( data, m_mutexes ) ;
                     StorePtr store = data->stores[i] ; 
-                    g_message("Trying artwork store [%u]", i) ;
                     store->load_artwork( data ) ;
+
                     if( store->get_state() == FETCH_STATE_COVER_SAVED )
                     {
-                        g_message("[%d]: Got Cover!", i) ;
                         pthreaddata->GotCover.emit( qual.id ) ;
-//                        create_or_unlock( data, m_mutexes );
+                        create_or_unlock( data, m_mutexes );
                         delete data ;
                         return false ;
                     }
@@ -371,6 +348,7 @@ namespace MPX
             try{
                 const std::string& mbid = boost::get<std::string>((*i)["mb_album_id"]);
                 const std::string& cpth = build_filename( path.get(), mbid) + ".png";
+
                 if( Glib::file_test( cpth, Glib::FILE_TEST_EXISTS )) 
                 {
                     Glib::RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cpth ); 
@@ -419,26 +397,6 @@ namespace MPX
                     , boost::ref(cover)
                     , size
         ))() ;
-    }
-
-    bool
-    Covers::fetch(
-        const std::string&                  mbid,
-        Cairo::RefPtr<Cairo::ImageSurface>& surface,
-        CoverSize                           size
-    )
-    {
-        return sigx::open_sync_tunnel(
-                    sigc::bind(
-                    sigc::mem_fun(
-                            *this
-                          , &Covers::fetch_back2
-                    )
-                    , mbid
-                    , boost::ref(surface)
-                    , size
-        ))() ;
-
     }
 
     void
@@ -525,38 +483,4 @@ namespace MPX
 
         return false;
     }
-
-    bool
-    Covers::fetch_back2(
-          const std::string&                    mbid
-        , Cairo::RefPtr<Cairo::ImageSurface>&   surface
-        , CoverSize                             size
-    )
-    {
-        Glib::RefPtr<Gdk::Pixbuf> pb;
-
-        if(fetch( mbid, pb, -1 ))
-        {
-            int px = pixel_size (size);
-            
-            try{
-                surface = Util::cairo_image_surface_from_pixbuf(
-                              pb->scale_simple(
-                                    px,
-                                    px,
-                                    Gdk::INTERP_BILINEAR
-                ));
-                return true;
-            }
-            catch( Gdk::PixbufError )
-            {
-            }
-            catch( Glib::FileError )
-            {
-            }
-        }
-
-        return false;
-    }
-
 }

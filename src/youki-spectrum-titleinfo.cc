@@ -155,7 +155,7 @@ namespace MPX
     )
     : m_spectrum_data( SPECT_BANDS, 0 )
     , m_spectrum_peak( SPECT_BANDS, 0 )
-    , m_mode( SPECTRUM_MODE_VOCODER )
+    , m_mode( SPECTRUM_MODE_LINEAR )
     , m_tmod( m_current_time, text_time )
     {
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
@@ -256,7 +256,7 @@ namespace MPX
         GdkEventButton* G_GNUC_UNUSED 
     )
     {
-        m_mode = Mode( !m_mode ) ; 
+//        m_mode = Mode( !m_mode ) ; 
 
         return false ;
     }

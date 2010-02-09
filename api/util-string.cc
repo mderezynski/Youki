@@ -277,6 +277,43 @@ namespace MPX
       return result;
     }
 
+    std::string
+    row_get_artist_name(
+          const MPX::SQL::Row& r
+    )
+    {
+        std::string name ;
+
+        if( r.count("album_artist") ) 
+        {
+            Glib::ustring in_utf8 = boost::get<std::string>(r.find("album_artist")->second) ; 
+            gunichar c = in_utf8[0] ;
+
+            if( g_unichar_get_script( c ) != G_UNICODE_SCRIPT_LATIN && r.count("album_artist_sortname") ) 
+            {
+                    std::string in = boost::get<std::string>( r.find("album_artist_sortname")->second ) ; 
+
+                    boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
+                    boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
+
+                    if( !match1.empty() && match2.empty() ) 
+                    {
+                        name = std::string (match1.end(), in.end()) + " " + std::string (in.begin(), match1.begin());
+                    }
+                    else
+                    {
+                        name = in ;
+                    }
+
+                    return name ;
+            }
+
+            name = in_utf8 ;
+        }
+
+        return name ;
+    }
+
     Glib::ustring
     utf8_string_normalize (Glib::ustring const& in)
     {

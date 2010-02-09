@@ -1,7 +1,7 @@
 /* vim: set sw=2: -*- Mode: C; tab-width: 2; indent-tabs-mode: t; c-basic-offset: 2; c-indent-level: 2 -*- */
 /* GStreamer
  * Copyright (C) <2005> Edgard Lima <edgard.lima@indt.org.br>
- * Copyright (C) <2007> Milosz Derezynski <internalerror@gmail.com>
+ * Copyright (C) <2010> Milosz Derezynski <internalerror@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public

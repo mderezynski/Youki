@@ -27,8 +27,6 @@
 #include <glibmm.h>
 #include <string>
 #include <map>
-#include <vector>
-#include <map>
 #include <string>
 #include <vector>
 #include <set>
@@ -160,7 +158,6 @@ namespace MPX
     };
 
     typedef boost::shared_ptr<Track> Track_sp;
-    typedef std::vector< gint64 > IdV;
 
     namespace SQL
     {
@@ -175,11 +172,14 @@ namespace MPX
         // NOTE: Regrettably, this must be a std::map. Although more
         // efficient, std::tr1::unordered_map cannot be exported to
         // Python yet
-        typedef std::map< std::string, Variant >                 Row ;
-        typedef std::vector< Row >                               RowV ;
-        typedef std::vector< std::string >                       ColumnV ;
+        typedef std::map<std::string, Variant>              Row ;
+        typedef std::vector<Row>                            RowV ;
+        typedef std::vector<std::string>                    ColumnV ;
 
     } // namespace SQL
+
+    typedef std::vector<gint64 > IdV;
+
 } //namespace MPX 
 
 #endif //!MPX_LIBRARY_TYPES_HH

@@ -1,5 +1,5 @@
-//  MPX - The Dumb Music IPlayer
-//  Copyright (C) 2005-2007 MPX development team.
+//  MPX
+//  Copyright (C) 2010 MPX development team.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2

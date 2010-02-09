@@ -50,13 +50,6 @@
 
 namespace MPX
 {
-    enum CoverSize
-    {
-          COVER_SIZE_ALBUM        = 0,
-          COVER_SIZE_DEFAULT      = 1,
-          N_COVER_SIZES
-    };
-
     typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> >            PixbufCache ;
     typedef boost::shared_ptr<CoverStore>                                 StorePtr ;
     typedef std::vector<StorePtr>                                         StoresVec ;
@@ -139,13 +132,6 @@ namespace MPX
                 , int                                     /*size*/ = -1
             );
 
-            bool
-            fetch(
-              const std::string&                      /*mbid*/,
-              Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/,
-              CoverSize                               /*size*/
-            );
-
             void
             purge();
 
@@ -188,13 +174,6 @@ namespace MPX
                   const std::string&                      /*mbid*/
                 , Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
                 , int                                     /*size*/
-            );
-
-            bool
-            fetch_back2(
-                  const std::string&                      /*mbid*/
-                , Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/
-                , CoverSize                               /*size*/
             );
 
             void

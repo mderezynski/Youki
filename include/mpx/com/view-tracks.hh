@@ -272,57 +272,33 @@ namespace Tracks
                 {
                     using boost::get ;
 
-                    std::string     artist
-                                  , album
-                                  , title
-                                  , release_date
-                    ;
-
-                    gint64          id          = 0
-                                  , track_n     = 0
-                                  , id_artist   = 0
-                                  , time        = 0
-                    ;
+                    gint64          id = 0 ;
 
                     if( r.count("id") )
                     { 
                         id = get<gint64>(r["id"]) ;
                     }
                     else
+                    {
                         g_critical("%s: No id for track, extremely suspicious", G_STRLOC) ;
-
-                    if( r.count("artist") )
-                        artist = get<std::string>(r["artist"]) ;
-
-                    if( r.count("time") )
-                        time = get<gint64>(r["time"]) ;
-
-                    if( r.count("album") )
-                        album = get<std::string>(r["album"]) ;
-
-                    if( r.count("title") )
-                        title = get<std::string>(r["title"]) ;
-
-                    if( r.count("track") )
-                    { 
-                        track_n = get<gint64>(r["track"]) ;
+                        throw std::logic_error("No ID given for track") ;
                     }
 
-                    if( r.count("mpx_album_artist_id") )
-                    { 
-                        id_artist = get<gint64>(r["mpx_album_artist_id"]) ;
-                    }
+                    Row_t row (
+                              r.count("title") ? get<std::string>(r["title"]) : ""
+                            , Util::row_get_artist_name( r )
+                            , r.count("album") ? get<std::string>(r["album"]) : ""
+                            , get<gint64>(r["id"])
+                            , track 
+                            , r.count("track") ? get<gint64>(r["track"]) : 0
+                            , r.count("mpx_album_artist_id") ? get<gint64>(r["mpx_album_artist_id"]) : 0
+                            , r.count("album_artist_sortname")
+                              ? get<std::string>(r["album_artist_sortname"])
+                              : ((r.count("album_artist") ? get<std::string>(r["album_artist"]) : "" ))
+                            , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]) : ""
+                            , r.count("time") ? get<gint64>(r["time"]) : 0
+                    ) ;
 
-                    if( r.count("mb_release_date") )
-                    { 
-                        release_date = get<std::string>(r["mb_release_date"]).substr( 0, 4 ) ;
-                    }
-
-                    const std::string&  order_artist = r.count("album_artist_sortname")
-                                                       ? get<std::string>(r["album_artist_sortname"])
-                                                       : get<std::string>(r["album_artist"]) ;
-
-                    Row_t row ( title, artist, album, id, track, track_n, id_artist, order_artist, release_date, time ) ;
                     m_realmodel->push_back(row) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -471,12 +447,12 @@ namespace Tracks
         struct DataModelFilter
         : public DataModel
         {
-                typedef std::vector<int>                        IdVector_t ;
+                typedef std::vector<gint64>                     IdVector_t ;
                 typedef boost::shared_ptr<IdVector_t>           IdVector_sp ;
                 typedef std::set<Model_t::const_iterator>       ModelIteratorSet_t ;
                 typedef boost::shared_ptr<ModelIteratorSet_t>   ModelIteratorSet_sp ;
                 typedef std::vector<ModelIteratorSet_sp>        IntersectVector_t ;
-                typedef std::vector<Model_t::const_iterator>    RowRowMapping_t;
+                typedef std::vector<Model_t::const_iterator>    RowRowMapping_t ;
 
                 gint64  m_max_size_constraints_artist ;
                 gint64  m_max_size_constraints_albums ;
@@ -680,18 +656,16 @@ namespace Tracks
                     , const MPX::Track_sp&  track
                 )
                 {
-                    const std::string&                    title             = get<std::string>(r["title"]) ;
+                    const std::string&                    title             = Util::row_get_artist_name( r ) ;
                     const std::string&                    artist            = get<std::string>(r["artist"]) ;
                     const std::string&                    album             = get<std::string>(r["album"]) ; 
 
-                    const std::string&                    release_date      = r.count("mb_release_date")
-                                                                              ? get<std::string>(r["mb_release_date"]).substr( 0, 4 )
-                                                                              : "" ;
+                    const std::string&                    release_date      = get<std::string>(r["mb_release_date"]) ;
 
                     gint64                                id                = get<gint64>(r["id"]) ;
                     gint64                                track_n           = get<gint64>(r["track"]) ;
-                    gint64                                id_artist         = get<gint64>(r["mpx_album_artist_id"]) ;
                     gint64                                time              = get<gint64>(r["time"]) ;
+                    gint64                                id_artist         = get<gint64>(r["mpx_album_artist_id"]) ;
 
                     const std::string&                    order_artist      = r.count("album_artist_sortname")
                                                                               ? get<std::string>(r["album_artist_sortname"])
@@ -940,7 +914,7 @@ namespace Tracks
                         }
                     }
                     else
-                    if( m_frags.empty() && !(m_constraints_ext.empty() && m_constraints_aqe.empty()) )
+                    if( m_frags.empty() && !(m_constraints_ext.empty() || m_constraints_aqe.empty()) )
                     {
                         m_constraints_albums = IdVector_sp( new IdVector_t ) ; 
                         m_constraints_albums->resize( m_max_size_constraints_albums + 1 ) ;

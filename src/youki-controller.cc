@@ -10,6 +10,7 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-types.hh"
+#include "mpx/util-string.hh"
 
 #include "mpx/com/view-album-artist.hh"
 #include "mpx/com/view-album.hh"
@@ -82,50 +83,26 @@ namespace
           , "mpx album artist id"
     };
 
-    std::string
-    RowGetArtistName(
-          const MPX::SQL::Row&   r
-    )
-    {
-        std::string name ;
-
-        if( r.count("album_artist") ) 
-        {
-            Glib::ustring in_utf8 = boost::get<std::string>(r.find("album_artist")->second) ; 
-            gunichar c = in_utf8[0] ;
-
-            if( g_unichar_get_script( c ) != G_UNICODE_SCRIPT_LATIN && r.count("album_artist_sortname") ) 
-            {
-                    std::string in = boost::get<std::string>( r.find("album_artist_sortname")->second ) ; 
-
-                    boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
-                    boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
-
-                    if( !match1.empty() && match2.empty() ) 
-                    {
-                        name = std::string (match1.end(), in.end()) + " " + std::string (in.begin(), match1.begin());
-                    }
-                    else
-                    {
-                        name = in ;
-                    }
-
-                    return name ;
-            }
-
-            name = in_utf8 ;
-        }
-
-        return name ;
-    }
-
     bool
     CompareAlbumArtists(
           const MPX::SQL::Row&   r1
         , const MPX::SQL::Row&   r2
     )
     {
-        return Glib::ustring(RowGetArtistName( r1 )).casefold() < Glib::ustring(RowGetArtistName( r2 )).casefold() ;
+        return Glib::ustring(::MPX::Util::row_get_artist_name( r1 )).casefold() < Glib::ustring(::MPX::Util::row_get_artist_name( r2 )).casefold() ;
+    }
+
+    void
+    handle_sql_error( MPX::SQL::SqlGenericError & cxe )
+    {
+        Gtk::Dialog dialog ("SQL Error", true, false ) ;
+        Gtk::Label label ;
+        label.set_text( cxe.what() ) ;
+        dialog.get_vbox()->pack_start( label, true, true ) ;
+        dialog.add_button("OK", Gtk::RESPONSE_DELETE_EVENT) ;
+        dialog.show_all() ; 
+        dialog.run() ;
+        std::abort() ;
     }
 }
 
@@ -136,6 +113,7 @@ namespace MPX
         View::Artist::DataModelFilter_SP_t  FilterModelArtist ;
         View::Albums::DataModelFilter_SP_t  FilterModelAlbums ;
         View::Tracks::DataModelFilter_SP_t  FilterModelTracks ;
+
     } ;
 
     YoukiController::YoukiController(
@@ -187,6 +165,10 @@ namespace MPX
                 , 0
         ) ;
 
+        m_covers    = services->get<Covers>("mpx-service-covers").get() ;
+        m_play      = services->get<Play>("mpx-service-play").get() ;
+        m_library   = services->get<Library>("mpx-service-library").get() ;
+
         m_mlibman_dbus_proxy = services->get<info::backtrace::Youki::MLibMan_proxy_actual>("mpx-service-mlibman").get() ; 
 
         m_mlibman_dbus_proxy->signal_scan_start().connect(
@@ -232,9 +214,17 @@ namespace MPX
         )) ;
 
 
-        m_covers    = services->get<Covers>("mpx-service-covers").get() ;
-        m_play      = services->get<Play>("mpx-service-play").get() ;
-        m_library   = services->get<Library>("mpx-service-library").get() ;
+        m_library->signal_album_updated().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_local_library_album_updated
+        )) ;
+
+        m_covers->signal_got_cover().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_covers_got_cover
+        )) ;
 
         m_play->signal_eos().connect(
             sigc::mem_fun(
@@ -294,7 +284,6 @@ namespace MPX
         m_HBox_Info->set_spacing( 2 ) ; 
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
-/*
         m_Entry->set_icon_from_pixbuf(
               Gtk::IconTheme::get_default()->load_icon( "mpx-stock-entry-clear", 16 ) 
             , Gtk::ENTRY_ICON_PRIMARY
@@ -305,7 +294,6 @@ namespace MPX
                       *this
                     , &YoukiController::on_entry_clear_clicked
         )))) ;
-*/
 
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
@@ -418,7 +406,7 @@ namespace MPX
                 using boost::get ;
 
                 SQL::RowV v ;
-                m_library->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album, track_view.track")).str()) ; 
+                m_library->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album, track_view.track")).str()) ; 
                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                 {
                         SQL::Row & r = *i;
@@ -498,7 +486,7 @@ namespace MPX
                     SQL::Row & r = *i;
 
                     private_->FilterModelArtist->append_artist(
-                          RowGetArtistName( r )
+                          Util::row_get_artist_name( r )
                         , boost::get<gint64>(r["id"])
                     ) ;
                 }
@@ -521,62 +509,34 @@ namespace MPX
 
                 m_ListViewAlbums->append_column( c1 ) ;
 
-                private_->FilterModelAlbums->append_album(
-                      Cairo::RefPtr<Cairo::ImageSurface>(0) 
-                    , -1
-                    , -1
-                    , ""
-                    , "" 
-                    , ""
-                    , ""
-                    , ""
-                    , ""
-                    , 0
-                    , 0
-                ) ;
 
-                boost::shared_ptr<Covers> c = services->get<Covers>("mpx-service-covers") ;
+
+                // our "All Albums" entry: FIXME: Don't do this but manage it inside the model
+                MPX::View::Albums::Album_sp dummy_album ( new MPX::View::Albums::Album ) ;
+                dummy_album->album_id = -1 ;
+                private_->FilterModelAlbums->append_album( dummy_album ) ;
+
 
                 SQL::RowV v ;
-
-                m_library->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label, album_playscore FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album" ) ;
+                try{
+                    m_library->getSQL( v, "SELECT album.id AS id FROM album JOIN album_artist "
+                                          "ON album.album_artist_j = album_artist.id ORDER BY "
+                                          "ifnull(album_artist_sortname,album_artist), mb_release_date, album"
+                    ) ; 
+                } catch (MPX::SQL::SqlGenericError & cxe )
+                {
+                    handle_sql_error( cxe ) ;
+                }
 
                 for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                 {
-                    SQL::Row & r = *i;
-
-                    Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
-
-                    c->fetch(
-                          get<std::string>(r["mb_album_id"])
-                        , cover_pb
-                        , 64
-                    ) ;
-                   
-                    Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
-
-                    if( cover_pb ) 
+                    gint64 id = get<gint64>((*i)["id"]); 
+                    try{
+                        private_->FilterModelAlbums->append_album( get_album_from_id( id )) ;
+                    } catch( std::logic_error )
                     {
-                        cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
+                        g_message("Ooops") ;
                     }
-
-                    SQL::RowV v2 ;
-                    gint64 id = get<gint64>(r["id"]) ;   
-                    m_library->getSQL( v2, (boost::format("SELECT count(*) AS cnt FROM track_view WHERE album_j = %lld") % id).str() ) ;
-
-                    private_->FilterModelAlbums->append_album(
-                          cover_is
-                        , id 
-                        , get<gint64>(r["album_artist_id"])
-                        , get<std::string>(r["album"])
-                        , RowGetArtistName( r ) 
-                        , get<std::string>(r["mb_album_id"])
-                        , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
-                        , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
-                        , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
-                        , get<gint64>(v2[0]["cnt"])
-                        , get<gint64>(r["album_playscore"]) ;
-                    ) ;
                 }
 
                 m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
@@ -719,6 +679,64 @@ namespace MPX
     }
 
 ////////////////
+    MPX::View::Albums::Album_sp
+    YoukiController::get_album_from_id( gint64 id )
+    {
+        SQL::RowV v ;
+
+        try{
+          m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, "
+                                                "album_artist.id AS album_artist_id, album_artist, "
+                                                "album_artist_sortname, mb_album_id, mb_release_type, "
+                                                "mb_release_date, album_label, album_playscore FROM album "
+                                                "JOIN album_artist ON album.album_artist_j = album_artist.id "
+                                                "WHERE album.id = '%lld'") % id
+                                ).str()) ; 
+        } catch( MPX::SQL::SqlGenericError & cxe )
+        {
+            handle_sql_error( cxe ) ;
+        }
+
+        if( v.size() != 1 )
+        {
+            throw std::logic_error("More than one album with same id = impossible") ;
+        }
+
+        SQL::Row & r = v[0] ; 
+
+        Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
+        Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
+
+        m_covers->fetch(
+              get<std::string>(r["mb_album_id"])
+            , cover_pb
+            , 64
+        ) ;
+
+        if( cover_pb ) 
+        {
+            cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
+        }
+
+        SQL::RowV v2 ;
+        m_library->getSQL( v2, (boost::format("SELECT count(*) AS cnt FROM track_view WHERE album_j = %lld") % id).str() ) ;
+
+        MPX::View::Albums::Album_sp album ( new MPX::View::Albums::Album ) ;
+
+        album->coverart = cover_is ;
+        album->album_id = id ;
+        album->artist_id = get<gint64>(r["album_artist_id"]) ;
+        album->album = get<std::string>(r["album"]) ;
+        album->album_artist = Util::row_get_artist_name( r ) ; 
+        album->mbid = get<std::string>(r["mb_album_id"]) ;
+        album->type = r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : "" ;
+        album->year = r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]) : "" ;
+        album->label = r.count("album_label") ? get<std::string>(r["album_label"]) : ""  ;
+        album->track_count = get<gint64>(v2[0]["cnt"]) ;
+        album->album_playscore = get<gdouble>(r["album_playscore"]) ;
+
+        return album ;
+    }
 
     void
     YoukiController::on_style_changed(
@@ -741,74 +759,7 @@ namespace MPX
         m_ListViewAlbums->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_ListViewTracks->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
-/*
-        m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
-        m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
-        m_Entry->modify_base( Gtk::STATE_PRELIGHT, c ) ;
-        m_Entry->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_Entry->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
-        m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
-*/
-
         c.set_rgb_p( c_bg.r, c_bg.g, c_bg.b ) ; 
-
-#if 0
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
-
-//        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
-        m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c2 ) ;
-
-//        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c2 ) ;
-
-//        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c2 ) ;
-
-        m_HBox_Main->modify_bg( Gtk::STATE_NORMAL, c ) ;
-
-        c.set_rgb_p( 0.3, 0.3, 0.3 ) ; 
-
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
-
-        m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
-
-        m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
-
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
-
-        m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
-
-        c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
-
-        m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
-        m_Entry->modify_fg( Gtk::STATE_NORMAL, c ) ;
-        m_Entry->property_has_frame() = false ; 
-
-        m_Label_Search->modify_base( Gtk::STATE_NORMAL, c ) ;
-        m_Label_Search->modify_base( Gtk::STATE_ACTIVE, c ) ;
-        m_Label_Search->modify_base( Gtk::STATE_PRELIGHT, c ) ;
-        m_Label_Search->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
-        m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
-
-        c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
-        m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
-        m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
-
-        Gdk::Color cgdk ;
-        cgdk.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
-        m_main_position->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_main_position->modify_base( Gtk::STATE_NORMAL, cgdk ) ;
-#endif
     }
 
     void
@@ -872,7 +823,7 @@ namespace MPX
         g_return_if_fail( (v.size() == 1) ) ;
 
         private_->FilterModelArtist->insert_artist(
-              RowGetArtistName( v[0] )
+              Util::row_get_artist_name( v[0] )
             , id 
         ) ; 
 
@@ -893,29 +844,19 @@ namespace MPX
     )
     {
         SQL::RowV v ;
-
-        m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label, album_playscore FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
+        m_library->getSQL( v, (boost::format( "SELECT mb_album_id FROM album WHERE album.id = '%lld'") % id ).str()) ; 
 
         g_return_if_fail( (v.size() == 1) ) ;
 
-        SQL::Row & r = v[0] ; 
-
-        const std::string& mbid = get<std::string>(r["mb_album_id"]) ;
-
         Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
-        Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
 
-        services->get<Covers>("mpx-service-covers")->fetch(
-              mbid
+        m_covers->fetch(
+              get<std::string>(v[0]["mb_album_id"])
             , cover_pb
             , 64
         ) ;
 
-        if( cover_pb ) 
-        {
-            cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
-        }
-        else
+        if( !cover_pb )
         {
             RequestQualifier rq ; 
             rq.mbid     =   s1 ;
@@ -928,27 +869,16 @@ namespace MPX
             m_covers->cache( rq, true ) ;
         }
 
-        SQL::RowV v2 ;
-        m_library->getSQL( v2, (boost::format("SELECT count(*) AS cnt FROM track_view WHERE album_j = %lld") % id).str() ) ;
-
-        private_->FilterModelAlbums->insert_album(
-              cover_is
-            , id 
-            , get<gint64>(r["album_artist_id"])
-            , get<std::string>(r["album"])
-            , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
-            , get<std::string>(r["mb_album_id"])
-            , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
-            , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
-            , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
-            , get<gint64>(v2[0]["cnt"])
-            , get<gint64>(r["album_playscore"]) ;
-        ) ;
-
-        gint64 max_artist, max_albums ;
-        private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
-        max_albums++ ;
-        private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+        try{
+            private_->FilterModelAlbums->insert_album( get_album_from_id( id )) ;
+            gint64 max_artist, max_albums ;
+            private_->FilterModelTracks->get_sizes( max_artist, max_albums ) ;
+            max_albums++ ;
+            private_->FilterModelTracks->set_sizes( max_artist, max_albums ) ;
+        } catch( std::logic_error ) 
+        {
+            g_message("Oops") ;
+        }
     }
 
     void
@@ -998,6 +928,35 @@ namespace MPX
     }
 
     void
+    YoukiController::on_local_library_album_updated( gint64 id )
+    {
+        on_library_entity_updated( id, 1 ) ;
+    }
+
+    void
+    YoukiController::on_covers_got_cover( gint64 id )
+    {
+        Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
+        Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
+
+        SQL::RowV v ;
+        m_library->getSQL( v, (boost::format( "SELECT mb_album_id FROM album WHERE album.id = '%lld'") % id ).str()) ; 
+
+        m_covers->fetch(
+              get<std::string>(v[0]["mb_album_id"])
+            , cover_pb
+            , 64
+        ) ;
+
+        if( cover_pb ) 
+        {
+            cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
+        }
+
+        private_->FilterModelAlbums->update_album_cover( id, cover_is ) ;
+    }
+
+    void
     YoukiController::on_library_entity_updated(
           gint64                id
         , int                   type
@@ -1012,46 +971,11 @@ namespace MPX
 
             case 1: // album
             {
-              SQL::RowV v ;
-
-              m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date, album_label FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
-
-              g_return_if_fail( (v.size() == 1) ) ;
-
-              SQL::Row & r = v[0] ; 
-
-              const std::string& mbid = get<std::string>(r["mb_album_id"]) ;
-
-              Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
-
-              services->get<Covers>("mpx-service-covers")->fetch(
-                    mbid
-                  , cover_pb
-                  , 64
-              ) ;
-
-              Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
-
-              if( cover_pb ) 
-              {
-                  cover_is = Util::cairo_image_surface_from_pixbuf( cover_pb ) ;
-              }
-
-              SQL::RowV v2 ;
-              m_library->getSQL( v2, (boost::format("SELECT count(*) AS cnt FROM track_view WHERE album_j = %lld") % id).str() ) ;
-
-              private_->FilterModelAlbums->update_album(
-                    cover_is
-                  , id 
-                  , get<gint64>(r["album_artist_id"])
-                  , get<std::string>(r["album"])
-                  , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
-                  , get<std::string>(r["mb_album_id"])
-                  , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
-                  , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
-                  , r.count("album_label") ? get<std::string>(r["album_label"]) : ""
-                  , get<gint64>(v2[0]["cnt"])
-              ) ;
+                try{
+                    private_->FilterModelAlbums->update_album( get_album_from_id( id )) ; 
+                } catch( std::logic_error ) {
+                }
+                
             }
             break ;
 
@@ -1280,18 +1204,14 @@ namespace MPX
 
         if( track.has( ATTRIBUTE_MB_ALBUM_ID ) )
         {
-                const std::string& mbid = boost::get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) ;
-
-                boost::shared_ptr<Covers> covers = services->get<Covers>("mpx-service-covers") ;
-
                 Glib::RefPtr<Gdk::Pixbuf> cover ;
 
-                if( !covers->fetch(
-                      mbid
+                if( !m_covers->fetch(
+                      boost::get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
                     , cover
                 ))
                 {
-                    covers->fetch( cover ) ; // we fetch the default cover
+                    m_covers->fetch( cover ) ; // we fetch the default cover
                 }
 
                 m_control_status_icon->set_metadata( cover, track ) ;

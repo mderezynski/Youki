@@ -17,6 +17,10 @@ import gtk.glade
 import urllib
 import random
 import threading
+import Queue
+import gtk
+import gobject
+import glib
 from mpxapi import lastfm
 from gettext import gettext as _
 #import musicbrainz2
@@ -66,22 +70,12 @@ class BaseOPTION__(threading.Thread):
         self.queue      = queue
         self.v          = v
         self.mcs        = mcs
-        self.finished   = threading.Event()
-
-    def stop(self):
-
-        self.finished.set()
-        self.join()
-    
-    def is_done(self):
-
-        return self.finished.isSet()
 
 class OPTION__Analyzer(BaseOPTION__):    
 
-    def __init__( self, lib, v, xml, queue, mcs ):
+    def __init__( self, lib, v, xml, queue, mcs):
 
-        BaseOPTION__.__init__( self, lib, v, xml, queue, mcs )
+        BaseOPTION__.__init__( self, lib, v, xml, queue, mcs)
         self.range = xml.get_widget("analyzer-range")
 
     def get_similartracks(self, id):
@@ -89,53 +83,15 @@ class OPTION__Analyzer(BaseOPTION__):
         try:
                 track = self.lib.getTrackById( id ) 
                 m = lastfm.SimilarTracks(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
-                t = m.get()
         except Exception, e:
                 print str(e)
 
-        return t
-
-#    def count_previous_mbid_presence(self, mbid):
-#
-#        count = 0
-#        items = 0
-#
-#        if (len(self.model)-1) < items:
-#
-#                items = len(self.model)-1
-#
-#        for i in range(0,items):
-#
-#                track = self.model[len(self.model)-items+i]
-#                mbid_track = track[mpx.AttributeId.MB_ARTIST_ID].get()
-#                if mbid_track == mbid: 
-#                        count = count +1
-#
-#        return count
-
-#    def count_previous_artist_presence(self, artist):
-#
-#        count = 0
-#        items = 9
-#
-#        if (len(self.model)-1) < items:
-#
-#                items = len(self.model)-1
-#
-#        for i in range(0,items):
-#
-#                track = self.model[len(self.model)-items+i]
-#                artist_track = track[mpx.AttributeId.ARTIST].get()
-#                if artist_track == artist: 
-#                        count = count +1
-#
-#        return count
+        return m.get()
 
     def run_similar_track(self):
 
-        if not len(self.queue): return
-
         tracks = self.get_similartracks(self.queue[-1:][0])[-1:]
+
         random.shuffle(tracks)
 
         for track in tracks: 
@@ -145,11 +101,7 @@ class OPTION__Analyzer(BaseOPTION__):
                 self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' ORDER BY random() LIMIT 1" % ( track.getArtist().getName().replace("'", "''") , track.getName().replace("'","''") ) ))
                 extract_IDs(rv, self.v)
 
-                if len(self.v) > 0: return
-
     def run_accumulate_tags(self):
-
-        if not len(self.queue): return
 
         tags  = {} 
 
@@ -205,18 +157,13 @@ class OPTION__Analyzer(BaseOPTION__):
 
     def run_similar_artist(self):
 
-        if not len(self.queue): return
-
         try:
-
                 id = self.queue[-1:][0]
 
                 if id:
                     track  = self.lib.getTrackById( id ) 
                     artist = track[mpx.AttributeId.ARTIST].get()
                     rv     = mpx.SQLRowV()
-
-                    print artist
                 else:
                     return
 
@@ -228,15 +175,12 @@ class OPTION__Analyzer(BaseOPTION__):
                 max    = tries
                 
                 m = lastfm.SimilarArtists(artist)
-
                 a = m.get()[:tries]
 
                 random.shuffle(a)
 
                 while tries > 0:
                         name = str(a[max-tries].getName())
-
-#                        if self.count_previous_artist_presence(name) < 1:
 
                         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY random() LIMIT 1" % name.replace("'","''") ))
                         extract_IDs(rv, self.v)
@@ -246,42 +190,43 @@ class OPTION__Analyzer(BaseOPTION__):
                         tries = tries - 1
 
         except Exception, e:
-
                 print "Error running run_similar_artist: " + str(e) 
 
     def run_markov(self):
         
-        if not len(self.queue): return
-
         id = self.queue[-1:][0]
 
         if id:
             markov_id = self.lib.markovGetRandomProbableTrack(id)
+
             if markov_id and markov_id != 0:
                 self.v.append(markov_id)
 
     def run(self):
 
-         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist, self.run_markov]
+         print "MPXDJ: Analyzer Running"
 
          if not len(self.queue):
-            self.finished.set()
+            print "MPXDJ: No data to process"
             return
 
-         # I know this is really lazy, i should just create a list of indexes instead and call the subroutines in sequence
+         print "MPXDJ: Choosing a callable"       
+ 
+         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist, self.run_markov]
+
+         print "MPXDJ: Trying the callables one by one"
+
          for n in range(0,5):
  
                  choice = random.randint(0,3)
                  callables[choice]()
  
-                 if len(self.v):
-                     self.finished.set()
-                     return
- 
-#         if not len(self.v) and id:
-#            self.run_markov(self.lib, self.v)
+         if not len(self.v) and id:
+            self.run_markov(self.lib, self.v)
 
-         self.finished.set()
+    
+         print "MPXDJ: Returning"
+         return
 
 class OPTION__LastFmTag(BaseOPTION__):    
 
@@ -513,6 +458,7 @@ class MPXDJ(mpx.Plugin):
         self.lib          = youki.get_library()
         self.mcs          = mcs
         self.playmode     = 0
+        self.tqueue       = Queue.Queue()
 
         self.xml          = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj.glade")
 
@@ -524,9 +470,6 @@ class MPXDJ(mpx.Plugin):
         self.header_image.set_from_file("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj.png")
 
         self.notebook     = self.xml.get_widget("notebook")
-
-        self.working      = False
-        self.abort        = False
 
         try:
             self.icon = gtk.gdk.pixbuf_new_from_file("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj-icon.png")
@@ -684,37 +627,32 @@ class MPXDJ(mpx.Plugin):
 
     def on_metadata_updated(self, object):
 
-        if self.working: return
-
         try:
-                self.working    = True
                 track           = self.youki.get_metadata()
                 id              = track[mpx.AttributeId.MPX_TRACK_ID].get()
-            
-                self.queue.append( id ) 
-
                 klass           = self.callables[self.playmode]
+
+                self.queue.append( id ) 
 
                 if klass:
 
-                    idv = []
+                    self.idv = []
 
-                    instance = klass( self.lib, idv, self.xml, self.queue, self.mcs )
-                    instance.start () 
+                    instance = klass( self.lib, self.idv, self.xml, self.queue, self.mcs )
+                    print "MPXDJ: Got instance"
+                    print "MPXDJ: Setting to daemon"
+                    instance.setDaemon(True)
+                    print "MPXDJ: Starting instance"
+                    instance.start() 
+                    print "MPXDJ: Started instance"
+                    print "MPXDJ: Waiting to join"
 
-                    print "Calling Instance"
-                
-                    while not instance.is_done():
+                    while not instance.join(0.001) and instance.isAlive(): 
                         while gtk.events_pending(): gtk.main_iteration()
 
-                    instance.stop ()
-
-                    if len(idv) and not self.abort:
-                        print "Next track: " + str(idv[0])
-                        self.youki.queue_next_track(idv[0]) 
+                    if len(self.idv): 
+                        print "MPXDJ: Next track: " + str(self.idv[0])
+                        self.youki.queue_next_track(self.idv[0]) 
                     
         except Exception, e:
                 print str(e)
-
-        self.abort = False
-        self.working = False

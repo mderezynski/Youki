@@ -19,7 +19,6 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-covers.hh"
 
-#include "mpx/algorithm/aque.hh"
 #include "mpx/algorithm/limiter.hh"
 #include "mpx/algorithm/interval.hh"
 
@@ -88,12 +87,31 @@ namespace View
 {
 namespace Albums
 {
+        // Album
+
+        struct Album
+        {
+            Cairo::RefPtr<Cairo::ImageSurface>      coverart ;
+            gint64                                  album_id ;
+            gint64                                  artist_id ;
+            std::string                             album ;
+            std::string                             album_artist ;
+            std::string                             type ;
+            std::string                             year ;
+            std::string                             mbid ;
+            std::string                             label ;
+            gint64                                  track_count ;
+            gdouble                                 album_playscore ; 
+        };
+
+        typedef boost::shared_ptr<Album> Album_sp ;
+
+
         const double rounding = 4. ; 
 
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string, std::string, std::size_t> Row_t ;
-
-        typedef IndexedList<Row_t>                                                      Model_t ;
+        typedef IndexedList<Album_sp>                                                   Model_t ;
         typedef boost::shared_ptr<Model_t>                                              Model_SP_t ;
+
         typedef std::map<gint64, Model_t::iterator>                                     IdIterMap_t ;
 
         typedef std::vector<Model_t::iterator>                                          RowRowMapping_t ;
@@ -102,51 +120,39 @@ namespace Albums
         typedef sigc::signal<void, std::size_t, bool>                                   Signal_1 ;
 
         struct OrderFunc
-        : public std::binary_function<Row_t, Row_t, bool>
+        : public std::binary_function<Album_sp, Album_sp, bool>
         {
             bool operator() (
-                  const Row_t&  a
-                , const Row_t&  b
+                  const Album_sp&  a
+                , const Album_sp&  b
             )
             {
-                int64_t id[2] = { get<1>(a), get<2>(b) } ;
-
-                if( id[0] == -1 ) 
+                if( a->album_id == -1 ) 
                 {
                     return true ;
                 }
 
-                if( id[1] == -1 )
+                if( b->album_id == -1 )
                 {     
                     return false ;
                 }
 
-                const std::string&  c_a_1 = boost::get<4>(a) ;
-                const std::string&  c_a_2 = boost::get<7>(a) ;
-                const std::string&  c_a_3 = boost::get<3>(a) ;
-            
-                const std::string&  c_b_1 = boost::get<4>(b) ;
-                const std::string&  c_b_2 = boost::get<7>(b) ;
-                const std::string&  c_b_3 = boost::get<3>(b) ;
-
-                if( c_a_1 < c_b_1 )
+                if( a->album_artist < b->album_artist )
                     return true ;
 
-                if( c_b_1 < c_a_1 )
+                if( b->album_artist < b->album_artist )
                     return false ;
 
-
-                if( c_a_2 < c_b_2 )
+                if( a->year < b->year )
                     return true ;
 
-                if( c_b_2 < c_a_2 )
+                if( b->year < a->year )
                     return false ;
 
-
-                if( c_a_3 < c_b_3 )
+                if( a->album < b->album )
                     return true ;
 
-                if( c_b_3 < c_a_3 )
+                if( a->album < b->album )
                     return false ;
 
                 return false ;
@@ -202,8 +208,8 @@ namespace Albums
                     return m_realmodel->size() ;
                 }
 
-                virtual Row_t&
-                row (std::size_t row)
+                virtual Album_sp
+                row(std::size_t row)
                 {
                     return (*m_realmodel)[row] ;
                 }
@@ -233,67 +239,32 @@ namespace Albums
 
                 virtual void
                 append_album(
-                      Cairo::RefPtr<Cairo::ImageSurface>    surface
-                    , gint64                                id_album
-                    , gint64                                id_artist
-                    , const std::string&                    album
-                    , const std::string&                    album_artist
-                    , const std::string&                    mbid
-                    , const std::string&                    type
-                    , const std::string&                    year
-                    , const std::string&                    label
-                    , std::size_t                           track_count
+                    const Album_sp album
                 )
                 {
-                    Row_t row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year, label, track_count ) ; 
-
-                    m_realmodel->push_back( row ) ;
+                    m_realmodel->push_back( album ) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
                     std::advance( i, -1 ) ;
-                    m_iter_map.insert( std::make_pair( id_album, i) ) ; 
+                    m_iter_map.insert( std::make_pair( album->album_id, i )) ; 
                 }
 
                 virtual void
                 insert_album(
-                      Cairo::RefPtr<Cairo::ImageSurface>    surface
-                    , gint64                                id_album
-                    , gint64                                id_artist
-                    , const std::string&                    album
-                    , const std::string&                    album_artist
-                    , const std::string&                    mbid
-                    , const std::string&                    type
-                    , const std::string&                    year
-                    , const std::string&                    label
-                    , std::size_t                           track_count
+                    const Album_sp album
                 )
                 {
                     static OrderFunc order ;
-
-                    Row_t row(
-                          surface
-                        , id_album
-                        , id_artist
-                        , album
-                        , album_artist
-                        , mbid
-                        , get_rt( type )
-                        , year
-                        , label
-                        , track_count
-                    ) ; 
 
                     Model_t::iterator i = m_realmodel->insert(
                           std::lower_bound(
                               m_realmodel->begin()
                             , m_realmodel->end()
-                            , row
+                            , album
                             , order
                           )
-                        , row
+                        , album
                     ) ;
-
-                    m_iter_map.insert( std::make_pair( id_album, i )) ; 
                 }
 
                 void
@@ -312,35 +283,24 @@ namespace Albums
 
                 void
                 update_album(
-                      Cairo::RefPtr<Cairo::ImageSurface>    surface
-                    , gint64                                id_album
-                    , gint64                                id_artist
-                    , const std::string&                    album
-                    , const std::string&                    album_artist
-                    , const std::string&                    mbid
-                    , const std::string&                    type
-                    , const std::string&                    year
-                    , const std::string&                    label
-                    , std::size_t                           track_count
-
+                    const Album_sp album
                 )
                 {
-                    IdIterMap_t::iterator i = m_iter_map.find( id_album ) ;
+                    IdIterMap_t::iterator i = m_iter_map.find( album->album_id ) ;
+                    *(i->second) = album ;
+                    m_changed.emit( m_top_row, false) ;
+                }
 
-                    Row_t row(
-                          surface
-                        , id_album
-                        , id_artist
-                        , album
-                        , album_artist
-                        , mbid
-                        , get_rt( type )
-                        , year
-                        , label
-                        , track_count
-                    ) ; 
-
-                    *(i->second) = row ;
+                void
+                update_album_cover(
+                      gint64      id
+                    , Cairo::RefPtr<Cairo::ImageSurface> is
+                )
+                {
+                    IdIterMap_t::iterator i = m_iter_map.find( id ) ;
+                    Album_sp & album = *i->second ;
+                    album->coverart = is ;
+                    m_changed.emit( m_top_row, false ) ;
                 }
         };
 
@@ -349,7 +309,7 @@ namespace Albums
         struct DataModelFilter
         : public DataModel
         {
-            typedef std::vector<int>                        IdVector_t ;
+            typedef std::vector<gint64>                     IdVector_t ;
             typedef boost::shared_ptr<IdVector_t>           IdVector_sp ;
 
             public:
@@ -361,7 +321,7 @@ namespace Albums
             public:
 
                 DataModelFilter(
-                      DataModel_SP_t& model
+                      DataModel_SP_t model
                 )
                 : DataModel( model->m_realmodel )
                 {
@@ -375,7 +335,7 @@ namespace Albums
 
                 virtual void
                 set_constraints_albums(
-                    const IdVector_sp& constraint
+                    IdVector_sp&  constraint
                 )
                 {
                     m_constraints_albums = constraint ;
@@ -390,7 +350,7 @@ namespace Albums
 
                 virtual void
                 set_constraints_artist(
-                    const IdVector_sp& constraint
+                    IdVector_sp& constraint
                 )
                 {
                     m_constraints_artist = constraint ;
@@ -417,7 +377,7 @@ namespace Albums
                     return m_mapping.size();
                 }
 
-                virtual Row_t&
+                virtual Album_sp 
                 row(
                       std::size_t   row
                 )
@@ -447,30 +407,10 @@ namespace Albums
 
                 virtual void
                 append_album(
-                      Cairo::RefPtr<Cairo::ImageSurface>    surface
-                    , gint64                                id_album
-                    , gint64                                id_artist
-                    , const std::string&                    album
-                    , const std::string&                    album_artist
-                    , const std::string&                    mbid
-                    , const std::string&                    type
-                    , const std::string&                    year
-                    , const std::string&                    label
-                    , std::size_t                           track_count
+                    const Album_sp album
                 )
                 {
-                    DataModel::append_album(
-                          surface
-                        , id_album
-                        , id_artist
-                        , album
-                        , album_artist
-                        , mbid
-                        , type
-                        , year
-                        , label
-                        , track_count
-                    ) ;
+                    DataModel::append_album( album ) ;
                 }
                 
                 void
@@ -483,30 +423,24 @@ namespace Albums
 
                 virtual void
                 insert_album(
-                      Cairo::RefPtr<Cairo::ImageSurface>    surface
-                    , gint64                                id_album
-                    , gint64                                id_artist
-                    , const std::string&                    album
-                    , const std::string&                    album_artist
-                    , const std::string&                    mbid
-                    , const std::string&                    type
-                    , const std::string&                    year
-                    , const std::string&                    label
-                    , std::size_t                           track_count
+                    const Album_sp album
                 )
                 {
                     DataModel::insert_album(
-                          surface
-                        , id_album
-                        , id_artist
-                        , album
-                        , album_artist
-                        , mbid
-                        , type
-                        , year
-                        , label
-                        , track_count
+                        album
                     ) ;
+                }
+
+                virtual void
+                update_album(
+                    const Album_sp album
+                )
+                {
+                    DataModel::update_album(
+                        album
+                    ) ;
+
+                    regen_mapping() ;
                 }
 
                 virtual void
@@ -515,7 +449,7 @@ namespace Albums
                 {
                     using boost::get;
 
-                    if( m_realmodel->size() == 0 )
+                    if( m_realmodel->empty() )
                     {
                         return ;
                     } 
@@ -528,7 +462,7 @@ namespace Albums
 
                     if( m_top_row < m_mapping.size() )
                     {
-                        id_top = get<1>( row( m_top_row )) ;
+                        id_top = (row( m_top_row ))->album_id ;
                     }
 
                     if( m_selected )
@@ -550,14 +484,14 @@ namespace Albums
                     for( ; i != m_realmodel->end(); ++i )
                     {
                         int truth = 
-                                    (!constraints_albums || ((*constraints_albums)[get<1>(*i)] > 0))
+                                    (!constraints_albums || ((*constraints_albums)[(*i)->album_id] > 0))
                                                                     &&
-                                    (!constraints_artist || ((*constraints_artist)[get<2>(*i)] > 0))
+                                    (!constraints_artist || ((*constraints_artist)[(*i)->artist_id] > 0))
                         ; 
 
                         if( truth )
                         {
-                            gint64 id_row = get<1>( *i ) ;
+                            gint64 id_row = (*i)->album_id ;
 
                             if( id_top && id_row == id_top.get() )
                             {
@@ -582,18 +516,8 @@ namespace Albums
                     if( new_mapping != m_mapping )
                     {
                         std::swap( new_mapping, m_mapping ) ;
-                        update_count() ;
                         m_changed.emit( m_top_row, m_mapping.size() != new_mapping.size() );
                     }                
-                }
-
-                void
-                update_count(
-                )
-                {
-                    Row_t& row = **m_mapping.begin() ;
-                    std::size_t model_size = m_mapping.size()-1 ;
-                    get<4>(row) = (boost::format(_("<b>%lld %s</b>")) % model_size % ((model_size > 1) ? _("Albums") : _("Album"))).str() ;
                 }
         };
 
@@ -644,8 +568,8 @@ namespace Albums
                 void
                 render(
                       Cairo::RefPtr<Cairo::Context>&        cairo
-                    , Cairo::RefPtr<Cairo::ImageSurface>&   s_fallback
-                    , const Row_t&                          data_row
+                    , Cairo::RefPtr<Cairo::ImageSurface>&   disc
+                    , const Album_sp                        album
                     , Gtk::Widget&                          widget
                     , std::size_t                           row
                     , std::size_t                           xpos
@@ -655,6 +579,7 @@ namespace Albums
                     , const ThemeColor&                     color
                     , bool                                  album_name_only
                     , std::size_t                           track_count
+                    , std::size_t                           album_count
                 )
                 {
                     using boost::get;
@@ -664,18 +589,15 @@ namespace Albums
 
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
-                    Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(data_row) ;
-
                     if( row > 0 ) 
                     {
                             r.x = 8 ; 
 
                             cairo->set_source(
-                                  s ? s : s_fallback
+                                  album->coverart ? album->coverart : disc
                                 , r.x
                                 , ypos + 2 
                             ) ; 
-
                             RoundedRectangle(
                                   cairo
                                 , r.x
@@ -684,14 +606,56 @@ namespace Albums
                                 , 64 
                                 , rounding
                             ) ;
-                
-                            cairo->save() ;
-                            cairo->paint_with_alpha(get<10>data_row) ;
-                            cairo->restore ;
+                            cairo->fill() ;
 
-                            ReleaseType rt = get<6>(data_row) ;
+                            if( album->coverart )
+                            {
+                                cairo->set_source_rgba(
+                                      0.3 
+                                    , 0.3
+                                    , 0.3
+                                    , 0.5
+                                ) ; 
+
+                                RoundedRectangle(
+                                      cairo
+                                    , r.x
+                                    , ypos + 2 
+                                    , 64 
+                                    , 64 
+                                    , rounding
+                                ) ;
+
+                                cairo->set_line_width( .75 ) ;
+                                cairo->stroke() ;
+                            }
+
+
+                            ReleaseType rt = get_rt( album->type ) ; 
+                            std::string release_type ;
 
                             if( rt == RT_SINGLE )
+                                release_type = "SINGLE" ;
+
+                            if( rt == RT_ALBUM )
+                                release_type = "ALBUM" ;
+
+                            if( rt == RT_SOUNDTRACK )
+                                release_type = "OST" ;
+
+                            if( rt == RT_COMPILATION )
+                                release_type = "COMPIL." ;
+
+                            if( rt == RT_LIVE )
+                                release_type = "LIVE" ;
+
+                            if( rt == RT_EP )
+                                release_type = "EP" ;
+
+                            if( rt == RT_REMIX )
+                                release_type = "REMIX" ;
+
+                            if( !release_type.empty() )
                             {
                                 cairo->save() ;
 
@@ -725,7 +689,8 @@ namespace Albums
                                 cairo->restore() ;
 
                                 const int text_size_px = 6 ; 
-                                const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+                                const int text_size_pt = static_cast<int> ((text_size_px * 72) 
+                                                            / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
 
                                 int width, height;
 
@@ -737,7 +702,7 @@ namespace Albums
                                 layout->set_font_description( font_desc ) ;
                                 layout->set_ellipsize( Pango::ELLIPSIZE_NONE ) ;
                                 layout->set_width( 64 * PANGO_SCALE ) ;
-                                layout->set_text( _("SINGLE")) ; 
+                                layout->set_text( release_type ) ; 
                                 layout->get_pixel_size (width, height) ;
                                 cairo->move_to(
                                       r.x + ((64 - width)/2)
@@ -752,31 +717,9 @@ namespace Albums
                                 pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
                             }
 
-                            if( s )
-                            {
-                                cairo->set_source_rgba(
-                                      0.3 
-                                    , 0.3
-                                    , 0.3
-                                    , 0.5
-                                ) ; 
-
-                                RoundedRectangle(
-                                      cairo
-                                    , r.x
-                                    , ypos + 2 
-                                    , 64 
-                                    , 64 
-                                    , rounding
-                                ) ;
-
-                                cairo->set_line_width( .75 ) ;
-                                cairo->stroke() ;
-                            }
-
                             if( track_count > 0 ) 
                             {
-                                std::size_t total_track_count = get<9>(data_row) ;
+                                std::size_t total_track_count = album->track_count ; 
     
                                 if( track_count != total_track_count )
                                 {
@@ -802,7 +745,8 @@ namespace Albums
                                     cairo->fill() ;
 
                                     const int text_size_px = 10 ;
-                                    const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+                                    const int text_size_pt = static_cast<int> ((text_size_px * 72) 
+                                    / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ; 
 
                                     int width, height;
 
@@ -814,7 +758,7 @@ namespace Albums
                                     layout->set_font_description( font_desc ) ;
                                     layout->set_ellipsize( Pango::ELLIPSIZE_NONE ) ;
                                     layout->set_width( 64 * PANGO_SCALE ) ;
-                                    layout->set_text((boost::format ("%u %s %u") % track_count % _("of") % total_track_count).str()) ;
+                                    layout->set_text((boost::format ("%u %s %u") % track_count % ("of") % total_track_count).str()) ;
                                     layout->get_pixel_size (width, height) ;
                                     cairo->move_to(
                                           r.x + ((64 - width)/2)
@@ -840,9 +784,11 @@ namespace Albums
             
                     enum { L1, L2, N_LS } ;
 
-                    const int text_size_px[N_LS] = { 10, 12 } ; 
-                    const int text_size_pt[N_LS] = {   static_cast<int> ((text_size_px[L1] * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ()))
-                                                     , static_cast<int> ((text_size_px[L2] * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) } ;
+                    const int text_size_px[N_LS] = { 11, 12 } ; 
+                    const int text_size_pt[N_LS] = {   static_cast<int> ((text_size_px[L1] * 72)
+                                                            / Util::screen_get_y_resolution (Gdk::Screen::get_default ()))
+                                                     , static_cast<int> ((text_size_px[L2] * 72)
+                                                            / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) } ;
 
                     int width, height;
 
@@ -859,7 +805,8 @@ namespace Albums
                     font_desc[L2].set_size( text_size_pt[L2] * PANGO_SCALE ) ;
                     font_desc[L2].set_weight( Pango::WEIGHT_BOLD ) ;
 
-                    Glib::RefPtr<Pango::Layout> layout[N_LS] = { Glib::wrap( pango_cairo_create_layout( cairo->cobj() )), Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) } ;
+                    Glib::RefPtr<Pango::Layout> layout[N_LS] = { Glib::wrap( pango_cairo_create_layout( cairo->cobj() )),
+                                                                 Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) } ;
 
                     layout[L1]->set_font_description( font_desc[L1] ) ;
                     layout[L1]->set_ellipsize( Pango::ELLIPSIZE_END ) ;
@@ -876,7 +823,7 @@ namespace Albums
                             int yoff  = 2 ;
 
                             //// ALBUM
-                            layout[L2]->set_text( get<3>(data_row) )  ;
+                            layout[L2]->set_text( album->album )  ;
                             layout[L2]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + 8 
@@ -893,7 +840,7 @@ namespace Albums
                             yoff = 18 ;
 
                             //// ARTIST
-                            layout[L1]->set_text( get<4>(data_row) )  ;
+                            layout[L1]->set_text( album->album_artist )  ;
                             layout[L1]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + 8 
@@ -907,18 +854,18 @@ namespace Albums
                             ) ;
                             pango_cairo_show_layout( cairo->cobj(), layout[L1]->gobj() ) ;
 
-                            //// YEAR + LABEL
 
+                            //// YEAR + LABEL
                             font_desc[L1].set_style( Pango::STYLE_NORMAL ) ;
                             layout[L1]->set_font_description( font_desc[L1] ) ;
 
-                            if( get<8>(data_row).empty() )
+                            if( album->label.empty() )
                             {
-                                layout[L1]->set_text( get<7>(data_row) ) ; 
+                                layout[L1]->set_text( (boost::format("PlayScore: %.2f") % album->album_playscore).str() ) ; 
                             }
                             else
                             {
-                                layout[L1]->set_markup( (boost::format("%s / %s") % Glib::Markup::escape_text(get<7>(data_row)).c_str() % Glib::Markup::escape_text(get<8>(data_row)).c_str()).str() ) ;
+                                layout[L1]->set_markup( /*(boost::format("%s / %s") % Glib::Markup::escape_text(album->year.c_str()).c_str() % Glib::Markup::escape_text(album->label).c_str()).str()*/ (boost::format("PlayScore: %.2f") % album->album_playscore).str() ) ;
                             }
                                 
                             layout[L1]->get_pixel_size( width, height ) ;
@@ -934,7 +881,7 @@ namespace Albums
                             ) ;
                             pango_cairo_show_layout( cairo->cobj(), layout[L1]->gobj() ) ;
                     }
-                    else
+                    else // display album count only
                     {
                             font_desc[L1] = widget.get_style()->get_font() ;
                             font_desc[L1].set_size( text_size_pt[L1] * PANGO_SCALE * 1.5 ) ;
@@ -944,7 +891,8 @@ namespace Albums
                             layout[L1]->set_ellipsize( Pango::ELLIPSIZE_END ) ;
                             layout[L1]->set_width( m_width * PANGO_SCALE ) ;
 
-                            layout[L1]->set_markup( get<4>(data_row) )  ;
+                            layout[L1]->set_text( (boost::format(("%lld %s")) % album_count % ( (album_count > 1)
+                                                                                                 ? ("Albums") : ("Album"))).str()) ;
                             layout[L1]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + (m_width - width) / 2
@@ -968,7 +916,8 @@ namespace Albums
 
         typedef sigc::signal<void>              Signal_void ;
 
-        class Class : public Gtk::DrawingArea
+        class Class
+        : public Gtk::DrawingArea
         {
             public:
 
@@ -1030,7 +979,7 @@ namespace Albums
 
                     m_prop_vadj.get_value()->set_value( adj_value ) ;
 
-                    bool done = ( adj_value == m_dest_position ) ;
+                    bool done = ( static_cast<int>(adj_value) == static_cast<int>(m_dest_position) ) ;
 
                     if( done )
                     {
@@ -1186,7 +1135,7 @@ namespace Albums
                             }
                             else
                             {
-                                int origin = get<2>(m_selection.get()) ;
+                                int origin = boost::get<2>(m_selection.get()) ;
 
                                 if( origin > 0 )
                                 {
@@ -1259,7 +1208,7 @@ namespace Albums
                             }
                             else
                             {
-                                int origin = get<2>(m_selection.get()) ;
+                                int origin = boost::get<2>(m_selection.get()) ;
 
                                 if( get_row_is_visible( origin )) 
                                 {
@@ -1555,7 +1504,7 @@ namespace Albums
                         xpos = 0 ;
 
                         Model_t::iterator  selected           = *row_iter ; 
-                        bool               iter_is_selected   = ( m_selection && get<2>(m_selection.get()) == row ) ;
+                        bool               iter_is_selected   = ( m_selection && boost::get<2>(m_selection.get()) == row ) ;
 
                         if( iter_is_selected )
                         {
@@ -1579,7 +1528,7 @@ namespace Albums
 
                             if( m_model->m_constraints_albums )
                             { 
-                                gint64 id = get<1>(**row_iter) ;
+                                gint64 id = (**row_iter)->album_id ;
                                 count = (*m_model->m_constraints_albums)[id] ;
                             }
 
@@ -1596,6 +1545,7 @@ namespace Albums
                                 , iter_is_selected ? c_text_sel : c_text
                                 , album_name_only 
                                 , count 
+                                , m_model->size() - 1
                             ) ;
 
                             xpos += (*i)->get_width() ; 
@@ -1731,7 +1681,7 @@ namespace Albums
 
                         for( RowRowMapping_t::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
                         {
-                            if( real_id == get<1>(**i))
+                            if( real_id == (**i)->album_id )
                             {
                                 std::size_t n = std::distance( m_model->m_mapping.begin(), i ) ;
                                 select_row( n ) ;
@@ -1777,7 +1727,7 @@ namespace Albums
                 {
                     if( m_Model_I.in( row )) 
                     {
-                        const gint64& id = get<1>(*m_model->m_mapping[row]) ;
+                        const gint64& id = (*m_model->m_mapping[row])->album_id ;
 
                         m_selection = boost::make_tuple( m_model->m_mapping[row], id, row ) ;
 
@@ -1811,6 +1761,7 @@ namespace Albums
                     if( m_selection )
                     {
                         const gint64& sel_id = boost::get<1>(m_selection.get()) ;
+
                         if( sel_id != -1 )
                         {
                             return boost::optional<gint64>( sel_id ) ;
@@ -1875,7 +1826,7 @@ namespace Albums
 
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
-                        Glib::ustring match = Glib::ustring(get<3>(**i)).casefold() ;
+                        Glib::ustring match = Glib::ustring((**i)->album).casefold() ;
 
                         if( Util::match_keys( match, text )) 
                         {
@@ -1909,7 +1860,7 @@ namespace Albums
 
                     for( ; i >= m_model->m_mapping.begin(); --i )
                     {
-                        Glib::ustring match = Glib::ustring(get<3>(**i)).casefold() ;
+                        Glib::ustring match = Glib::ustring((**i)->album).casefold() ;
 
                         if( Util::match_keys( match, text )) 
                         {
@@ -1938,7 +1889,7 @@ namespace Albums
               
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
-                        Glib::ustring match = Glib::ustring(get<3>(**i)).casefold() ;
+                        Glib::ustring match = Glib::ustring((**i)->album).casefold() ;
 
                         if( Util::match_keys( match, text )) 
                         {

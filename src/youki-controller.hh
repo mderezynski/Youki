@@ -23,6 +23,9 @@
 
 #include "mpx/i-youki-controller.hh"
 #include "mpx/i-youki-play.hh"
+#include "mpx/com/view-album.hh"
+
+#include <sigx/sigx.h>
 
 namespace MPX
 {
@@ -56,6 +59,7 @@ namespace MPX
     , public ::info::backtrace::Youki::App_adaptor
     , public DBus::ObjectAdaptor
     , public DBus::IntrospectableAdaptor
+    , public sigx::glib_auto_dispatchable
     , public Service::Base
     {
         public: 
@@ -438,6 +442,16 @@ namespace MPX
             ) ;
 
             void
+            on_local_library_album_updated(
+                  gint64
+            ) ;
+
+            void
+            on_covers_got_cover(
+                  gint64
+            ) ;
+
+            void
             on_library_entity_updated(
                   gint64
                 , int
@@ -446,6 +460,9 @@ namespace MPX
             void
             push_new_tracks(
             ) ;
+
+            MPX::View::Albums::Album_sp
+            get_album_from_id( gint64 ) ;
 
         protected:
     

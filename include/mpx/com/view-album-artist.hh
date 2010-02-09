@@ -202,7 +202,7 @@ namespace Artist
 
         struct DataModelFilter : public DataModel
         {
-                typedef std::vector<int>                IdVector_t ;
+                typedef std::vector<gint64>             IdVector_t ;
                 typedef boost::shared_ptr<IdVector_t>   IdVector_sp ;
 
                 RowRowMapping_t        m_mapping ;

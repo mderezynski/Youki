@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 #include <glibmm/ustring.h>
+#include "mpx/mpx-types.hh"
 
 namespace MPX
 {
@@ -100,6 +101,11 @@ namespace MPX
 	std::string
     sanitize_lastfm(
           const std::string&
+    ) ;
+
+    std::string
+    row_get_artist_name(
+          const ::MPX::SQL::Row&
     ) ;
 
     Glib::ustring
