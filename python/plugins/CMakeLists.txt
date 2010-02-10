@@ -1,3 +1,5 @@
 ADD_SUBDIRECTORY(mpxdj)
 ADD_SUBDIRECTORY(trackinfo-webkit)
 ADD_SUBDIRECTORY(tracktags)
+ADD_SUBDIRECTORY(puid-scan)
+ADD_SUBDIRECTORY(musicbrainz-tools)

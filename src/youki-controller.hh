@@ -176,6 +176,11 @@ namespace MPX
             API_stop(
             ) ;
 
+            void
+            API_play_track(
+                gint64  id
+            ) ; 
+
             virtual void        
             add_info_widget(
                   Gtk::Widget*          w

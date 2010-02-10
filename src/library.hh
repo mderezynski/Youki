@@ -148,9 +148,8 @@ namespace MPX
             ) ;
 			void
 			trackPlayed(
-                  gint64
-                , gint64
-                , time_t
+                 const Track_sp
+               , time_t
             ) ;
             void
             trackTagged(

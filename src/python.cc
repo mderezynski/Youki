@@ -799,11 +799,8 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("get_metadata",            &MPX::YoukiController::get_metadata,
                                         return_internal_reference<>())
 
-//        .def("deactivate_plugin",   &MPX::YoukiController::deactivate_plugin)
-//        .def("activate_plugin",     &MPX::YoukiController::activate_plugin)
-//        .def("show_plugin",         &MPX::YoukiController::show_plugin)
-
 		.def("pause",                   &MPX::YoukiController::API_pause_toggle)
+		.def("play_track",              &MPX::YoukiController::API_play_track)
 
         .def("add_info_widget",         &mpxpy::player_add_info_widget)
         .def("remove_info_widget",      &mpxpy::player_remove_info_widget)

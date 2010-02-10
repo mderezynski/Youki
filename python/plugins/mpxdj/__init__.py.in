@@ -262,8 +262,6 @@ class OPTION__LastFmTag(BaseOPTION__):
                 extract_IDs(rv, self.v)
                 idx = idx + 1
 
-        self.finished.set()
-
 class OPTION__RandomMix(BaseOPTION__):
 
     def __init__(self, lib, v, xml, mlib, mcs, model):
@@ -280,8 +278,6 @@ class OPTION__RandomMix(BaseOPTION__):
              self.RANDOM_toptune,
             ][ random.randint(0,1) ](self.lib, self.v)
     
-        self.finished.set()
-
     def RANDOM_genre(self, lib, v):
 
         choice = random.randint(0,1)
@@ -331,7 +327,6 @@ class OPTION__TopTunes(BaseOPTION__):
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY random() LIMIT 10")
         extract_IDs(rv, self.v)
-        self.finished.set()
 
 class OPTION__PlayAll(BaseOPTION__):
 
@@ -344,7 +339,6 @@ class OPTION__PlayAll(BaseOPTION__):
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view ORDER BY album_j, track")
         extract_IDs(rv, self.v)
-        self.finished.set()
 
 class OPTION__EntertainMe(BaseOPTION__):
 
@@ -358,13 +352,12 @@ class OPTION__EntertainMe(BaseOPTION__):
          self.ENTERTAIN_LastFm
         ][random.randint(0,1)]()
 
-        self.finished.set()
-
     def ENTERTAIN_Local(self):
 
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, "SELECT id FROM track_view ORDER BY pcount DESC LIMIT 25")
-    
+        self.lib.getSQL(rv, "SELECT track.id FROM track ORDER BY pcount DESC LIMIT 25")
+        self.lib.getSQL(rv, "SELECT track.id FROM track JOIN artist ON artist.id = track.artist_j ORDER BY artist.playcount DESC LIMIT 25") ;
+
         if len(rv):
             random.shuffle(rv)
             extract_IDs(rv, self.v)
@@ -411,7 +404,6 @@ class OPTION__SoundsOf(BaseOPTION__):
             self.lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY random() LIMIT 1")
 
         extract_IDs(rv, self.v)
-        self.finished.set()
 
 class OPTION__ForgottenGems(BaseOPTION__):
 
@@ -428,8 +420,6 @@ class OPTION__ForgottenGems(BaseOPTION__):
             random.shuffle(rv)
             extract_IDs_n(rv, self.v, 5)
 
-        self.finished.set()
-
 class OPTION__DejaVu(BaseOPTION__):
 
     def __init__(self, lib, v, xml, mlib, mcs, model):
@@ -445,26 +435,26 @@ class OPTION__DejaVu(BaseOPTION__):
             random.shuffle(rv)
             extract_IDs_n(rv, self.v, 5)
 
-        self.finished.set()
-
 class MPXDJ(mpx.Plugin):
 
     """MPXDJ DJs your music library for you!"""
 
     def __init__(self,id,youki,mcs):
        
-        self.id           = id 
-        self.youki        = youki
-        self.lib          = youki.get_library()
-        self.mcs          = mcs
-        self.playmode     = 0
-        self.tqueue       = Queue.Queue()
+        self.id             = id 
+        self.youki          = youki
+        self.lib            = youki.get_library()
+        self.mcs            = mcs
+        self.playmode       = 0
+        self.tqueue         = Queue.Queue()
 
-        self.xml          = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj.glade")
+        self.xml            = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj.glade")
 
-        self.widget       = self.xml.get_widget("widget")
+        self.widget         = self.xml.get_widget("widget")
+        self.combo          = self.xml.get_widget("combobox")
+        self.button         = self.xml.get_widget("button")
+        self.button_handler = self.button.connect("clicked", self.on_cold_start)
 
-        self.combo        = self.xml.get_widget("combobox")
 
         self.header_image = self.xml.get_widget("header-image")
         self.header_image.set_from_file("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj.png")
@@ -653,6 +643,34 @@ class MPXDJ(mpx.Plugin):
                     if len(self.idv): 
                         print "MPXDJ: Next track: " + str(self.idv[0])
                         self.youki.queue_next_track(self.idv[0]) 
+                    
+        except Exception, e:
+                print str(e)
+
+    def on_cold_start(self, object):
+
+        try:
+                klass = self.callables[self.playmode]
+
+                if klass:
+
+                    self.idv = []
+
+                    instance = klass( self.lib, self.idv, self.xml, self.queue, self.mcs )
+                    print "MPXDJ: Got instance"
+                    print "MPXDJ: Setting to daemon"
+                    instance.setDaemon(True)
+                    print "MPXDJ: Starting instance"
+                    instance.start() 
+                    print "MPXDJ: Started instance"
+                    print "MPXDJ: Waiting to join"
+
+                    while not instance.join(0.001) and instance.isAlive(): 
+                        while gtk.events_pending(): gtk.main_iteration()
+
+                    if len(self.idv): 
+                        print "MPXDJ: Next track: " + str(self.idv[0])
+                        self.youki.play_track(self.idv[0]) 
                     
         except Exception, e:
                 print str(e)

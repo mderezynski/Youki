@@ -1106,8 +1106,8 @@ namespace Albums
                         return true ;
                     }
 
-                    int step ; 
-                    int row ;
+                    int step = 0 ; 
+                    int row = 0 ;
 
                     switch( event->keyval )
                     {
@@ -1147,16 +1147,15 @@ namespace Albums
                                     if( get_row_is_visible( origin ) ) 
                                     {
                                         row = std::max<int>( origin+step, 0 ) ;
-
                                         select_row( row ) ;
 
                                         double adj_value = m_prop_vadj.get_value()->get_value() ;
 
-                                        if( (row * m_row_height) < m_prop_vadj.get_value()->get_value() )
+                                        if( (row * m_row_height) < adj_value )
                                         {
                                             if( event->keyval == GDK_Page_Up )
                                             {
-                                                m_prop_vadj.get_value()->set_value( std::max<double>( adj_value + (step*m_row_height), 0 )) ; 
+                                                m_prop_vadj.get_value()->set_value( std::max<int>( adj_value + (step*int(m_row_height)), 0 )) ; 
                                             }
                                             else
                                             {

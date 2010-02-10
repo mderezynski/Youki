@@ -1094,7 +1094,6 @@ namespace MPX
                 m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % next_id ).str()) ; 
                 Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
                 play_track( p ) ;
-                return ;
             }
             else
             {
@@ -1102,37 +1101,32 @@ namespace MPX
 
                 if( pos )
                 {
-                    gint64 pos_cpy = pos.get() + 1 ;
+                    gint64 pos_next = pos.get() + 1 ;
 
-                    if( pos_cpy < private_->FilterModelTracks->size() )
+                    if( pos_next < private_->FilterModelTracks->size() )
                     {
-                        play_track( boost::get<4>(private_->FilterModelTracks->row(pos_cpy)) ) ;
-                        return ;
+                        play_track( boost::get<4>(private_->FilterModelTracks->row( pos_next )) ) ;
                     }
                 }
                 else
                 if( private_->FilterModelTracks->size() )
                 {
                     play_track( boost::get<4>(private_->FilterModelTracks->row( 0 )) ) ;
-                    return ;
                 }
             }
         }
-
-        m_play->request_status( PLAYSTATUS_STOPPED ) ; 
-        m_ListViewTracks->clear_terminal_id() ;
+        else
+        {
+            m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+            m_ListViewTracks->clear_terminal_id() ;
+        }
 
         if( m_track_previous )
         {
-                const MPX::Track& prev = *(m_track_previous.get()) ;
-
                 m_library->trackPlayed(
-                      boost::get<gint64>(prev[ATTRIBUTE_MPX_TRACK_ID].get())
-                    , boost::get<gint64>(prev[ATTRIBUTE_MPX_ALBUM_ID].get())
+                      m_track_previous
                     , time(NULL)
                 ) ;
-
-                m_track_previous.reset() ;
         }
     }
 
@@ -1220,18 +1214,6 @@ namespace MPX
         {
             m_control_status_icon->set_metadata( Glib::RefPtr<Gdk::Pixbuf>(0), track ) ;
             m_main_spectrum_titleinfo->set_info( info, Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
-        }
-
-        if( m_track_previous )
-        {
-                const MPX::Track& track = *(m_track_previous.get()) ;
-
-                m_library->trackPlayed(
-                      boost::get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get())
-                    , boost::get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get())
-                    , time(NULL)
-                ) ;
-                m_track_previous.reset() ;
         }
 
         m_playqueue.push_back( id_track ) ; 
@@ -1859,4 +1841,16 @@ namespace MPX
     {
         m_play->request_status( PLAYSTATUS_STOPPED ) ; 
     }
+
+    void
+    YoukiController::API_play_track(
+        gint64  id
+    )
+    {
+        SQL::RowV v ;
+        m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id ).str()) ; 
+        Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
+        play_track( p ) ;
+    }
+
 }

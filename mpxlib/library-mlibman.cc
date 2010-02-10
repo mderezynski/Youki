@@ -307,9 +307,9 @@ namespace MPX
 
                         if( !m_SQL->table_exists("meta") )
                         {
-        #ifdef HAVE_HAL
+#ifdef HAVE_HAL
                                 m_Flags |= ( mcs->key_get<bool>("library","use-hal") ? F_USING_HAL : 0) ; 
-        #endif // HAVE_HAL
+#endif // HAVE_HAL
                                 m_SQL->exec_sql( "CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0, last_scan_date INTEGER DEFAULT 0)" ) ;
                                 m_SQL->exec_sql( ( boost::format( "INSERT INTO meta (flags) VALUES (%lld)" ) % m_Flags ).str() ) ;
                         }
@@ -329,10 +329,11 @@ namespace MPX
                         ///////////////////////////////////////////////////////////////
 
                         m_SQL->exec_sql((
-                            boost::format("CREATE TABLE IF NOT EXISTS artist (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, UNIQUE ('%s', '%s', '%s'))")
+                            boost::format("CREATE TABLE IF NOT EXISTS artist (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s'))")
                                 % attrs[ATTRIBUTE_ARTIST].id
                                 % attrs[ATTRIBUTE_MB_ARTIST_ID].id
                                 % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
+                                % attrs[ATTRIBUTE_COUNT] 
                                 % attrs[ATTRIBUTE_ARTIST].id
                                 % attrs[ATTRIBUTE_MB_ARTIST_ID].id
                                 % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
