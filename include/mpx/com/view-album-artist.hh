@@ -46,7 +46,7 @@ namespace Artist
         typedef boost::tuple<std::string, gint64>           Row_t ;
 
         typedef IndexedList<Row_t>                          Model_t ;
-        typedef boost::shared_ptr<Model_t>                  Model_SP_t ;
+        typedef boost::shared_ptr<Model_t>                  Model_sp_t ;
         typedef std::map<gint64, Model_t::iterator>         IdIterMap_t ;
 
         typedef std::vector<Model_t::iterator>              RowRowMapping_t ;
@@ -81,7 +81,7 @@ namespace Artist
         struct DataModel
         : public sigc::trackable
         {
-                Model_SP_t                      m_realmodel ;
+                Model_sp_t                      m_realmodel ;
                 IdIterMap_t                     m_iter_map ;
                 std::size_t                     m_top_row ;
                 boost::optional<gint64>         m_selected ;
@@ -91,11 +91,11 @@ namespace Artist
                 DataModel()
                 : m_top_row( 0 )
                 {
-                    m_realmodel = Model_SP_t( new Model_t ) ; 
+                    m_realmodel = Model_sp_t( new Model_t ) ; 
                 }
 
                 DataModel(
-                    Model_SP_t model
+                    Model_sp_t model
                 )
                 : m_top_row( 0 )
                 {
@@ -198,7 +198,7 @@ namespace Artist
                 }
         };
 
-        typedef boost::shared_ptr<DataModel> DataModel_SP_t;
+        typedef boost::shared_ptr<DataModel> DataModel_sp_t;
 
         struct DataModelFilter : public DataModel
         {
@@ -208,7 +208,7 @@ namespace Artist
                 RowRowMapping_t        m_mapping ;
                 IdVector_sp            m_constraints_artist ;
 
-                DataModelFilter(DataModel_SP_t & model)
+                DataModelFilter(DataModel_sp_t & model)
                 : DataModel( model->m_realmodel )
                 {
                     regen_mapping() ;
@@ -377,7 +377,7 @@ namespace Artist
                 }
         };
 
-        typedef boost::shared_ptr<DataModelFilter> DataModelFilter_SP_t;
+        typedef boost::shared_ptr<DataModelFilter> DataModelFilter_sp_t;
 
         class Column
         {
@@ -533,8 +533,8 @@ namespace Artist
                 }
         };
 
-        typedef boost::shared_ptr<Column>       Column_SP_t ;
-        typedef std::vector<Column_SP_t>        Column_SP_vector_t ;
+        typedef boost::shared_ptr<Column>       Column_sp_t ;
+        typedef std::vector<Column_sp_t>        Column_SP_vector_t ;
         typedef sigc::signal<void>              Signal_void ;
 
         class Class : public Gtk::DrawingArea
@@ -542,7 +542,7 @@ namespace Artist
                 int                                 m_row_height ;
                 int                                 m_visible_height ;
 
-                DataModelFilter_SP_t                m_model ;
+                DataModelFilter_sp_t                m_model ;
                 Column_SP_vector_t                  m_columns ;
 
                 PropAdj                             m_prop_vadj ;
@@ -1224,7 +1224,7 @@ namespace Artist
 
                 void
                 set_model(
-                      DataModelFilter_SP_t  model
+                      DataModelFilter_sp_t  model
                 )
                 {
                     m_model = model;
@@ -1241,7 +1241,7 @@ namespace Artist
 
                 void
                 append_column(
-                      Column_SP_t   column
+                      Column_sp_t   column
                 )
                 {
                     m_columns.push_back(column);

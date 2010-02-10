@@ -105,8 +105,7 @@ namespace Tracks
 */
 
         typedef std::vector<Row_t>                          Model_t ;
-        typedef boost::shared_ptr<Model_t>                  Model_SP_t ;
-        typedef std::map<gint64, Model_t::iterator>         IdIterMap_t ;
+        typedef boost::shared_ptr<Model_t>                  Model_sp_t ;
         typedef sigc::signal<void, std::size_t, bool>       Signal1 ;
 
         struct Model_t_iterator_equal
@@ -209,17 +208,17 @@ namespace Tracks
         struct DataModel
         : public sigc::trackable
         {
-                Model_SP_t      m_realmodel;
+                Model_sp_t      m_realmodel;
                 Signal1         m_changed;
                 std::size_t     m_top_row ;
 
                 DataModel()
                 : m_top_row( 0 )
                 {
-                    m_realmodel = Model_SP_t(new Model_t); 
+                    m_realmodel = Model_sp_t(new Model_t); 
                 }
 
-                DataModel(Model_SP_t model)
+                DataModel(Model_sp_t model)
                 : m_top_row( 0 )
                 {
                     m_realmodel = model; 
@@ -320,7 +319,7 @@ namespace Tracks
                 }
         };
 
-        typedef boost::shared_ptr<DataModel> DataModel_SP_t;
+        typedef boost::shared_ptr<DataModel> DataModel_sp_t;
 
 #if 0
         class DataModelInserter
@@ -338,7 +337,7 @@ namespace Tracks
 
             protected:
 
-                    Model_SP_t m_Model ;
+                    Model_sp_t m_Model ;
                     boost::shared_ptr<MPX::Library> m_library ; 
 
                     struct ThreadData                      
@@ -353,7 +352,7 @@ namespace Tracks
             public:
     
                     DataModelInserter(
-                          Model_SP_t model
+                          Model_sp_t model
                     )
                     : sigx::glib_threadable()
                     , process(sigc::mem_fun( *this, &DataModelInserter::on_process))
@@ -485,7 +484,7 @@ namespace Tracks
                 bool                        m_cache_enabled ;
                 Gtk::Widget*                m_widget ;
 
-                DataModelFilter( DataModel_SP_t& model )
+                DataModelFilter( DataModel_sp_t& model )
 
                     : DataModel( model->m_realmodel )
                     , m_max_size_constraints_artist( 0 )
@@ -914,7 +913,7 @@ namespace Tracks
                         }
                     }
                     else
-                    if( m_frags.empty() && !(m_constraints_ext.empty() || m_constraints_aqe.empty()) )
+                    if( m_frags.empty() && !(m_constraints_ext.empty() && m_constraints_aqe.empty()) )
                     {
                         m_constraints_albums = IdVector_sp( new IdVector_t ) ; 
                         m_constraints_albums->resize( m_max_size_constraints_albums + 1 ) ;
@@ -1315,7 +1314,7 @@ namespace Tracks
                 }
         };
 
-        typedef boost::shared_ptr<DataModelFilter> DataModelFilter_SP_t;
+        typedef boost::shared_ptr<DataModelFilter> DataModelFilter_sp_t;
 
         class Column
         {
@@ -1549,8 +1548,8 @@ namespace Tracks
                   }
         };
 
-        typedef boost::shared_ptr<Column>               Column_SP_t ;
-        typedef std::vector<Column_SP_t>                Columns ;
+        typedef boost::shared_ptr<Column>               Column_sp_t ;
+        typedef std::vector<Column_sp_t>                Columns ;
 
         typedef sigc::signal<void, MPX::Track_sp, bool> SignalTrackActivated ;
         typedef sigc::signal<void>                      SignalVAdjChanged ;
@@ -1563,7 +1562,7 @@ namespace Tracks
         {
             public:
 
-                DataModelFilter_SP_t          m_model ;
+                DataModelFilter_sp_t          m_model ;
 //                DataModelInserter           * m_inserter ;
 
             private:
@@ -1862,7 +1861,7 @@ namespace Tracks
                                 x = x_root + get_allocation().get_x() ;
                                 y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
 
-                                m_SearchWindow->set_size_request( m_columns[0]->get_width(), - 1 ) ;
+                                m_SearchWindow->set_size_request( m_columns[1]->get_width(), - 1 ) ;
                                 m_SearchWindow->move( x, y ) ;
                                 m_SearchWindow->show() ;
 
@@ -2674,7 +2673,7 @@ namespace Tracks
                 }
 
                 void
-                set_model(DataModelFilter_SP_t model)
+                set_model(DataModelFilter_sp_t model)
                 {
                     if( m_model )
                     {
@@ -2702,7 +2701,9 @@ namespace Tracks
                 }
 
                 void
-                append_column (Column_SP_t column)
+                append_column(
+                      Column_sp_t   column
+                )
                 {
                     m_columns.push_back(column) ;
                 }

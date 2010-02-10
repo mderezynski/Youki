@@ -657,9 +657,6 @@ namespace MPX
                                 if( row.count("mb_artist_id") )
                                         (*track.get())[ATTRIBUTE_MB_ARTIST_ID] = get<std::string>(row["mb_artist_id"]);
 
-                                if( row.count("mb_album_id") )
-                                        (*track.get())[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
-
                                 if( row.count("mb_track_id") )
                                         (*track.get())[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
 
@@ -671,6 +668,9 @@ namespace MPX
 
                                 if( row.count("mb_release_type") )
                                         (*track.get())[ATTRIBUTE_MB_RELEASE_TYPE] = get<std::string>(row["mb_release_type"]);
+
+                                if( row.count("mb_album_id") )
+                                        (*track.get())[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
 
                                 if( row.count("musicip_puid") )
                                         (*track.get())[ATTRIBUTE_MUSICIP_PUID] = get<std::string>(row["musicip_puid"]);

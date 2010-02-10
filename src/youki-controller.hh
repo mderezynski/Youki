@@ -323,7 +323,21 @@ namespace MPX
             ) ;
 
             void
+            on_list_view_ab_select_album(
+                const std::string&
+            ) ;
+
+            void
+            on_list_view_ab_select_artist(
+                const std::string&
+            ) ;
+
+            void
             on_list_view_tr_vadj_changed(
+            ) ;
+
+            void
+            on_ab_start_playback(
             ) ;
 
             void
@@ -388,12 +402,6 @@ namespace MPX
             on_status_icon_scroll_down(
             ) ;
 
-            bool
-            on_expose_render_outline(
-                  GdkEventExpose* event
-                , Gtk::Widget* widget
-            ) ;
-    
         protected:
 
             void

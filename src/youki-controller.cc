@@ -110,9 +110,9 @@ namespace MPX
 {
     struct YoukiController::Private
     { 
-        View::Artist::DataModelFilter_SP_t  FilterModelArtist ;
-        View::Albums::DataModelFilter_SP_t  FilterModelAlbums ;
-        View::Tracks::DataModelFilter_SP_t  FilterModelTracks ;
+        View::Artist::DataModelFilter_sp_t  FilterModelArtist ;
+        View::Albums::DataModelFilter_sp_t  FilterModelAlbums ;
+        View::Tracks::DataModelFilter_sp_t  FilterModelTracks ;
 
     } ;
 
@@ -373,17 +373,6 @@ namespace MPX
         m_Alignment_Entry->property_left_padding() = 2 ;
         m_Alignment_Entry->property_right_padding() = 2 ;
 
-/*
-        m_Alignment_Entry->signal_expose_event().connect(
-            sigc::bind(
-                sigc::mem_fun(
-                      *this  
-                    , &YoukiController::on_expose_render_outline
-                )
-                , m_Alignment_Entry
-        )) ; 
-*/
-
         on_style_changed() ;
 
         m_main_window->signal_style_changed().connect(
@@ -398,8 +387,8 @@ namespace MPX
         m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
 
         {
-                View::Tracks::DataModel_SP_t m ( new View::Tracks::DataModel ) ;
-                private_->FilterModelTracks = View::Tracks::DataModelFilter_SP_t (new View::Tracks::DataModelFilter( m )) ;
+                View::Tracks::DataModel_sp_t m ( new View::Tracks::DataModel ) ;
+                private_->FilterModelTracks = View::Tracks::DataModelFilter_sp_t (new View::Tracks::DataModelFilter( m )) ;
 
                 // Tracks 
 
@@ -419,21 +408,21 @@ namespace MPX
 
                 m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
 
-                View::Tracks::Column_SP_t c1 (new View::Tracks::Column(_("Track"))) ;
+                View::Tracks::Column_sp_t c1 (new View::Tracks::Column(_("Track"))) ;
                 c1->set_column(5) ;
                 c1->set_alignment( Pango::ALIGN_RIGHT ) ;
 
-                View::Tracks::Column_SP_t c2 (new View::Tracks::Column(_("Title"))) ;
+                View::Tracks::Column_sp_t c2 (new View::Tracks::Column(_("Title"))) ;
                 c2->set_column(0) ;
 
-                View::Tracks::Column_SP_t c3 (new View::Tracks::Column(_("Time"))) ;
+                View::Tracks::Column_sp_t c3 (new View::Tracks::Column(_("Time"))) ;
                 c3->set_column(9) ;
                 c3->set_alignment( Pango::ALIGN_RIGHT ) ;
 
-                View::Tracks::Column_SP_t c4 (new View::Tracks::Column(_("Artist"))) ;
+                View::Tracks::Column_sp_t c4 (new View::Tracks::Column(_("Artist"))) ;
                 c4->set_column(1) ;
 
-                View::Tracks::Column_SP_t c5 (new View::Tracks::Column(_("Album"))) ;
+                View::Tracks::Column_sp_t c5 (new View::Tracks::Column(_("Album"))) ;
                 c5->set_column(2) ;
 
                 m_ListViewTracks->append_column(c1) ;
@@ -468,15 +457,13 @@ namespace MPX
         }
 
         {
-                View::Artist::DataModel_SP_t m (new View::Artist::DataModel) ;
-                private_->FilterModelArtist = View::Artist::DataModelFilter_SP_t (new View::Artist::DataModelFilter( m )) ;
-
-                View::Artist::Column_SP_t c1 (new View::Artist::Column(_("Album Artist"))) ;
+                View::Artist::DataModel_sp_t m (new View::Artist::DataModel) ;
+                private_->FilterModelArtist = View::Artist::DataModelFilter_sp_t (new View::Artist::DataModelFilter( m )) ;
+                View::Artist::Column_sp_t c1 (new View::Artist::Column(_("Album Artist"))) ;
                 c1->set_column(0) ;
-
                 m_ListViewArtist->append_column(c1) ;
 
-                private_->FilterModelArtist->append_artist("<b>Empty</b>",-1);
+                private_->FilterModelArtist->append_artist("",-1);
 
                 SQL::RowV v ;
                 m_library->getSQL(v, (boost::format("SELECT * FROM album_artist")).str()) ; 
@@ -501,10 +488,10 @@ namespace MPX
         }
 
         {
-                View::Albums::DataModel_SP_t m ( new View::Albums::DataModel ) ;
-                private_->FilterModelAlbums = View::Albums::DataModelFilter_SP_t (new View::Albums::DataModelFilter( m )) ;
+                View::Albums::DataModel_sp_t m ( new View::Albums::DataModel ) ;
+                private_->FilterModelAlbums = View::Albums::DataModelFilter_sp_t (new View::Albums::DataModelFilter( m )) ;
 
-                View::Albums::Column_SP_t c1 ( new View::Albums::Column ) ;
+                View::Albums::Column_sp_t c1 ( new View::Albums::Column ) ;
                 c1->set_column(0) ;
 
                 m_ListViewAlbums->append_column( c1 ) ;
@@ -519,7 +506,7 @@ namespace MPX
 
                 SQL::RowV v ;
                 try{
-                    m_library->getSQL( v, "SELECT album.id AS id FROM album JOIN album_artist "
+                    m_library->getSQL( v, "SELECT album.id AS id, album_artist.mb_album_artist_id AS mbid_artist FROM album JOIN album_artist "
                                           "ON album.album_artist_j = album_artist.id ORDER BY "
                                           "ifnull(album_artist_sortname,album_artist), mb_release_date, album"
                     ) ; 
@@ -597,6 +584,18 @@ namespace MPX
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_list_view_ab_selection_changed
+        )) ;
+
+        m_ListViewAlbums->signal_only_this_album_mbid().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_list_view_ab_select_album
+        )) ;
+
+        m_ListViewAlbums->signal_only_this_artist_mbid().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_list_view_ab_select_artist
         )) ;
 
         m_Entry->signal_key_press_event().connect(
@@ -687,7 +686,7 @@ namespace MPX
         try{
           m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, "
                                                 "album_artist.id AS album_artist_id, album_artist, "
-                                                "album_artist_sortname, mb_album_id, mb_release_type, "
+                                                "album_artist_sortname, mb_album_artist_id, mb_album_id, mb_release_type, "
                                                 "mb_release_date, album_label, album_playscore FROM album "
                                                 "JOIN album_artist ON album.album_artist_j = album_artist.id "
                                                 "WHERE album.id = '%lld'") % id
@@ -729,6 +728,7 @@ namespace MPX
         album->album = get<std::string>(r["album"]) ;
         album->album_artist = Util::row_get_artist_name( r ) ; 
         album->mbid = get<std::string>(r["mb_album_id"]) ;
+        album->mbid_artist = get<std::string>(r["mb_album_artist_id"]) ;
         album->type = r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : "" ;
         album->year = r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]) : "" ;
         album->label = r.count("album_label") ? get<std::string>(r["album_label"]) : ""  ;
@@ -1093,7 +1093,6 @@ namespace MPX
                 SQL::RowV v ;
                 m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % next_id ).str()) ; 
                 Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
-
                 play_track( p ) ;
                 return ;
             }
@@ -1342,6 +1341,24 @@ namespace MPX
     }
 
     void
+    YoukiController::on_list_view_ab_select_album(
+        const std::string&  mbid
+    )
+    {
+        on_entry_clear_clicked() ;
+        m_Entry->set_text( (boost::format("album-mbid = \"%s\"") % mbid).str() ) ;
+    }
+
+    void
+    YoukiController::on_list_view_ab_select_artist(
+        const std::string&  mbid
+    )
+    {
+        on_entry_clear_clicked() ;
+        m_Entry->set_text( (boost::format("album-artist-mbid = \"%s\"") % mbid).str() ) ;
+    }
+
+    void
     YoukiController::on_list_view_tr_vadj_changed(
     ) 
     {
@@ -1526,6 +1543,15 @@ namespace MPX
     YoukiController::on_info_area_clicked ()
     {
         API_pause_toggle() ;
+    }
+
+    void
+    YoukiController::on_ab_start_playback ()
+    {
+        if( private_->FilterModelTracks->size() )
+        {
+           play_track( boost::get<4>(private_->FilterModelTracks->row(0))) ;
+        }
     }
 
     bool
@@ -1832,40 +1858,5 @@ namespace MPX
     )
     {
         m_play->request_status( PLAYSTATUS_STOPPED ) ; 
-    }
-
-    bool
-    YoukiController::on_expose_render_outline(
-          GdkEventExpose* event
-        , Gtk::Widget* widget
-    )
-    {
-            boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-
-            const ThemeColor& c = theme->get_color( THEME_COLOR_ENTRY_OUTLINE ) ;
-
-            Cairo::RefPtr<Cairo::Context> cairo = widget->get_window()->create_cairo_context() ;
-            cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
-            cairo->set_source_rgba(
-                  c.r 
-                , c.g
-                , c.b
-                , c.a 
-            ) ;
-
-            cairo->set_line_width( 1. ) ;
-           
-            MPX::RoundedRectangle( 
-                  cairo
-                , widget->get_allocation().get_x() + 1
-                , widget->get_allocation().get_y() + 1
-                , widget->get_allocation().get_width() - 2
-                , widget->get_allocation().get_height() - 2
-                , 4.
-            ) ;
-
-            cairo->stroke () ;
-
-            return true ;
     }
 }

@@ -119,7 +119,6 @@ namespace
 
                     for( lfm_tagtopalbums::topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
                     {
-                        g_message("MBID: %s", (*i).mbid().c_str()) ;
                         s.insert( (*i).mbid() ) ;
                     }
 
@@ -336,7 +335,7 @@ namespace AQE
                 }
             }
             else
-            if( *i == '"' )
+            if( *i == '"' || *i == '\'')
             {
                 have_quot = true ;
 

@@ -99,6 +99,7 @@ namespace Albums
             std::string                             type ;
             std::string                             year ;
             std::string                             mbid ;
+            std::string                             mbid_artist ;
             std::string                             label ;
             gint64                                  track_count ;
             gdouble                                 album_playscore ; 
@@ -110,13 +111,9 @@ namespace Albums
         const double rounding = 4. ; 
 
         typedef IndexedList<Album_sp>                                                   Model_t ;
-        typedef boost::shared_ptr<Model_t>                                              Model_SP_t ;
-
+        typedef boost::shared_ptr<Model_t>                                              Model_sp_t ;
         typedef std::map<gint64, Model_t::iterator>                                     IdIterMap_t ;
-
         typedef std::vector<Model_t::iterator>                                          RowRowMapping_t ;
-
-        typedef sigc::signal<void>                                                      Signal_0 ;
         typedef sigc::signal<void, std::size_t, bool>                                   Signal_1 ;
 
         struct OrderFunc
@@ -162,7 +159,7 @@ namespace Albums
         struct DataModel
         : public sigc::trackable
         {
-                Model_SP_t                      m_realmodel ;
+                Model_sp_t                      m_realmodel ;
                 IdIterMap_t                     m_iter_map ;
                 std::size_t                     m_top_row ;
                 boost::optional<gint64>         m_selected ;
@@ -173,10 +170,10 @@ namespace Albums
                 DataModel()
                 : m_top_row( 0 )
                 {
-                    m_realmodel = Model_SP_t(new Model_t); 
+                    m_realmodel = Model_sp_t(new Model_t); 
                 }
 
-                DataModel(Model_SP_t model)
+                DataModel(Model_sp_t model)
                 : m_top_row( 0 )
                 {
                     m_realmodel = model; 
@@ -304,7 +301,7 @@ namespace Albums
                 }
         };
 
-        typedef boost::shared_ptr<DataModel> DataModel_SP_t;
+        typedef boost::shared_ptr<DataModel> DataModel_sp_t;
 
         struct DataModelFilter
         : public DataModel
@@ -321,7 +318,7 @@ namespace Albums
             public:
 
                 DataModelFilter(
-                      DataModel_SP_t model
+                      DataModel_sp_t model
                 )
                 : DataModel( model->m_realmodel )
                 {
@@ -521,7 +518,7 @@ namespace Albums
                 }
         };
 
-        typedef boost::shared_ptr<DataModelFilter> DataModelFilter_SP_t;
+        typedef boost::shared_ptr<DataModelFilter> DataModelFilter_sp_t;
 
         class Column
         {
@@ -911,8 +908,8 @@ namespace Albums
                 }
         };
 
-        typedef boost::shared_ptr<Column>       Column_SP_t ;
-        typedef std::vector<Column_SP_t>        Column_SP_t_vector_t ;
+        typedef boost::shared_ptr<Column>       Column_sp_t ;
+        typedef std::vector<Column_sp_t>        Column_sp_t_vector_t ;
 
         typedef sigc::signal<void>              Signal_void ;
 
@@ -921,7 +918,7 @@ namespace Albums
         {
             public:
 
-                DataModelFilter_SP_t                m_model ;
+                DataModelFilter_sp_t                m_model ;
 
             private:
 
@@ -939,17 +936,16 @@ namespace Albums
                  
                 ScrollDirection                     m_scroll_direction ; 
 
-                Column_SP_t_vector_t                m_columns ;
+                Column_sp_t_vector_t                m_columns ;
 
                 PropAdj                             m_prop_vadj ;
                 PropAdj                             m_prop_hadj ;
-
-                guint                               m_signal0 ; 
 
                 boost::optional<boost::tuple<Model_t::iterator, gint64, std::size_t> >  m_selection ; 
 
                 Signal_void                         m_SIGNAL_selection_changed ;
                 Signal_void                         m_SIGNAL_find_accepted ;
+                Signal_void                         m_SIGNAL_start_playback ;
 
                 Interval<std::size_t>               m_Model_I ;
 
@@ -960,6 +956,15 @@ namespace Albums
                 bool                                m_search_active ;
 
                 Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
+
+                Glib::RefPtr<Gtk::UIManager> m_refUIManager ;
+                Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup ;
+                Gtk::Menu* m_pMenuPopup ;
+
+                typedef sigc::signal<void, const std::string&> SignalMBID ;
+
+                SignalMBID _signal_0 ; 
+                SignalMBID _signal_1 ; 
 
                 bool
                 scroll_timeout_func()
@@ -1338,7 +1343,7 @@ namespace Albums
                 {
                     using boost::get;
 
-                    if( event->type == GDK_BUTTON_PRESS )
+                    //if( event->type == GDK_BUTTON_PRESS && event->button == 1 )
                     {
                         cancel_search() ;
                         grab_focus() ;
@@ -1358,34 +1363,23 @@ namespace Albums
                                 select_row( row2 ) ;
                             }
 
-#if 0
-                            double adj_value = m_prop_vadj.get_value()->get_value() ;
-
-                            {
-                                std::size_t offset = adj_value - ((std::size_t(adj_value)/m_row_height) * m_row_height) ;
-                                std::size_t excess = (((m_visible_height/m_row_height)+1)*m_row_height) - m_visible_height ;
-                                std::size_t endpos = (row2-get_upper_row()+1)*m_row_height ;
-
-                                if( endpos > (m_visible_height - offset))  
-                                {
-                                    init_scroll( adj_value + excess + (offset ? (m_row_height-offset):0) /*- (offset>0)*m_row_height + m_row_height*/, SCROLL_DIRECTION_DOWN ) ;
-                                }
-                            }
-#endif
                         }
                         else
                         {
                             if( m_Model_I.in( row )) 
                             {
                                 select_row( row ) ;
-#if 0
-                                init_scroll(
-                                      row * m_row_height
-                                    , SCROLL_DIRECTION_UP
-                                ) ;
-#endif
                             }
                         }
+                    }
+
+                    if( event->button == 3 )
+                    {
+                        m_pMenuPopup->popup(event->button, event->time) ;                            
+                    }
+                    else if( event->button == 1 && event->type == GDK_2BUTTON_PRESS )
+                    {
+                        m_SIGNAL_start_playback.emit() ;
                     }
 
                     return true ;
@@ -1522,7 +1516,7 @@ namespace Albums
                             ) ;
                         }
 
-                        for( Column_SP_t_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i )
+                        for( Column_sp_t_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i )
                         {
                             std::size_t count = 0 ;
 
@@ -1755,6 +1749,12 @@ namespace Albums
                     return m_SIGNAL_find_accepted ;
                 }
 
+                Signal_void&
+                signal_start_playback()
+                {
+                    return m_SIGNAL_start_playback ;
+                }
+
                 boost::optional<gint64>
                 get_selected()
                 {
@@ -1783,7 +1783,7 @@ namespace Albums
                 }
     
                 void
-                set_model(DataModelFilter_SP_t model)
+                set_model(DataModelFilter_sp_t model)
                 {
                     m_model = model;
 
@@ -1797,7 +1797,9 @@ namespace Albums
                 }
 
                 void
-                append_column (Column_SP_t column)
+                append_column(
+                      Column_sp_t   column
+                )
                 {
                     m_columns.push_back(column);
                 }
@@ -1921,8 +1923,23 @@ namespace Albums
                 }
 
                 void
-                on_got_cover( gint64 id )
+                on_show_only_this_album() 
                 {
+                    if( m_selection )
+                    {
+                        Album_sp album = *(boost::get<0>(m_selection.get())) ;
+                        _signal_0.emit( album->mbid ) ;
+                    }
+                }
+
+                void
+                on_show_only_this_artist() 
+                {
+                    if( m_selection )
+                    {
+                        Album_sp album = *(boost::get<0>(m_selection.get())) ;
+                        _signal_1.emit( album->mbid_artist ) ;
+                    }
                 }
 
             public:
@@ -1953,6 +1970,18 @@ namespace Albums
                 }
 
             public:
+
+                SignalMBID&
+                signal_only_this_album_mbid()
+                {
+                    return _signal_0 ;
+                }
+
+                SignalMBID&
+                signal_only_this_artist_mbid()
+                {
+                    return _signal_1 ;
+                }
 
                 Class ()
 
@@ -2024,6 +2053,29 @@ namespace Albums
                               *this
                             , &Class::key_press_event
                     ), true ) ;
+
+                    m_refActionGroup = Gtk::ActionGroup::create() ;
+                    m_refActionGroup->add( Gtk::Action::create("ContextMenu", "Context Menu")) ;
+
+                    m_refActionGroup->add( Gtk::Action::create("ContextShowAlbum", "Show only this Album"),
+                        sigc::mem_fun(*this, &Class::on_show_only_this_album)) ;
+                    m_refActionGroup->add( Gtk::Action::create("ContextShowArtist", "Show only this Artist"),
+                        sigc::mem_fun(*this, &Class::on_show_only_this_artist)) ;
+    
+                    m_refUIManager = Gtk::UIManager::create() ;
+                    m_refUIManager->insert_action_group(m_refActionGroup) ;
+
+                    std::string ui_info =
+                    "<ui>"
+                    "   <popup name='PopupMenu'>"
+                    "       <menuitem action='ContextShowAlbum'/>"
+                    "       <menuitem action='ContextShowArtist'/>"
+                    "   </popup>"
+                    "</ui>" ;
+
+                    m_refUIManager->add_ui_from_string( ui_info ) ;
+
+                    m_pMenuPopup = dynamic_cast<Gtk::Menu*>(m_refUIManager->get_widget("/PopupMenu")) ;
                }
 
                 virtual ~Class ()
