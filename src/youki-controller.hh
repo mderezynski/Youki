@@ -248,6 +248,10 @@ namespace MPX
 
             Gtk::Notebook                   * m_NotebookPlugins ;
 
+            Gtk::Button                     * m_Button_STOP ;
+            Gtk::Button                     * m_Button_PREV ;
+            Gtk::Button                     * m_Button_NEXT ;
+
             Glib::RefPtr<Gdk::Pixbuf>         m_icon ;  
     
             Covers                          * m_covers ;
@@ -347,11 +351,6 @@ namespace MPX
 
             void
             on_info_area_clicked(
-            ) ;
-
-            bool
-            on_title_clicked(
-                  GdkEventButton*
             ) ;
 
             bool

@@ -87,6 +87,8 @@ namespace View
 {
 namespace Albums
 {
+        const double rounding = 4. ; 
+
         // Album
 
         struct Album
@@ -107,14 +109,11 @@ namespace Albums
 
         typedef boost::shared_ptr<Album> Album_sp ;
 
-
-        const double rounding = 4. ; 
-
-        typedef IndexedList<Album_sp>                                                   Model_t ;
-        typedef boost::shared_ptr<Model_t>                                              Model_sp_t ;
-        typedef std::map<gint64, Model_t::iterator>                                     IdIterMap_t ;
-        typedef std::vector<Model_t::iterator>                                          RowRowMapping_t ;
-        typedef sigc::signal<void, std::size_t, bool>                                   Signal_1 ;
+        typedef IndexedList<Album_sp>                       Model_t ;
+        typedef boost::shared_ptr<Model_t>                  Model_sp_t ;
+        typedef std::map<gint64, Model_t::iterator>         IdIterMap_t ;
+        typedef std::vector<Model_t::iterator>              RowRowMapping_t ;
+        typedef sigc::signal<void, std::size_t, bool>       Signal_1 ;
 
         struct OrderFunc
         : public std::binary_function<Album_sp, Album_sp, bool>
@@ -163,8 +162,6 @@ namespace Albums
                 IdIterMap_t                     m_iter_map ;
                 std::size_t                     m_top_row ;
                 boost::optional<gint64>         m_selected ;
-                boost::optional<std::size_t>    m_selected_row ;
-
                 Signal_1                        m_changed ;
 
                 DataModel()
@@ -221,17 +218,10 @@ namespace Albums
 
                 virtual void
                 set_selected(
-                    const boost::optional<gint64>& row = boost::optional<gint64>()
+                    const boost::optional<gint64>& id = boost::optional<gint64>()
                 )
                 {
-                    m_selected = row ;
-                }
-
-                virtual boost::optional<std::size_t>
-                get_selected_row(
-                )
-                {
-                    return m_selected_row ; 
+                    m_selected = id ;
                 }
 
                 virtual void
@@ -240,7 +230,6 @@ namespace Albums
                 )
                 {
                     m_realmodel->push_back( album ) ;
-
                     Model_t::iterator i = m_realmodel->end() ;
                     std::advance( i, -1 ) ;
                     m_iter_map.insert( std::make_pair( album->album_id, i )) ; 
@@ -320,7 +309,9 @@ namespace Albums
                 DataModelFilter(
                       DataModel_sp_t model
                 )
-                : DataModel( model->m_realmodel )
+
+                    : DataModel( model->m_realmodel )
+
                 {
                     regen_mapping() ;
                 }
@@ -335,7 +326,10 @@ namespace Albums
                     IdVector_sp&  constraint
                 )
                 {
-                    m_constraints_albums = constraint ;
+                    if( constraint != m_constraints_albums )
+                    {
+                        m_constraints_albums = constraint ;
+                    }
                 }
 
                 virtual void
@@ -350,7 +344,11 @@ namespace Albums
                     IdVector_sp& constraint
                 )
                 {
-                    m_constraints_artist = constraint ;
+                    if( constraint != m_constraints_artist )
+                    {
+                        m_constraints_artist = constraint ;
+                        regen_mapping() ;
+                    }
                 }
 
                 virtual void
@@ -468,10 +466,10 @@ namespace Albums
                     }
 
                     m_selected.reset() ;
-                    m_selected_row.reset() ;
                     m_top_row = 0 ;
     
-                    Model_t::iterator i = m_realmodel->begin() ;
+                    typedef Model_t::iterator Iter ;
+                    Iter i = m_realmodel->begin() ;
 
                     new_mapping.push_back( i++ ) ;
 
@@ -498,18 +496,12 @@ namespace Albums
                             if( id_sel && id_row == id_sel.get() )
                             {
                                 m_selected = id_sel ; 
-                                m_selected_row = new_mapping.size() ;
                             }
 
                             new_mapping.push_back( i ) ;
                         }
                     }
 
-                    if( m_selected_row )
-                    {
-                        m_top_row = m_selected_row.get() ;
-                    }
-                
                     if( new_mapping != m_mapping )
                     {
                         std::swap( new_mapping, m_mapping ) ;
@@ -910,7 +902,6 @@ namespace Albums
 
         typedef boost::shared_ptr<Column>       Column_sp_t ;
         typedef std::vector<Column_sp_t>        Column_sp_t_vector_t ;
-
         typedef sigc::signal<void>              Signal_void ;
 
         class Class
@@ -1342,7 +1333,6 @@ namespace Albums
                 {
                     using boost::get;
 
-                    //if( event->type == GDK_BUTTON_PRESS && event->button == 1 )
                     {
                         cancel_search() ;
                         grab_focus() ;
@@ -1375,10 +1365,13 @@ namespace Albums
                     if( event->button == 3 )
                     {
                         m_pMenuPopup->popup(event->button, event->time) ;                            
+                        return true ;
                     }
-                    else if( event->button == 1 && event->type == GDK_2BUTTON_PRESS )
+
+                    if( event->button == 1 && event->type == GDK_2BUTTON_PRESS )
                     {
                         m_SIGNAL_start_playback.emit() ;
+                        return true ;
                     }
 
                     return true ;
@@ -1618,7 +1611,12 @@ namespace Albums
                             ) ;
                     }
 
-                    boost::optional<std::size_t> row = m_model->get_selected_row() ;
+                    boost::optional<std::size_t> row ;
+
+                    if( m_selection )
+                    {
+                        row = boost::get<2>(m_selection.get()) ;
+                    }
 
                     if( row )
                     {
@@ -1725,7 +1723,6 @@ namespace Albums
                         m_selection = boost::make_tuple( m_model->m_mapping[row], id, row ) ;
 
                         m_model->set_selected( id ) ;
-                        m_model->m_selected_row = row ;
 
                         if( !quiet )
                         {
@@ -1776,8 +1773,6 @@ namespace Albums
                 )
                 {
                     m_model->m_selected.reset() ; 
-                    m_model->m_selected_row.reset() ;
-            
                     queue_draw() ;
                 }
     

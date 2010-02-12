@@ -333,7 +333,7 @@ namespace MPX
                                 % attrs[ATTRIBUTE_ARTIST].id
                                 % attrs[ATTRIBUTE_MB_ARTIST_ID].id
                                 % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
-                                % attrs[ATTRIBUTE_COUNT] 
+                                % attrs[ATTRIBUTE_COUNT].id
                                 % attrs[ATTRIBUTE_ARTIST].id
                                 % attrs[ATTRIBUTE_MB_ARTIST_ID].id
                                 % attrs[ATTRIBUTE_ARTIST_SORTNAME].id

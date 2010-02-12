@@ -223,7 +223,11 @@ namespace Artist
                     const IdVector_sp& constraint
                 )
                 {
-                    m_constraints_artist = constraint ;
+                    if( constraint != m_constraints_artist )
+                    {
+                        m_constraints_artist = constraint ;
+                        regen_mapping() ;
+                    }
                 }
 
                 virtual void

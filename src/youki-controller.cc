@@ -362,8 +362,35 @@ namespace MPX
         m_Label_Search->set_use_underline() ;
 
         m_VBox->property_spacing() = 4 ; 
+
+/*
+        m_Button_STOP = new Gtk::Button ;
+        Gtk::Image * img = Gtk::manage( new Gtk::Image( Gtk::Stock::MEDIA_STOP, Gtk::ICON_SIZE_BUTTON )) ;
+        m_Button_STOP->add( *img ) ;
+
+        m_Button_PREV = new Gtk::Button ;
+        img = Gtk::manage( new Gtk::Image( Gtk::Stock::MEDIA_PREVIOUS, Gtk::ICON_SIZE_BUTTON )) ;
+        m_Button_PREV->add( *img ) ;
+
+        m_Button_NEXT = new Gtk::Button ;
+        img = Gtk::manage( new Gtk::Image( Gtk::Stock::MEDIA_NEXT, Gtk::ICON_SIZE_BUTTON )) ;
+        m_Button_NEXT->add( *img ) ;
+   
+        m_Button_PREV->set_relief( Gtk::RELIEF_NONE ) ; 
+        m_Button_STOP->set_relief( Gtk::RELIEF_NONE ) ; 
+        m_Button_NEXT->set_relief( Gtk::RELIEF_NONE ) ; 
+
+        Gtk::VSeparator * sep = Gtk::manage( new Gtk::VSeparator ) ;
+*/
+
         m_HBox_Entry->property_spacing() = 4 ; 
         m_HBox_Entry->set_border_width( 2 ) ;
+/*
+        m_HBox_Entry->pack_start( *m_Button_PREV, false, true, 0 );
+        m_HBox_Entry->pack_start( *m_Button_STOP, false, true, 0 );
+        m_HBox_Entry->pack_start( *m_Button_NEXT, false, true, 0 );
+        m_HBox_Entry->pack_start( *sep, false, false, 0 ) ;
+*/
         m_HBox_Entry->pack_start( *m_Label_Search, false, false, 0 ) ;
         m_HBox_Entry->pack_start( *m_Alignment_Entry, true, true, 0 ) ;
 
@@ -562,6 +589,18 @@ namespace MPX
                     , &YoukiController::on_list_view_tr_find_propagate
         )) ;
 
+        m_ListViewTracks->signal_only_this_album_mbid().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_list_view_ab_select_album
+        )) ;
+
+        m_ListViewTracks->signal_only_this_artist_mbid().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_list_view_ab_select_artist
+        )) ;
+
         m_conn1 = m_ListViewArtist->signal_selection_changed().connect(
             sigc::mem_fun(
                   *this
@@ -596,6 +635,12 @@ namespace MPX
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_list_view_ab_select_artist
+        )) ;
+
+        m_ListViewAlbums->signal_start_playback().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_ab_start_playback
         )) ;
 
         m_Entry->signal_key_press_event().connect(
@@ -1491,11 +1536,11 @@ namespace MPX
         private_->FilterModelTracks->set_filter( m_Entry->get_text() ) ;
 
         private_->FilterModelArtist->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;
-        private_->FilterModelArtist->regen_mapping() ;
+//        private_->FilterModelArtist->regen_mapping() ;
 
         private_->FilterModelAlbums->set_constraints_albums( private_->FilterModelTracks->m_constraints_albums ) ;
         private_->FilterModelAlbums->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;
-        private_->FilterModelAlbums->regen_mapping() ;
+//        private_->FilterModelAlbums->regen_mapping() ;
     }
 
     void
@@ -1534,24 +1579,6 @@ namespace MPX
         {
            play_track( boost::get<4>(private_->FilterModelTracks->row(0))) ;
         }
-    }
-
-    bool
-    YoukiController::on_title_clicked(
-          GdkEventButton* event
-    )
-    {
-        if( event->type == GDK_BUTTON_PRESS )
-        {
-            if( m_track_current )
-            {
-                const MPX::Track& track = *(m_track_current.get()) ;
-
-                m_ListViewTracks->scroll_to_id( boost::get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
-            }
-        }
-
-        return false ;
     }
 
     bool

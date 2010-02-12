@@ -321,128 +321,6 @@ namespace Tracks
 
         typedef boost::shared_ptr<DataModel> DataModel_sp_t;
 
-#if 0
-        class DataModelInserter
-        : public sigx::glib_threadable
-        {
-            public:
-
-                    typedef std::vector<std::pair<Model_t::const_iterator, Row_t> >  SignalData_t ;
-                    typedef sigc::signal<void, SignalData_t>                        SignalRows_t ;
-                    typedef sigx::signal_f<SignalRows_t>                            signal_rows_x ;
-
-                    sigx::request_f<const std::vector<int64_t>&> process ;
-
-                    signal_rows_x signal_rows ; 
-
-            protected:
-
-                    Model_sp_t m_Model ;
-                    boost::shared_ptr<MPX::Library> m_library ; 
-
-                    struct ThreadData                      
-                    {
-                        SignalRows_t Rows ;
-                    } ;
-
-                    Glib::Private<ThreadData> m_ThreadData ;
-
-                    sigc::connection m_conn_idle ;
-
-            public:
-    
-                    DataModelInserter(
-                          Model_sp_t model
-                    )
-                    : sigx::glib_threadable()
-                    , process(sigc::mem_fun( *this, &DataModelInserter::on_process))
-                    , signal_row( *this, m_ThreadData, &ThreadData::Row )
-                    , m_Model( model )
-                    , m_library( services->get<Library>("mpx-service-library") )
-                    {
-                    }
-
-                    virtual
-                    ~DataModelInserter(
-                    )
-                    {}
-
-            protected:
-
-                    virtual void
-                    on_startup(
-                    )
-                    {
-                        m_ThreadData.set( new ThreadData ) ;
-                    }
-
-                    virtual void
-                    on_cleanup(
-                    )
-                    {
-                    }
-
-                    void
-                    on_process(
-                          const std::vector<int64_t>& v
-                    )
-                    {
-                        ThreadData * pthreaddata = m_ThreadData.get() ;
-
-                        SignalData_t data ;
-
-                        const Model_t& m = *(m_Model.get()) ;
-
-                        for( std::vector<int64_t>::const_iterator n = v.begin() ; n != v.end() ; ++n )
-                        {
-                            const int64_t& id = *n ;  
-          
-                            SQL::RowV v ;
-                            m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id ).str()) ;
-
-                            SQL::Row& r = v[0] ; 
-
-                            MPX::Track_sp track = m_library->sqlToTrack( r, true, true ) ;
-  
-                            using boost::get ;
-
-                            std::string artist, album, title ;
-                            gint64 track_n = 0, artist_id = 0 ;
-
-                            if(r.count("artist"))
-                                artist = get<std::string>(r["artist"]) ;
-
-                            if(r.count("album"))
-                                album = get<std::string>(r["album"]) ;
-
-                            if(r.count("title"))
-                                title = get<std::string>(r["title"]) ;
-
-                            if(r.count("track"))
-                            { 
-                                track_n = get<gint64>(r["track"]) ;
-                            }
-
-                            if(r.count("mpx_album_artist_id"))
-                            { 
-                                artist_id = get<gint64>(r["mpx_album_artist_id"]) ;
-                            }
-
-                            Row_t row ( title, artist, album, id, *track.get(), track_n, artist_id ) ;
-
-                            Model_t::const_iterator i = std::lower_bound( m.begin(), m.end(), row ) ; 
-
-                            if( i != m.end() )
-                            {
-                                data.push_back( std::make_pair( i, row )) ;
-                            }
-                        }
-
-                        pthreaddata->Rows.emit( data ) ; 
-                    }
-        } ;
-#endif
-
         struct DataModelFilter
         : public DataModel
         {
@@ -889,8 +767,7 @@ namespace Tracks
                     {
                         id = m_id_currently_playing.get() ;
                     }
-                    else
-                    if( m_top_row < m_mapping.size() )
+                    else if( m_top_row < m_mapping.size() )
                     {
                         id = get<3>(row( m_top_row )) ; 
                     }
@@ -1558,12 +1435,10 @@ namespace Tracks
 
         class Class
         : public Gtk::DrawingArea
-//        , public sigx::glib_auto_dispatchable()
         {
             public:
 
-                DataModelFilter_sp_t          m_model ;
-//                DataModelInserter           * m_inserter ;
+                DataModelFilter_sp_t                m_model ;
 
             private:
 
@@ -1603,6 +1478,15 @@ namespace Tracks
 
                 sigc::connection                    m_search_changed_conn ; 
                 bool                                m_search_active ;
+
+                Glib::RefPtr<Gtk::UIManager> m_refUIManager ;
+                Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup ;
+                Gtk::Menu* m_pMenuPopup ;
+
+                typedef sigc::signal<void, const std::string&> SignalMBID ;
+
+                SignalMBID _signal_0 ; 
+                SignalMBID _signal_1 ; 
 
                 SignalTrackActivated                m_SIGNAL_track_activated ;
                 SignalVAdjChanged                   m_SIGNAL_vadj_changed ;
@@ -1920,7 +1804,6 @@ namespace Tracks
                 {
                     using boost::get;
 
-                    if( event->type == GDK_BUTTON_PRESS )
                     {
                         cancel_search() ;
                         grab_focus() ;
@@ -1953,7 +1836,7 @@ namespace Tracks
                             , get_upper_row() + (event->y-m_row_start) / m_row_height
                         ) ;
 
-                        if( x >= 32 )
+                        if( x >= 32 ) 
                         {
                             m_selection     = boost::make_tuple( m_model->m_mapping[row], row ) ;
                             m_clicked_row   = row ;
@@ -1981,8 +1864,8 @@ namespace Tracks
                             queue_draw() ;
                         }
                     }
-                    else
-                    if( event->type == GDK_2BUTTON_PRESS )
+
+                    if( event->type == GDK_2BUTTON_PRESS && event->button == 1 )
                     {
                         if( event->y < m_row_height )
                             return false ;
@@ -2005,8 +1888,17 @@ namespace Tracks
                             MPX::Track_sp track = get<4>(m_model->row(row)) ;
                             m_SIGNAL_track_activated.emit( track, true ) ;
                         }
+                    
+                        return true ;
                     }
                 
+                    if( event->button == 3 )
+                    {
+                        m_clicked = false ;
+                        m_pMenuPopup->popup(event->button, event->time) ;                            
+                        return true ;
+                    }
+
                     return true;
                 }
 
@@ -2996,6 +2888,32 @@ namespace Tracks
                     m_SIGNAL_find_propagate.emit( text ) ;
                 }
 
+                void
+                on_show_only_this_album() 
+                {
+                    if( m_selection )
+                    {
+                        const Row_t& row = *(boost::get<0>(m_selection.get())) ;
+                        const MPX::Track_sp& t = get<4>(row);
+                        const MPX::Track& track = *(t.get()) ;
+
+                        _signal_0.emit( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()));
+                    }
+                }
+
+                void
+                on_show_only_this_artist() 
+                {
+                    if( m_selection )
+                    {
+                        const Row_t& row = *(boost::get<0>(m_selection.get())) ;
+                        const MPX::Track_sp& t = get<4>(row);
+                        const MPX::Track& track = *(t.get()) ;
+
+                        _signal_1.emit( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()));
+                    }
+                }
+
             public:
 
                 void
@@ -3025,11 +2943,21 @@ namespace Tracks
 
             public:
 
+                SignalMBID&
+                signal_only_this_album_mbid()
+                {
+                    return _signal_0 ;
+                }
+
+                SignalMBID&
+                signal_only_this_artist_mbid()
+                {
+                    return _signal_1 ;
+                }
+
                 Class ()
 
                         : ObjectBase( "YoukiClassTracks" )
-//                        , sigx::glib_auto_dispatchable()
-//                        , m_inserter( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_dnd( false )
@@ -3132,6 +3060,28 @@ namespace Tracks
                     m_SearchHBox->show_all() ;
 
                     property_can_focus() = true ;
+
+                    m_refActionGroup = Gtk::ActionGroup::create() ;
+                    m_refActionGroup->add( Gtk::Action::create("ContextMenu", "Context Menu")) ;
+
+                    m_refActionGroup->add( Gtk::Action::create("ContextShowAlbum", "Show only this Album"),
+                        sigc::mem_fun(*this, &Class::on_show_only_this_album)) ;
+                    m_refActionGroup->add( Gtk::Action::create("ContextShowArtist", "Show only this Artist"),
+                        sigc::mem_fun(*this, &Class::on_show_only_this_artist)) ;
+    
+                    m_refUIManager = Gtk::UIManager::create() ;
+                    m_refUIManager->insert_action_group(m_refActionGroup) ;
+
+                    std::string ui_info =
+                    "<ui>"
+                    "   <popup name='PopupMenu'>"
+                    "       <menuitem action='ContextShowAlbum'/>"
+                    "       <menuitem action='ContextShowArtist'/>"
+                    "   </popup>"
+                    "</ui>" ;
+
+                    m_refUIManager->add_ui_from_string( ui_info ) ;
+                    m_pMenuPopup = dynamic_cast<Gtk::Menu*>(m_refUIManager->get_widget("/PopupMenu")) ;
                 }
 
                 virtual ~Class ()

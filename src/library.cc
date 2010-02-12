@@ -480,22 +480,23 @@ namespace MPX
                         gint64 artist_id = get<gint64>(t[ATTRIBUTE_MPX_ARTIST_ID].get()) ;
                         gint64 album_id = get<gint64>(t[ATTRIBUTE_MPX_ALBUM_ID].get()) ;
 
+                        execSQL((boost::format ("UPDATE track SET pdate = '%lld' WHERE id = '%lld'") % gint64(time_) % track_id).str());
+                        execSQL((boost::format ("UPDATE track SET pcount = ifnull(pcount,0) + 1 WHERE id = '%lld'") % track_id).str());
+
                         RowV v;
                         getSQL(v, (boost::format ("SELECT SUM(pcount) AS count FROM track_view WHERE album_j = '%lld'") % album_id).str());
                         gint64 count1 = get<gint64>(v[0]["count"]);
+
                         v.clear();
                         getSQL(v, (boost::format ("SELECT count(id) AS count FROM track_view WHERE album_j = '%lld'") % album_id).str());
                         gint64 count2 = get<gint64>(v[0]["count"]);
 
                         double score = double(count1) / double(count2);
 
-                        execSQL((boost::format ("UPDATE track SET pdate = '%lld' WHERE id = '%lld'") % gint64(time_) % track_id).str());
-                        execSQL((boost::format ("UPDATE track SET pcount = ifnull(pcount,0) + 1 WHERE id = '%lld'") % track_id).str());
                         execSQL((boost::format ("UPDATE artist SET playcount = ifnull(playcount,0) + 1 WHERE id = %lld") % artist_id).str());
                         execSQL((boost::format ("UPDATE album SET album_playscore = '%f' WHERE album.id = '%lld'") % score % album_id).str());
 
                         Signals.AlbumUpdated.emit( album_id ) ;
-
                 //        Signals.TrackUpdated.emit( (*t.get()), id_album, id_artst );
                 }
 
@@ -567,7 +568,7 @@ namespace MPX
                 }
 
         gint64
-                Library::markovGetRandomProbableTrack( gint64 a )
+                Library::markovGetRandomProbableTrack( int a )
                 {
                         try{
                                 std::vector<double> ratios ;

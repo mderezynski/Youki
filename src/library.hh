@@ -190,7 +190,7 @@ namespace MPX
             markovUpdate(gint64 /* track a */, gint64 /* track b */) ;
 
             gint64 
-            markovGetRandomProbableTrack(gint64 /* track a*/); 
+            markovGetRandomProbableTrack(int /* track a*/); 
 
             gint64
             collectionCreate(const std::string& /*name*/, const std::string& /*blurb*/) ;

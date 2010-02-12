@@ -61,7 +61,7 @@ ui_playlist_popup = """
 
 class BaseOPTION__(threading.Thread):
 
-    def __init__(self, lib, v, xml, queue, mcs):
+    def __init__(self, lib, v, xml, queue, mcs, track, id):
 
         threading.Thread.__init__(self)
 
@@ -70,28 +70,28 @@ class BaseOPTION__(threading.Thread):
         self.queue      = queue
         self.v          = v
         self.mcs        = mcs
+        self.track      = track
+        self.id         = id
 
 class OPTION__Analyzer(BaseOPTION__):    
 
-    def __init__( self, lib, v, xml, queue, mcs):
+    def __init__( self, lib, v, xml, queue, mcs, track, id):
 
-        BaseOPTION__.__init__( self, lib, v, xml, queue, mcs)
+        BaseOPTION__.__init__( self, lib, v, xml, queue, mcs, track, id)
         self.range = xml.get_widget("analyzer-range")
 
     def get_similartracks(self, id):
 
         try:
-                track = self.lib.getTrackById( id ) 
-                m = lastfm.SimilarTracks(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
+                self.track = self.lib.getTrackById( id ) 
+                m = lastfm.SimilarTracks(self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get())
+                return m.get()
         except Exception, e:
                 print str(e)
-
-        return m.get()
 
     def run_similar_track(self):
 
         tracks = self.get_similartracks(self.queue[-1:][0])[-1:]
-
         random.shuffle(tracks)
 
         for track in tracks: 
@@ -149,7 +149,6 @@ class OPTION__Analyzer(BaseOPTION__):
                     id = artist.getMBID() 
                     rv = mpx.SQLRowV()
 
-#                    if self.count_previous_mbid_presence(id) < 1:
                     self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % id))
                     extract_IDs(rv, self.v)
 
@@ -157,13 +156,14 @@ class OPTION__Analyzer(BaseOPTION__):
 
     def run_similar_artist(self):
 
+        artist = ""
+
         try:
                 id = self.queue[-1:][0]
 
                 if id:
                     track  = self.lib.getTrackById( id ) 
                     artist = track[mpx.AttributeId.ARTIST].get()
-                    rv     = mpx.SQLRowV()
                 else:
                     return
 
@@ -171,6 +171,7 @@ class OPTION__Analyzer(BaseOPTION__):
                 print str(e)
 
         try:
+                rv     = mpx.SQLRowV()
                 tries  = int(self.range.get_value())
                 max    = tries
                 
@@ -193,28 +194,21 @@ class OPTION__Analyzer(BaseOPTION__):
                 print "Error running run_similar_artist: " + str(e) 
 
     def run_markov(self):
+
+        if not len(self.queue): return
         
         id = self.queue[-1:][0]
 
         if id:
             markov_id = self.lib.markovGetRandomProbableTrack(id)
-
-            if markov_id and markov_id != 0:
-                self.v.append(markov_id)
+            if markov_id and markov_id != 0: self.v.append(markov_id)
 
     def run(self):
 
-         print "MPXDJ: Analyzer Running"
-
          if not len(self.queue):
-            print "MPXDJ: No data to process"
             return
 
-         print "MPXDJ: Choosing a callable"       
- 
          callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist, self.run_markov]
-
-         print "MPXDJ: Trying the callables one by one"
 
          for n in range(0,5):
  
@@ -222,17 +216,14 @@ class OPTION__Analyzer(BaseOPTION__):
                  callables[choice]()
  
          if not len(self.v) and id:
-            self.run_markov(self.lib, self.v)
+            self.run_markov()
 
-    
-         print "MPXDJ: Returning"
-         return
 
 class OPTION__LastFmTag(BaseOPTION__):    
 
-    def __init__(self, lib, v, xml, mlib, mcs, model):
+    def __init__(self, lib, v, xml, mlib, mcs, track, id):
 
-         BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
+         BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, track, id)
 
     def run(self):
         
@@ -264,63 +255,59 @@ class OPTION__LastFmTag(BaseOPTION__):
 
 class OPTION__RandomMix(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs, model):
+    def __init__(self, lib, v, xml, queue, mcs, track, id):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
+        BaseOPTION__.__init__(self, lib, v, xml, queue, mcs, track, id)
 
     def run(self):
-
-        if len(self.model):
-            self.RANDOM_markov(self.lib, self.v)
 
         if not len(self.v):
             [self.RANDOM_genre,
              self.RANDOM_toptune,
-            ][ random.randint(0,1) ](self.lib, self.v)
-    
-    def RANDOM_genre(self, lib, v):
+            ][ random.randint(0,1) ](self.lib, self.v, self.track, self.id)
 
-        choice = random.randint(0,1)
+    def RANDOM_genre(self, lib, v, track, id):
 
+        choice = random.randint(0,2)
         rv = mpx.SQLRowV()
 
-        if not len(self.model):
+        if choice == 0:
 
-            lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY random() LIMIT 1")
-            genre = rv[0]["genre"].get_string()
+            rv2 = mpx.SQLRowV()
+            lib.getSQL(rv2, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY random()")
+            random.shuffle(rv2)
+            genre = rv2[0]["genre"].get_string()
             lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY random() LIMIT 2" % genre)
+            random.shuffle(rv)
 
-        elif choice == 0: 
+        if choice == 1 and track: 
 
-            track = self.model[len(self.model)-1]
             genre = track[mpx.AttributeId.GENRE].get()
             lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY random() LIMIT 2" % genre)
         
-        elif choice == 1:
+        if choice == 2:
 
-            lib.getSQL(rv, "SELECT id FROM track_view ORDER BY random() LIMIT 2")
+            lib.getSQL(rv, "SELECT id FROM track_view ORDER BY random() LIMIT 25")
 
         extract_IDs(rv, v)
 
-    def RANDOM_toptune(self, lib, v):
+    def RANDOM_toptune(self, lib, v, track, id):
     
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY random() LIMIT 1")
         extract_IDs(rv, v)
 
-    def RANDOM_markov(self, lib, v):
+    def RANDOM_markov(self, lib, v, track, id):
         
-        track = self.model[len(self.model)-1]
-        id = track[mpx.AttributeId.MPX_TRACK_ID].get()
         markov_id = lib.markovGetRandomProbableTrack(id)
         if markov_id and markov_id != 0:
             v.append(markov_id)
 
 class OPTION__TopTunes(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs, model):
+    def __init__(self, lib, v, xml, mlib, mcs, track, id):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, track, id)
 
     def run(self):
     
@@ -330,9 +317,9 @@ class OPTION__TopTunes(BaseOPTION__):
 
 class OPTION__PlayAll(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs, model):
+    def __init__(self, lib, v, xml, mlib, mcs, track, id ):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, track, id)
 
     def run(self):
 
@@ -342,9 +329,9 @@ class OPTION__PlayAll(BaseOPTION__):
 
 class OPTION__EntertainMe(BaseOPTION__):
 
-    def __init__( self, lib, v, xml, queue, mcs ):
+    def __init__( self, lib, v, xml, queue, mcs, track, id ):
 
-        BaseOPTION__.__init__( self, lib, v, xml, queue, mcs )
+        BaseOPTION__.__init__( self, lib, v, xml, queue, mcs, track, id )
 
     def run(self):
 
@@ -355,8 +342,8 @@ class OPTION__EntertainMe(BaseOPTION__):
     def ENTERTAIN_Local(self):
 
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, "SELECT track.id FROM track ORDER BY pcount DESC LIMIT 25")
-        self.lib.getSQL(rv, "SELECT track.id FROM track JOIN artist ON artist.id = track.artist_j ORDER BY artist.playcount DESC LIMIT 25") ;
+        self.lib.getSQL(rv, "SELECT track.id FROM track ORDER BY pcount DESC LIMIT 5")
+        self.lib.getSQL(rv, "SELECT track.id FROM track JOIN artist ON artist.id = track.artist_j ORDER BY artist.playcount DESC LIMIT 5") ;
 
         if len(rv):
             random.shuffle(rv)
@@ -469,9 +456,9 @@ class MPXDJ(mpx.Plugin):
             
         self.callables = [
             OPTION__Analyzer,
-            OPTION__EntertainMe
-#            OPTION__TopTunes, 
-#            OPTION__RandomMix, 
+            OPTION__EntertainMe,
+            OPTION__TopTunes,
+            OPTION__RandomMix 
 #            None,
 #            OPTION__SoundsOf, 
 #            OPTION__ForgottenGems,
@@ -481,9 +468,9 @@ class MPXDJ(mpx.Plugin):
 
         self.helptexts = [
             "Analyzes the playlist and plays similar Music",
-            "Creates a running order composed of the most frequently played tracks."
-#            "Plays some of the best rated tracks",
-#            "Plays random, but similar tracks",
+            "Creates a running order composed of the most frequently played tracks.",
+            "Plays some of the best rated tracks",
+            "Plays random, but similar tracks"
 #            "",
 #           "Plays tracks from a specific decade.",
 #            "Plays long forgotten but popular tracks.",
@@ -494,8 +481,8 @@ class MPXDJ(mpx.Plugin):
         self.actionnames = [
             "mpxdj-mode-analyzer",
             "mpxdj-mode-entertain"
-#            "mpxdj-mode-toptunes",
-#            "mpxdj-mode-random",
+            "mpxdj-mode-toptunes"
+            "mpxdj-mode-random"
 #            "mpxdj-mode-memorylane",
 #            "mpxdj-mode-soundsof",
 #            "mpxdj-mode-gems",
@@ -505,9 +492,9 @@ class MPXDJ(mpx.Plugin):
 
         self.options = [
             "Analyzer",
-            "Entertain Me!"
-#            "Top Tunes",
-#            "Random Mix",
+            "Entertain Me!",
+            "Top Tunes",
+            "Random Mix"
 #            "Memory Lane",
 #            "Sounds Of...",
 #            "Forgotten Gems",
@@ -552,8 +539,6 @@ class MPXDJ(mpx.Plugin):
         self.combo.set_model(self.store)
         self.combo.set_active(0)
 
-        self.working = False
-    
         self.queue = []
 
     def on_mode_changed(self, action, current):
@@ -618,26 +603,21 @@ class MPXDJ(mpx.Plugin):
     def on_metadata_updated(self, object):
 
         try:
-                track           = self.youki.get_metadata()
-                id              = track[mpx.AttributeId.MPX_TRACK_ID].get()
+                self.track      = self.youki.get_metadata()
+                self.track_id   = self.track[mpx.AttributeId.MPX_TRACK_ID].get()
                 klass           = self.callables[self.playmode]
 
-                self.queue.append( id ) 
+                self.queue.append( self.track_id ) 
 
                 if klass:
 
                     self.idv = []
 
-                    instance = klass( self.lib, self.idv, self.xml, self.queue, self.mcs )
-                    print "MPXDJ: Got instance"
-                    print "MPXDJ: Setting to daemon"
+                    instance = klass( self.lib, self.idv, self.xml, self.queue, self.mcs, self.track, self.track_id )
                     instance.setDaemon(True)
-                    print "MPXDJ: Starting instance"
                     instance.start() 
-                    print "MPXDJ: Started instance"
-                    print "MPXDJ: Waiting to join"
 
-                    while not instance.join(0.001) and instance.isAlive(): 
+                    while instance.isAlive(): 
                         while gtk.events_pending(): gtk.main_iteration()
 
                     if len(self.idv): 
@@ -656,16 +636,11 @@ class MPXDJ(mpx.Plugin):
 
                     self.idv = []
 
-                    instance = klass( self.lib, self.idv, self.xml, self.queue, self.mcs )
-                    print "MPXDJ: Got instance"
-                    print "MPXDJ: Setting to daemon"
+                    instance = klass( self.lib, self.idv, self.xml, self.queue, self.mcs, None, None )
                     instance.setDaemon(True)
-                    print "MPXDJ: Starting instance"
                     instance.start() 
-                    print "MPXDJ: Started instance"
-                    print "MPXDJ: Waiting to join"
 
-                    while not instance.join(0.001) and instance.isAlive(): 
+                    while instance.isAlive(): 
                         while gtk.events_pending(): gtk.main_iteration()
 
                     if len(self.idv): 
