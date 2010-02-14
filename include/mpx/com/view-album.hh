@@ -442,6 +442,8 @@ namespace Albums
                 regen_mapping(
                 )
                 {
+                    g_message(G_STRLOC) ;
+    
                     using boost::get;
 
                     if( m_realmodel->empty() )
@@ -1690,6 +1692,8 @@ namespace Albums
                       std::size_t row
                 )
                 {
+                    g_message(G_STRLOC) ;
+
                     if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
                     {
                         if( m_model->m_mapping.size() < std::size_t(m_visible_height/m_row_height) )

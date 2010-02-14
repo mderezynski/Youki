@@ -108,6 +108,12 @@ namespace MPX
           const ::MPX::SQL::Row&
     ) ;
 
+    std::string
+    row_get_album_artist_name(
+          const ::MPX::SQL::Row&
+    ) ;
+
+
     Glib::ustring
     utf8_string_normalize(
           const Glib::ustring&

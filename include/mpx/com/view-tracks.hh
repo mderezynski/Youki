@@ -291,9 +291,7 @@ namespace Tracks
                             , track 
                             , r.count("track") ? get<gint64>(r["track"]) : 0
                             , r.count("mpx_album_artist_id") ? get<gint64>(r["mpx_album_artist_id"]) : 0
-                            , r.count("album_artist_sortname")
-                              ? get<std::string>(r["album_artist_sortname"])
-                              : ((r.count("album_artist") ? get<std::string>(r["album_artist"]) : "" ))
+                            , Util::row_get_album_artist_name( r ) 
                             , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]) : ""
                             , r.count("time") ? get<gint64>(r["time"]) : 0
                     ) ;
@@ -533,8 +531,8 @@ namespace Tracks
                     , const MPX::Track_sp&  track
                 )
                 {
-                    const std::string&                    title             = Util::row_get_artist_name( r ) ;
-                    const std::string&                    artist            = get<std::string>(r["artist"]) ;
+                    const std::string&                    title             = get<std::string>(r["title"]) ;
+                    const std::string&                    artist            = Util::row_get_artist_name( r ) ;
                     const std::string&                    album             = get<std::string>(r["album"]) ; 
 
                     const std::string&                    release_date      = get<std::string>(r["mb_release_date"]) ;
@@ -544,9 +542,8 @@ namespace Tracks
                     gint64                                time              = get<gint64>(r["time"]) ;
                     gint64                                id_artist         = get<gint64>(r["mpx_album_artist_id"]) ;
 
-                    const std::string&                    order_artist      = r.count("album_artist_sortname")
-                                                                              ? get<std::string>(r["album_artist_sortname"])
-                                                                              : get<std::string>(r["album_artist"]) ;
+                    const std::string&                    order_artist      = Util::row_get_album_artist_name( r ) ; 
+
                     static OrderFunc order ;
 
                     Row_t row(

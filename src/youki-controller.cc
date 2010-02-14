@@ -89,7 +89,7 @@ namespace
         , const MPX::SQL::Row&   r2
     )
     {
-        return Glib::ustring(::MPX::Util::row_get_artist_name( r1 )).casefold() < Glib::ustring(::MPX::Util::row_get_artist_name( r2 )).casefold() ;
+        return Glib::ustring(::MPX::Util::row_get_album_artist_name( r1 )).casefold() < Glib::ustring(::MPX::Util::row_get_album_artist_name( r2 )).casefold() ;
     }
 
     void
@@ -500,7 +500,7 @@ namespace MPX
                     SQL::Row & r = *i;
 
                     private_->FilterModelArtist->append_artist(
-                          Util::row_get_artist_name( r )
+                          Util::row_get_album_artist_name( r )
                         , boost::get<gint64>(r["id"])
                     ) ;
                 }
@@ -771,7 +771,7 @@ namespace MPX
         album->album_id = id ;
         album->artist_id = get<gint64>(r["album_artist_id"]) ;
         album->album = get<std::string>(r["album"]) ;
-        album->album_artist = Util::row_get_artist_name( r ) ; 
+        album->album_artist = Util::row_get_album_artist_name( r ) ; 
         album->mbid = get<std::string>(r["mb_album_id"]) ;
         album->mbid_artist = get<std::string>(r["mb_album_artist_id"]) ;
         album->type = r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : "" ;
@@ -868,7 +868,7 @@ namespace MPX
         g_return_if_fail( (v.size() == 1) ) ;
 
         private_->FilterModelArtist->insert_artist(
-              Util::row_get_artist_name( v[0] )
+              Util::row_get_album_artist_name( v[0] )
             , id 
         ) ; 
 
@@ -1139,6 +1139,7 @@ namespace MPX
                 m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % next_id ).str()) ; 
                 Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
                 play_track( p ) ;
+                return ;
             }
             else
             {
@@ -1151,19 +1152,16 @@ namespace MPX
                     if( pos_next < private_->FilterModelTracks->size() )
                     {
                         play_track( boost::get<4>(private_->FilterModelTracks->row( pos_next )) ) ;
+                        return ;
                     }
                 }
                 else
                 if( private_->FilterModelTracks->size() )
                 {
                     play_track( boost::get<4>(private_->FilterModelTracks->row( 0 )) ) ;
+                    return ;
                 }
             }
-        }
-        else
-        {
-            m_play->request_status( PLAYSTATUS_STOPPED ) ; 
-            m_ListViewTracks->clear_terminal_id() ;
         }
 
         if( m_track_previous )
@@ -1173,6 +1171,9 @@ namespace MPX
                     , time(NULL)
                 ) ;
         }
+
+        m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+        m_ListViewTracks->clear_terminal_id() ;
     }
 
     void
@@ -1182,6 +1183,8 @@ namespace MPX
         PlayStatus status = PlayStatus( m_play->property_status().get_value() ) ;
 
         m_control_status_icon->set_playstatus( status ) ;
+
+        g_message("Status: %d", int(status)) ;
 
         switch( status )
         {
@@ -1196,18 +1199,18 @@ namespace MPX
                 m_playqueue.clear() ;
                 m_ListViewTracks->clear_active_track() ;
                 m_main_spectrum_titleinfo->clear() ;
-                m_control_status_icon->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
-
+                m_control_status_icon->clear() ;
                 m_main_window->queue_draw () ;    
+
                 break ;
 
             case PLAYSTATUS_WAITING:
 
                 m_seek_position.reset() ; 
                 m_main_spectrum_titleinfo->clear() ;
-
                 m_main_window->queue_draw () ;    
+
                 break ;
 
             case PLAYSTATUS_PAUSED:

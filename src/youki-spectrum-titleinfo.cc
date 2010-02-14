@@ -119,7 +119,7 @@ namespace MPX
     )
     {
         m_info = i ;
-        m_cover = cover->scale_simple( 99, 99, Gdk::INTERP_BILINEAR ) ;
+        m_cover = cover->scale_simple( 100, 100, Gdk::INTERP_BILINEAR ) ;
 
 /*
         total_animation_time    = m_info.size() * text_time;
