@@ -42,8 +42,10 @@ namespace MPX
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
         set_flags(Gtk::CAN_FOCUS) ;
 
-        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+        m_theme = services->get<IYoukiThemeEngine>("mpx-service-theme").get() ;
+
+        const ThemeColor& c = m_theme->get_color( THEME_COLOR_BASE ) ;
+
         Gdk::Color cgdk ;
         cgdk.set_rgb_p( c.r, c.g, c.b ) ; 
         modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
@@ -76,13 +78,12 @@ namespace MPX
     )
     {
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
-        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
         const Gdk::Rectangle& a = get_allocation() ;
 
-        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
-        const ThemeColor& c = theme->get_color( THEME_COLOR_SELECT ) ;
-        const ThemeColor& ct = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
+        const ThemeColor& c_base /* :) */ = m_theme->get_color( THEME_COLOR_BACKGROUND ) ; 
+        const ThemeColor& c = m_theme->get_color( THEME_COLOR_SELECT ) ;
+        const ThemeColor& ct = m_theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
 
         cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
         cairo->set_source_rgba(
@@ -183,7 +184,7 @@ namespace MPX
 
         if( has_focus() )
         {
-            theme->draw_focus(
+            m_theme->draw_focus(
                   cairo
                 , r 
                 , is_sensitive()

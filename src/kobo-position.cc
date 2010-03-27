@@ -8,7 +8,6 @@
 #include "mpx/widgets/cairo-extensions.hh"
 
 #include "mpx/i-youki-play.hh"
-#include "mpx/i-youki-theme-engine.hh"
 
 #include "mpx/util-graphics.hh"
 
@@ -41,11 +40,12 @@ namespace MPX
         , m_seek_position( 0 )
         , m_seek_factor( 0 )
         , m_clicked( false )
-        , m_clock( 0 )
 
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
         set_flags(Gtk::CAN_FOCUS) ;
+
+        m_theme = services->get<IYoukiThemeEngine>("mpx-service-theme").get() ;
     }
 
     KoboPosition::~KoboPosition () 
@@ -55,30 +55,11 @@ namespace MPX
     void
     KoboPosition::stop()
     {
-/*
-        m_update_conn.disconnect() ;
-        m_clock = 0 ;
-        queue_draw() ;
-*/
     }
 
     void
     KoboPosition::start()
     {
-/*
-        boost::shared_ptr<IPlay> p = services->get<IPlay>("mpx-service-play") ;
-
-        m_clock = p->get_clock() ;
-
-        if( !m_update_conn )
-        {
-            m_update_conn = Glib::signal_timeout().connect(
-                sigc::mem_fun(
-                      *this
-                    , &KoboPosition::draw_frame 
-            ), animation_frame_period_ms) ;
-        }
-*/
     }
 
     void
@@ -112,9 +93,17 @@ namespace MPX
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
         const Gdk::Rectangle& a = get_allocation() ;
 
-        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+        const ThemeColor& c = m_theme->get_color( THEME_COLOR_SELECT ) ;
+        const ThemeColor& c_base /* :) */ = m_theme->get_color( THEME_COLOR_BACKGROUND ) ; 
 
-        const ThemeColor& c = theme->get_color( THEME_COLOR_SELECT ) ;
+        cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
+        cairo->set_source_rgba(
+              c_base.r
+            , c_base.g
+            , c_base.b
+            , c_base.a
+        ) ;
+        cairo->paint () ;
 
         Gdk::Color cgdk ;
         double h, s, b ;
@@ -285,7 +274,7 @@ namespace MPX
 
         if( m_duration > 0 ) 
         {
-            ThemeColor ct = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
+            ThemeColor ct = m_theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
             ct.a = 0.92 ;
 
             /// POSITION
@@ -370,7 +359,7 @@ namespace MPX
             r.width = a.get_width() ;
             r.height = a.get_height() ;
 
-            theme->draw_focus(
+            m_theme->draw_focus(
                   cairo
                 , r 
                 , is_sensitive()

@@ -2,6 +2,7 @@
 #define KOBO_VOLUME_HH
 
 #include <gtkmm.h>
+#include "mpx/i-youki-theme-engine.hh"
 
 namespace MPX
 {
@@ -11,6 +12,8 @@ namespace MPX
         
             int  m_volume ;        
             bool m_clicked ;
+
+            IYoukiThemeEngine * m_theme ;            
     
         public:
 

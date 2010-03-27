@@ -442,8 +442,6 @@ namespace Albums
                 regen_mapping(
                 )
                 {
-                    g_message(G_STRLOC) ;
-    
                     using boost::get;
 
                     if( m_realmodel->empty() )
@@ -1692,8 +1690,6 @@ namespace Albums
                       std::size_t row
                 )
                 {
-                    g_message(G_STRLOC) ;
-
                     if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
                     {
                         if( m_model->m_mapping.size() < std::size_t(m_visible_height/m_row_height) )
@@ -1771,15 +1767,6 @@ namespace Albums
                     return boost::optional<gint64>() ;
                 }
 
-                void
-                clear_selection(
-                      bool quiet = true
-                )
-                {
-                    m_model->m_selected.reset() ; 
-                    queue_draw() ;
-                }
-    
                 void
                 set_model(DataModelFilter_sp_t model)
                 {
@@ -1968,6 +1955,20 @@ namespace Albums
                 }
 
             public:
+
+                void
+                clear_selection(
+                      bool quiet = true
+                )
+                {
+                    m_model->m_selected.reset() ;
+                    m_selection.reset() ;
+
+                    if( !quiet )
+                    {
+                        queue_draw() ;
+                    }
+                }
 
                 SignalMBID&
                 signal_only_this_album_mbid()

@@ -707,11 +707,15 @@ namespace MPX
 
     YoukiController::~YoukiController ()
     {
-        m_play->request_status( PLAYSTATUS_STOPPED ) ; 
-
         delete m_control_status_icon ;
         delete m_main_window ;
         delete private_ ;
+
+        m_control_status_icon = 0 ;
+        m_main_window = 0 ;
+        private_ = 0 ;
+
+        m_play->request_status( PLAYSTATUS_STOPPED ) ; 
 
         ShutdownComplete () ;
     }
@@ -1182,9 +1186,8 @@ namespace MPX
     {
         PlayStatus status = PlayStatus( m_play->property_status().get_value() ) ;
 
-        m_control_status_icon->set_playstatus( status ) ;
-
-        g_message("Status: %d", int(status)) ;
+        if( m_control_status_icon )
+            m_control_status_icon->set_playstatus( status ) ;
 
         switch( status )
         {
@@ -1200,8 +1203,12 @@ namespace MPX
                 m_ListViewTracks->clear_active_track() ;
                 m_main_spectrum_titleinfo->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
-                m_control_status_icon->clear() ;
-                m_main_window->queue_draw () ;    
+
+                if( m_control_status_icon )
+                    m_control_status_icon->clear() ;
+
+                if( m_main_window )
+                    m_main_window->queue_draw () ;    
 
                 break ;
 
@@ -1209,7 +1216,9 @@ namespace MPX
 
                 m_seek_position.reset() ; 
                 m_main_spectrum_titleinfo->clear() ;
-                m_main_window->queue_draw () ;    
+
+                if( m_main_window )
+                    m_main_window->queue_draw () ;    
 
                 break ;
 
@@ -1318,6 +1327,7 @@ namespace MPX
     ) 
     {
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+        m_ListViewAlbums->clear_selection() ;
 
         //// SET UP CONSTRAINTS
 
@@ -1334,7 +1344,6 @@ namespace MPX
 
         private_->FilterModelTracks->regen_mapping_iterative() ;
 
-        m_ListViewAlbums->clear_selection() ;
         private_->FilterModelAlbums->set_constraints_albums( private_->FilterModelTracks->m_constraints_albums ) ;
         private_->FilterModelAlbums->set_constraints_artist( private_->FilterModelTracks->m_constraints_artist ) ;
         private_->FilterModelAlbums->regen_mapping() ;

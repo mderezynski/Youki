@@ -3,6 +3,7 @@
 
 #include <gtkmm.h>
 #include <gst/gst.h>
+#include "mpx/i-youki-theme-engine.hh"
 
 namespace MPX
 {
@@ -21,7 +22,7 @@ namespace MPX
 
             sigc::connection m_update_conn ;
 
-            GstClock* m_clock ;
+            IYoukiThemeEngine * m_theme ;
 
        protected:
     
