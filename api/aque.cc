@@ -8,6 +8,7 @@
 #include "mpx/util-string.hh"
 #include "mpx/algorithm/aque.hh"
 #include "mpx/mpx-uri.hh"
+
 #include "mpx/xml/xmltoc++.hh"
 
 #include "xmlcpp/xsd-topalbums-2.0.hxx"
@@ -252,6 +253,30 @@ namespace MPX
 {
 namespace AQE
 {
+    bool operator == (const Constraint_t& a, const Constraint_t& b )
+    {
+        return  (a.TargetAttr == b.TargetAttr) 
+                    &&
+                (a.TargetValue == b.TargetValue)
+                    &&
+                (a.MatchType == b.MatchType)
+                    &&
+                (a.InverseMatch == b.InverseMatch)
+        ;
+    }
+
+    bool operator < (const Constraint_t& a, const Constraint_t& b )
+    {
+        return  (a.TargetAttr < b.TargetAttr) 
+                    &&
+                (a.TargetValue < b.TargetValue)
+                    &&
+                (a.MatchType < b.MatchType)
+                    &&
+                (a.InverseMatch < b.InverseMatch)
+        ;
+    }
+
     void
     parse_advanced_query(
           Constraints_t&            constraints

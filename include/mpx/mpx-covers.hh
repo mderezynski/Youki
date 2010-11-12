@@ -115,7 +115,7 @@ namespace MPX
 
 
             sigx::request_f<const RequestQualifier&, bool> cache ;
-            sigx::request_f<const ::MPX::Library*>         precache ;
+//            sigx::request_f<const ::MPX::Library*>         precache ;
 
             SignalGotCover_xt  signal_got_cover ;
 
@@ -152,10 +152,12 @@ namespace MPX
               , bool                        acquire
             ) ;
 
+/*
             void
             on_precache(
               const ::MPX::Library*
             );
+*/
 
 
             bool
@@ -164,10 +166,12 @@ namespace MPX
               , bool                        acquire
             ) ;
 
+/*
             bool
             handle_precache(
               const ::MPX::Library*
             );
+*/
 
             bool
             fetch_back1(
