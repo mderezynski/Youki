@@ -131,9 +131,9 @@ namespace
 
 namespace Mcs
 {
-      Mcs::Mcs(
-            std::string const& xml,
-            std::string const& root_node_name,
+      Config::Config(
+            const std::string& xml,
+            const std::string& root_node_name,
             double             version
       )
       : m_xml(xml)
@@ -143,13 +143,13 @@ namespace Mcs
       {
       }
 
-      Mcs::~Mcs ()
+      Config::~Config ()
       {
         save ();
       }
 
       void
-      Mcs::save ()
+      Config::save ()
       {
         //Serialize the configuration into XML
         xmlDocPtr	        doc;
@@ -237,7 +237,7 @@ namespace Mcs
       } 
 
       void
-      Mcs::load(
+      Config::load(
         VersionIgnore version_ignore
       )
       {
@@ -251,7 +251,7 @@ namespace Mcs
       }
 
       void 
-      Mcs::domain_register(
+      Config::domain_register(
         std::string const& domain
       )
       {
@@ -265,7 +265,7 @@ namespace Mcs
       }
 
       void
-      Mcs::key_register(
+      Config::key_register(
             std::string const& domain, //Must be registered
             std::string const& key,
             KeyVariant  const& key_default
@@ -367,7 +367,7 @@ namespace Mcs
       }
 
       void 
-      Mcs::key_unset(
+      Config::key_unset(
             std::string const& domain,
             std::string const& key
       )
@@ -379,7 +379,7 @@ namespace Mcs
       } 
 
       int
-      Mcs::subscribe(
+      Config::subscribe(
             std::string const&      domain, //Must be registered 
             std::string const&      key,    //Must be registered,
             SubscriberNotify const& notify
@@ -394,7 +394,7 @@ namespace Mcs
       }
 
       void 
-      Mcs::unsubscribe(
+      Config::unsubscribe(
             int                id,     //Must be unique
             std::string const& domain, //Must be registered 
             std::string const& key     //Must be registered,

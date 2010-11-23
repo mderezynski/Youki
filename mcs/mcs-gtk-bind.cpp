@@ -9,7 +9,7 @@
 
 namespace Mcs
 {
-  Bind::Bind (Mcs* mcs)
+  Bind::Bind (Config* mcs)
   : m_rebind_locks (N_REBIND_LOCKS, false)
   , mcs (mcs)
   {}

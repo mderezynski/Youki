@@ -92,7 +92,7 @@ namespace Mcs
 
     public:
 
-      Bind (Mcs::Mcs * mcs);
+      Bind (Mcs::Config * mcs);
       ~Bind ();
 
       void
@@ -147,7 +147,7 @@ namespace Mcs
 
     private:
 
-      Mcs::Mcs *mcs;
+      Mcs::Config *mcs;
 
       void
       action_toggled_cb       (Glib::RefPtr<Gtk::ToggleAction> const& toggle_action,
