@@ -6,7 +6,7 @@
 
 namespace MPX
 {
-	extern Mcs::Mcs         * mcs;
+	extern Mcs::Config      * mcs;
     extern Mcs::Bind        * mcs_bind;
     extern Service::Manager * services;
 }

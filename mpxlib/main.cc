@@ -58,7 +58,7 @@ using namespace Glib;
 
 namespace MPX
 {
-  Mcs::Mcs         * mcs      = 0;
+  Mcs::Config         * mcs      = 0;
   Mcs::Bind        * mcs_bind = 0;
   Service::Manager * services = 0;
 
@@ -128,9 +128,9 @@ namespace MPX
     void
     setup_mcs ()
     {
-        mcs = new Mcs::Mcs (Glib::build_filename (get_app_config_dir (), "config.xml"), "mpx", 0.01);
+        mcs = new Mcs::Config (Glib::build_filename (get_app_config_dir (), "config.xml"), "mpx", 0.01);
         mcs_bind = new Mcs::Bind(mcs);
-        mcs->load (Mcs::Mcs::VERSION_IGNORE);
+        mcs->load (Mcs::Config::VERSION_IGNORE);
 
         mcs->domain_register ("mpx");
         mcs->key_register ("mpx", "file-chooser-close-on-open", true);

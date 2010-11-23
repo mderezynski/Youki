@@ -51,7 +51,7 @@
 
 namespace Mcs
 {
-      class Mcs
+      class Config
       {
         public:
 
@@ -75,17 +75,17 @@ namespace Mcs
                 {}
             };
 
-            Mcs(
+            Config(
                 std::string const& /* m_xml*/,
                 std::string const& /*m_root_node_name*/,
                 double             /*version*/
             );
 
-            ~Mcs ();
+            ~Config ();
 
             void
             load(
-                Mcs::VersionIgnore /*version_ignore*/ = VERSION_CHECK
+                Config::VersionIgnore /*version_ignore*/ = VERSION_CHECK
             ); 
 
             void

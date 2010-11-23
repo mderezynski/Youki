@@ -939,18 +939,18 @@ BOOST_PYTHON_MODULE(mpx)
 
 	;
 
-	class_<Mcs::Mcs, boost::noncopyable>("MCS", boost::python::no_init)
-		.def("domain_register", &Mcs::Mcs::domain_register)
-		.def("key_register", &Mcs::Mcs::key_register)
-		.def("domain_key_exist", &Mcs::Mcs::domain_key_exist)
-		.def("key_set_bool", &Mcs::Mcs::key_set<bool>)
-		.def("key_set_int", &Mcs::Mcs::key_set<int>)
-		.def("key_set_double", &Mcs::Mcs::key_set<double>)
-		.def("key_set_string", &Mcs::Mcs::key_set<std::string>)
-		.def("key_get_bool", &Mcs::Mcs::key_get<bool>)
-		.def("key_get_int", &Mcs::Mcs::key_get<int>)
-		.def("key_get_double", &Mcs::Mcs::key_get<double>)
-		.def("key_get_string", &Mcs::Mcs::key_get<std::string>)
+	class_<Mcs::Config, boost::noncopyable>("MCS", boost::python::no_init)
+		.def("domain_register", &Mcs::Config::domain_register)
+		.def("key_register", &Mcs::Config::key_register)
+		.def("domain_key_exist", &Mcs::Config::domain_key_exist)
+		.def("key_set_bool", &Mcs::Config::key_set<bool>)
+		.def("key_set_int", &Mcs::Config::key_set<int>)
+		.def("key_set_double", &Mcs::Config::key_set<double>)
+		.def("key_set_string", &Mcs::Config::key_set<std::string>)
+		.def("key_get_bool", &Mcs::Config::key_get<bool>)
+		.def("key_get_int", &Mcs::Config::key_get<int>)
+		.def("key_get_double", &Mcs::Config::key_get<double>)
+		.def("key_get_string", &Mcs::Config::key_get<std::string>)
 	;	
 
 	/*-------------------------------------------------------------------------------------*/
