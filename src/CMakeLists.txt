@@ -27,6 +27,7 @@ INCLUDE_DIRECTORIES(
   ${HAL_INCLUDE_DIRS}
   ${NM_INCLUDE_DIRS}
   ${LIBOFA_INCLUDE_DIRS}
+  ${MPD_INCLUDE_DIRS}
   ${PYGTK_INCLUDE_DIRS}
   ${PYTHON_INCLUDE_PATH}
   ${RSVG_INCLUDE_DIRS}
@@ -55,65 +56,23 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mpx-app-dbus-adaptor.hh
 SET(youki_bin_SOURCES
   covers.cc
   covers-stores.cc
-  dialog-about.hh
-  dialog-about.cc
-  dialog-equalizer.hh
-  dialog-equalizer.cc
   glib-marshalers.h
   glib-marshalers.c
-  youki-spectrum-titleinfo.hh
-  youki-spectrum-titleinfo.cc
   jnethttpsrc.h
   jnethttpsrc.cc
   kobo-position.hh
   kobo-position.cc
-  youki-controller.hh
-  youki-controller.cc
-  youki-controller-status-icon.hh
-  youki-controller-status-icon.cc
-  youki-notification.hh
-  youki-notification.cc
-  youki-simpleinfo.hh
-  youki-simpleinfo.cc
-  kobo-main.hh
-  kobo-main.cc
-  kobo-titleinfo.hh
-  kobo-titleinfo.cc
   kobo-volume.hh
   kobo-volume.cc
   youki-theme-engine.hh
   youki-theme-engine.cc
-  library.cc
-  library.hh
-  mpx-mlibman-dbus-proxy-actual.hh
-  ${CMAKE_CURRENT_BINARY_DIR}/mpx-mlibman-dbus-proxy.hh
-  ${CMAKE_CURRENT_BINARY_DIR}/mpx-app-dbus-adaptor.hh
-  markov-analyzer-thread.cc
-  markov-analyzer-thread.hh
-  play.hh
-  play.cc
-  python.cc
-  pysigc.hh
-  plugin.cc
-  plugin-loader-python.hh
-  plugin-loader-python.cc
-  plugin-types-python.cc
-  plugin-types-python.hh
-  plugin-loader-cpp.cc
-  plugin-loader-cpp.hh
-  plugin-types-cpp.hh
-  plugin-loader.hh
-  plugin-manager-gui.hh
-  plugin-manager-gui.cc
-  gtkmm.cc
-  gtkmmmodule.cc
-  gtkmmmodule.h
-  preferences.cc
-  preferences.hh
-  splash-screen.hh
-  splash-screen.cc
-  stock.cc
-  main.cc
+  mpxpd.cc
+  mpxpd-sql.cc
+  mpxpd-sql.hh
+  mpxpd-mpd.cc
+  mpxpd-mpd.hh
+  mpxpd-shell.hh
+  mpxpd-shell.cc
 )
 
 # FIXME: Add definitions from: ${GLIB_CFLAGS} and ${GST_CFLAGS}
@@ -154,6 +113,7 @@ TARGET_LINK_LIBRARIES(youki-bin
   ${HAL_LIBRARIES}
   ${NM_LIBRARIES}
   ${LIBOFA_LIBRARIES}
+  ${MPD_LIBRARIES}
   ${PYGTK_LIBRARIES}
   ${PYTHON_LIBRARIES}
   ${RSVG_LIBRARIES}

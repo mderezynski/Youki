@@ -339,7 +339,7 @@ namespace MPX
 
         load_stored_themes() ;
 
-        m_CurrentTheme = m_Themes.find( mcs->key_get<std::string>("mpx","theme") ) ;
+        m_CurrentTheme = m_Themes.find( "default" ) ;
     }
     
     YoukiThemeEngine::~YoukiThemeEngine(

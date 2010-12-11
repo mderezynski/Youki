@@ -121,7 +121,7 @@ namespace MPX
 
         , sigx::glib_threadable()
         , cache(sigc::mem_fun(*this, &Covers::on_cache))
-        , precache(sigc::mem_fun(*this, &Covers::on_precache))
+//        , precache(sigc::mem_fun(*this, &Covers::on_precache))
         , signal_got_cover(*this, m_ThreadData, &ThreadData::GotCover)
         , m_rebuild(0)
         , m_rebuilt(0)
@@ -178,6 +178,7 @@ namespace MPX
         )) ;
     }
 
+/*
     void
     Covers::on_precache(
         const MPX::Library* library
@@ -192,6 +193,7 @@ namespace MPX
             , library
         )) ;
     }
+*/
 
     void
     Covers::source_pref_changed_callback(
@@ -332,6 +334,7 @@ namespace MPX
         return false ;
     }
 
+/*
     bool
     Covers::handle_precache(
         const MPX::Library* library
@@ -365,6 +368,7 @@ namespace MPX
 
         return false ;
     }
+*/
 
     bool
     Covers::fetch(
